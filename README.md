@@ -2,84 +2,100 @@
 
 vibecoding easy to run iRacing overlays.
 
-A lightweight overlay app that reads iRacing's shared memory directly, without SimHub.
+vibeRacingOverlays shows live race information on top of iRacing: standings, relative and a fuel calculator. Each overlay is a widget that you can place, size and style yourself. The app is built to cost as little FPS as possible. It works directly with iRacing, without SimHub or any other program.
 
-## Download
+## Features
 
-Get the latest installer or portable zip from the [Releases](../../releases) page.
+- **Lightweight:** widgets only redraw when something changes, and you set how often each widget may update. When nothing changes, a widget costs nothing.
+- **Widgets you arrange yourself:** drag them anywhere on any screen (triple screens work too), resize them with the mouse wheel, and set colors, font size, rows and columns per widget.
+- **Single class and multiclass automatically:** the app recognizes the session type and adjusts the standings and relative on its own, with the official iRacing class colors.
+- **Layouts:** save complete sets of widgets, for example "Sprint" and "Endurance", and switch between them, even while driving.
+- **Presets:** save the settings of a widget and reuse them in every layout.
+- **Live preview:** see the effect of each setting immediately, with live iRacing data or a built-in demo race (single class or multiclass). You can set everything up without iRacing running.
+- **Reset buttons:** undo a change per setting, per section, or for a whole widget.
+- **Dark and light theme** for the app itself.
 
-## Development
+## Widgets
 
-```powershell
-.\publish-dev.ps1          # local test version -> .\publish, Start menu: "vibeRacingOverlays DEV"
-```
+### Standings
+The classification of your session.
+- Top of the field plus a window around your own position, so you always see yourself.
+- In multiclass sessions: a block per class with class name, class color, fastest lap, strength of field and number of cars. You choose how many rows your own class and the other classes get.
+- Columns you can turn on and off, reorder and resize:
+  - position and positions gained or lost since the start;
+  - car number, driver name, car brand, license and safety rating, iRating;
+  - estimated iRating change;
+  - gap to the leader, interval to the car ahead, last lap (purple for fastest in class, green for a personal best), best lap;
+  - pit status (in the pits, towed, out lap, number of stops) and laps in the current stint.
+- Header bar with session type, laps (or an estimate for timed races), time remaining, track temperature, strength of field and number of cars.
 
-Local builds are **DEV builds**. They are called "vibeRacingOverlays DEV" (orange title) and use their own settings folder, `%APPDATA%\vibeRacingOverlays-dev`. On first start that folder gets a copy of the release settings, so testing never changes the layouts of the installed release. Release builds (`build-release.ps1` / GitHub Actions) pass `-p:ReleaseBuild=true`.
+### Relative
+The cars directly around you on track, with the time difference to each.
+- You choose the number of cars ahead and behind.
+- Colors show whether a car is a lap ahead of you or a lap down.
+- In multiclass sessions, class color bars and car numbers in the class color.
+- Pit and tow status per car.
 
-## Releasing a new version
+### Fuel calculator
+How much fuel you use and need.
+- Fuel level, laps left in the race and the time of day.
+- Consumption per lap based on your average, your last lap, or a value you set yourself.
+- For each: how many laps your fuel lasts, how much you need to refuel to finish (with an adjustable safety margin), and how much will be left at the finish.
+- A PIT indicator that warns when you need to stop.
+- Laps with a pit stop, refuel or caution are left out of the average.
 
-```powershell
-git add -A
-git commit -m "Describe the change"
-git push                   # "Build" workflow checks that it still compiles
-git tag v1.0.1
-git push origin v1.0.1     # "Release" workflow builds the installer + zip and publishes a GitHub Release
-```
+## Installation
 
-The version number comes from the tag (`v1.0.1` -> 1.0.1), in the app, the installer and the file names.
+1. Download the latest version from the [Releases](../../releases) page:
+   - **vibeRacingOverlays-Setup-x.y.z.exe**: installer (recommended). It installs for your Windows user only, so no administrator rights are needed. It adds a Start menu shortcut and, optionally, a desktop shortcut.
+   - **vibeRacingOverlays-x.y.z-portable.zip**: a single exe that runs without installing.
+2. Start vibeRacingOverlays.
+3. Set iRacing to **windowed** or **borderless** mode, so the widgets can be drawn on top of it.
 
-## Using the app
+Requirements: Windows 10 or 11 (64-bit). Nothing else needs to be installed.
 
-- **Data:** `Auto` uses iRacing when it's running and otherwise a built-in demo race. `iRacing` and `Demo` force one source.
-- **Widgets:** Standings, Relative and Fuel calculator. Each widget you add gets its own on-screen window. Renaming one only changes its display name; its type stays the same.
-- **Edit layout** (`Ctrl+Shift+E`): drag a widget to move it, and use the mouse wheel over it to scale it.
-- **Show/hide all widgets:** `Ctrl+Shift+H`.
-- **Layouts:** a layout is a named set of widgets with their positions and settings. `New` creates a layout with one widget of each type, `Save as` copies the current one under a new name, `Rename` and `Delete` manage them. Changes are saved automatically in the active layout. Next layout: `Ctrl+Shift+L`, which also works in-game.
-- **Settings:** stored in `%APPDATA%\vibeRacingOverlays\settings.json` (DEV builds: `%APPDATA%\vibeRacingOverlays-dev`).
+Windows SmartScreen may show "Windows protected your PC" the first time, because the app isn't code-signed. Click **More info** and then **Run anyway**.
 
-To write design previews with demo data to PNG files: `vibeRacingOverlays.exe --snapshot <folder>`.
+## Getting started
 
-## Sharing / release
+1. **Choose a data source** at the top: *Auto* uses iRacing when it's running and otherwise the demo race. *iRacing* and *Demo* force one source.
+2. **Add widgets** with **+ Add** (Standings, Relative or Fuel calculator). Tick a widget in the list to show it, untick it to hide it.
+3. **Click a widget** in the list to open its settings. The preview shows the result right away. Use **Side by side** to put the preview next to the settings.
+4. **Place your widgets:** press **Edit layout** (or `Ctrl+Shift+E`), drag the widgets to where you want them and use the mouse wheel to resize them. Press it again when you're done. Outside edit mode, clicks go straight through the widgets to iRacing.
+5. **Save layouts** with the buttons under *Layout*: **New**, **Save as**, **Rename** and **Delete**. Everything you change is saved automatically.
 
-```powershell
-.\build-release.ps1 -Version 1.0.0
-```
+### Hotkeys
 
-This creates two files in `dist\`:
+These also work while iRacing has focus.
 
-- **`vibeRacingOverlays-Setup-<version>.exe`**: the installer. It installs for the current Windows user only, so no admin rights are needed. It creates a Start menu shortcut and, optionally, a desktop shortcut, and adds an entry to Windows "Apps & features" so the app can be uninstalled normally. The installer runs on Windows 10/11 as-is (it uses .NET Framework 4.8, which ships with Windows).
-  - Unattended install: `--silent [--dir <folder>] [--no-desktop] [--launch]`.
-  - Uninstall: from Apps & features, or `uninstall.exe --uninstall [--quiet]`. User settings are kept unless you choose to remove them.
-- **`vibeRacingOverlays-<version>-portable.zip`**: a single `vibeRacingOverlays.exe` plus a README. It runs without installing.
+| Keys | Action |
+|---|---|
+| `Ctrl+Shift+E` | Edit layout on/off (move and resize widgets) |
+| `Ctrl+Shift+H` | Show/hide all widgets |
+| `Ctrl+Shift+L` | Switch to the next layout |
 
-The app is self-contained: .NET 8 is included, so users don't need to install anything. It isn't code-signed, so Windows SmartScreen may warn on first start ("More info" > "Run anyway").
+### Per widget
 
-## Why it's light on FPS
+- **Display name:** give a widget its own name, for example "Standings endurance".
+- **Preset:** **Save** stores the widget's settings under a name; **Load** applies a saved preset. Deleting the last preset of a widget type resets that widget to the defaults.
+- **Show:** always, only when you're in the car, or only in races.
+- **Refresh rate:** how often the widget may update. Lower means even less FPS impact.
+- **Reset:** ↺ next to a setting, **Reset** next to a section, or **Reset widget** for everything. The widget's name and position are kept.
 
-- A background thread reads telemetry at 60 Hz. It publishes an immutable `RaceSnapshot` 20 times per second.
-- Each widget draws into a `DisplayList`, a plain list of rectangles and texts.
-- The overlay window only redraws when that list differs from the previous frame, and at most at the widget's own refresh rate (default 10 Hz, 4 Hz for fuel). Static data costs nothing.
-- The windows are click-through, don't take focus and have no taskbar entry.
+## Frequently asked questions
 
-## Structure
+**The widgets don't appear over iRacing.**
+Set iRacing to windowed or borderless mode. Exclusive fullscreen doesn't allow windows on top.
 
-```
-src/vibeRacingOverlays.Data      no UI
-  IRSdk/                  shared-memory reader, lenient session-YAML parser, SessionInfo model
-  Telemetry/              TelemetryState (one frame), IRacingSource, DemoSource
-  Engine/                 RaceEngine: positions, live gaps (100 checkpoints/lap), relative,
-                          pit/tow/stint tracking, iRating estimate, SOF, fuel
-                          TelemetryService: background thread + source switching
-  Model/                  RaceSnapshot, CarInfo, FuelInfo
-src/vibeRacingOverlays.App       WPF
-  Widgets/                Standings, Relative, Fuel (settings class + Draw)
-  Rendering/              DisplayList, WpfRenderer, formatting
-  Overlay/                OverlayWindow (transparent/topmost/click-through), OverlayManager (hotkeys, saving)
-  UI/                     settings panel generated from [Setting] attributes, column editor
-```
+**Where are my layouts and settings stored?**
+In `%APPDATA%\vibeRacingOverlays`. Uninstalling asks whether you want to keep them.
 
-## Adding a widget
+**Does it work in replays?**
+Yes. In a replay iRacing provides less data (for example no fuel data), so some values stay empty.
 
-1. Create `XxxSettings : WidgetSettings` with `[Setting]` properties. The editor UI is generated from them.
-2. Create `XxxWidget : Widget` and implement `Draw(DisplayList, RaceSnapshot)`.
-3. Register both in `Widget.Create`, in `Widget.Catalog`, and with `[JsonDerivedType]` on `WidgetSettings`.
+**How do I uninstall?**
+Through Windows Settings, under *Apps* > *Installed apps* > *vibeRacingOverlays* > *Uninstall*.
+
+---
+
+Want to work on the app itself? See [DEVELOPMENT.md](DEVELOPMENT.md).
