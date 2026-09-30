@@ -60,6 +60,8 @@ Requirements: Windows 10 or 11 (64-bit). Nothing else needs to be installed.
 
 Windows SmartScreen may show "Windows protected your PC" the first time, because the app isn't code-signed. Click **More info** and then **Run anyway**.
 
+What changed in each version is in the [changelog](CHANGELOG.md). Older versions stay available on the [Releases](../../releases) page, so you can always go back to a previous one.
+
 ## Getting started
 
 1. **Choose a data source** at the top: *Auto* uses iRacing when it's running and otherwise the demo race. *iRacing* and *Demo* force one source.

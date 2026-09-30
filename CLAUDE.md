@@ -24,7 +24,8 @@ The user (c4seum) speaks **Dutch**: answer in Dutch. Setup: triple screens (3× 
 ## Build / test / release
 - Local test version: `.\publish-dev.ps1` produces a **DEV build** ("vibeRacingOverlays DEV", orange title, settings in `%APPDATA%\vibeRacingOverlays-dev`, Start menu "vibeRacingOverlays DEV"). Close the app first.
 - Design checks without iRacing: `vibeRacingOverlays.exe --snapshot <folder>` (PNG per widget, demo single and multi, plus the user's saved widgets and a narrow-columns test). `--snapshot <folder> --live` uses live iRacing data. `--dump <file>` writes raw iRacing values.
-- Release: `.\build-release.ps1 -Version x.y.z` locally, or push a tag `vX.Y.Z` so GitHub Actions (`release.yml`) builds the installer and portable zip and creates a GitHub Release. **Never push a version tag without the user's explicit consent.**
+- Release: `.\build-release.ps1 -Version x.y.z` locally, or push a tag `vX.Y.Z` so GitHub Actions (`release.yml`) builds the installer and portable zip and creates a GitHub Release (notes = the version's CHANGELOG section). Before tagging: move Unreleased to the new version in CHANGELOG.md, add the version to the release history below, commit, push, then tag. **Never push a version tag without the user's explicit consent.**
+- `gh` for this repo: `--repo c4seum/vibeRacingOverlays` (on the work laptop both accounts are logged in; see memory).
 - Versions: last digit = fixes only, middle digit = new features.
 - A normal `git push` only runs the "Build" check (`build.yml`); only a pushed `vX.Y.Z` tag creates a release.
 
@@ -32,6 +33,12 @@ The user (c4seum) speaks **Dutch**: answer in Dutch. Setup: triple screens (3× 
 - **v1.0.0**: first release (Standings, Relative, Fuel; layouts, presets, reset buttons, preview, installer).
 - **v1.0.1**: the user's vRO logo as app icon, README rewritten as a user guide.
 - **v1.1.0** (2026-09-30, built on the work laptop): position panel (anchoring, offsets, lock, snapping), Relative "Laps in stint" column, Fuel: "Last N avg" and "Stint avg" rows, stops indicator (off / next to refuel / column), laps-to-go fixes (timed race last lap, lap+time limit, clean-lap pace, after checkered, grid). Released before an in-game test: check at home (drag snapping, stint reset after a pit stop, last lap of a timed race) and fix in 1.1.x if needed.
+
+## History and documentation (agreed 2026-09-30)
+- **One commit per finished change** (a feature or a fix, not per prompt), made locally as soon as it works and is tested, so every change can be reverted on its own (`git revert <hash>`). The message says what changed and why. Pushing stays the user's call (end of the day); don't push unasked.
+- **CHANGELOG.md**: add every user-visible change under `## [Unreleased]` in the same commit (Added / Changed / Fixed). At a release, rename that section to `## [x.y.z] - date` and add a new empty Unreleased section; the release workflow uses that section as the GitHub release notes.
+- Code comments explain *why* (iRacing quirks, non-obvious choices), not what the code does.
+- Going back: every release is a tag plus a GitHub Release with the installer, so users can install an older version; developers can `git checkout vX.Y.Z` to look at old code.
 
 ## Working rules
 - Before UI tests: back up `settings.json` and restore it afterwards. Close test instances (also leftover Debug instances), but never the user's own running DEV app (`publish\vibeRacingOverlays.exe`): check with `Get-Process` first, and don't edit `settings.json` while it runs.

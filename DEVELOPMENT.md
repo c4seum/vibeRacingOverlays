@@ -22,16 +22,24 @@ Command-line options for design and debugging:
 - `--snapshot <folder> --live`: the same, with live iRacing data.
 - `--dump <file>`: writes raw iRacing values (per car) to a text file.
 
+## Commits and the changelog
+
+- One commit per finished change (a feature or a fix), with a message that says what changed and why, so any change can be reverted on its own with `git revert <hash>`.
+- Every user-visible change also goes into `CHANGELOG.md` under `## [Unreleased]` (Added / Changed / Fixed), in the same commit.
+
 ## Releasing a new version
 
+1. In `CHANGELOG.md`, rename `## [Unreleased]` to `## [1.1.1] - <date>`, add a new empty `## [Unreleased]` above it and update the compare links at the bottom.
+2. Commit, push and tag:
+
 ```powershell
-git add -A
-git commit -m "Describe the change"
+git commit -am "Release 1.1.1"
 git push                   # "Build" workflow checks that it still compiles, no release
-git tag v1.0.1
-git push origin v1.0.1     # "Release" workflow builds the installer + zip and publishes a GitHub Release
+git tag v1.1.1
+git push origin v1.1.1     # "Release" workflow builds the installer + zip and publishes a GitHub Release
 ```
 
+- The release notes are that version's section of `CHANGELOG.md` (`tools/changelog-section.ps1`), followed by GitHub's generated list of commits.
 - Only a pushed tag in the form `vX.Y.Z` creates a release; a normal `git push` never does.
 - The version number comes from the tag (`v1.0.1` -> 1.0.1), in the app, the installer and the file names.
 - Last digit = fixes only, middle digit = new features.
