@@ -114,9 +114,22 @@ namespace vibeRacingOverlays.App.Rendering
     public static class TextMeasure
     {
         static TabularText text = new TabularText("Bahnschrift");
+        // widgets measure the same column samples and header items every frame
+        static readonly Dictionary<(string, float, bool), float> cache = new Dictionary<(string, float, bool), float>();
 
-        public static void SetFont(string font) { text.SetFont(font); }
+        public static void SetFont(string font) { lock (cache) { text.SetFont(font); cache.Clear(); } }
 
-        public static float Measure(string s, float size, bool bold) { return (float)text.Measure(s, size, bold); }
+        public static float Measure(string s, float size, bool bold)
+        {
+            lock (cache)
+            {
+                float w;
+                if (cache.TryGetValue((s, size, bold), out w)) return w;
+                if (cache.Count > 2000) cache.Clear();
+                w = (float)text.Measure(s, size, bold);
+                cache[(s, size, bold)] = w;
+                return w;
+            }
+        }
     }
 }

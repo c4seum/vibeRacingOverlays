@@ -28,6 +28,45 @@ namespace vibeRacingOverlays.App.Widgets
         }
 
         public bool HasFormat(string key) { return Formats != null && Formats.Any(f => f.Key == key); }
+
+        /// <summary>Only these columns have a width the user sets (the driver name); all others get a fixed width.</summary>
+        public bool Resizable;
+        /// <summary>Widest content per format ("|" separates alternatives, digits are equal-width); null = <see cref="Width"/> scaled with the font.</summary>
+        public Func<string, string> Sample;
+        /// <summary>Font size of the content relative to the widget's font size (badges and brands are smaller).</summary>
+        public float SampleSize = 1f;
+        /// <summary>Space inside the column around the text (badge padding).</summary>
+        public float Extra;
+
+        public ColumnDef UserWidth() { Resizable = true; return this; }
+
+        public ColumnDef Fit(string sample, float size = 1f, float extra = 0) { return Fit(f => sample, size, extra); }
+
+        public ColumnDef Fit(Func<string, string> sample, float size = 1f, float extra = 0)
+        {
+            Sample = sample; SampleSize = size; Extra = extra;
+            return this;
+        }
+
+        /// <summary>
+        /// Width of the column: the user's width for the name, otherwise the widest content of the chosen format
+        /// at this font size (and the column title when the titles row is shown), so values always fit and line up.
+        /// </summary>
+        public float WidthFor(ColumnConfig c, float fontSize, bool titles)
+        {
+            if (Resizable) return c.Width > 0 ? c.Width : Width;
+            float w;
+            if (Sample != null)
+            {
+                w = 0;
+                foreach (var s in Sample(c.Format ?? DefaultFormat).Split('|'))
+                    w = Math.Max(w, Rendering.TextMeasure.Measure(s, fontSize * SampleSize, true));
+                w += Extra;
+            }
+            else w = Width * fontSize / 14f;
+            if (titles && !string.IsNullOrEmpty(Header)) w = Math.Max(w, Rendering.TextMeasure.Measure(Header, fontSize * 0.75f, true));
+            return (float)Math.Ceiling(w);
+        }
     }
 
     /// <summary>Settings that need fixing up after loading (migration of older files, new defaults).</summary>
@@ -61,6 +100,19 @@ namespace vibeRacingOverlays.App.Widgets
 
     public static class TableColumns
     {
+        /// <summary>The visible columns with their drawn width (fixed from the content, or the user's width for the name).</summary>
+        public static List<ColumnConfig> Resolve(IEnumerable<ColumnConfig> visible, IReadOnlyList<ColumnDef> defs, float fontSize, bool titles)
+        {
+            var res = new List<ColumnConfig>();
+            foreach (var c in visible)
+            {
+                var def = defs.FirstOrDefault(d => d.Key == c.Key);
+                if (def == null) continue;
+                res.Add(new ColumnConfig { Key = c.Key, Enabled = true, Format = c.Format, Width = def.WidthFor(c, fontSize, titles) });
+            }
+            return res;
+        }
+
         /// <summary>Keeps the user's order/visibility and adds columns introduced in newer versions.</summary>
         public static List<ColumnConfig> Merge(List<ColumnConfig> saved, IReadOnlyList<ColumnDef> defs)
         {
@@ -70,7 +122,7 @@ namespace vibeRacingOverlays.App.Widgets
                 {
                     var def = defs.FirstOrDefault(d => d.Key == c.Key);
                     if (def == null || res.Any(r => r.Key == c.Key)) continue;
-                    if (c.Width <= 0) c.Width = def.Width;
+                    if (c.Width <= 0 || !def.Resizable) c.Width = def.Width;   // only resizable columns keep a width of their own
                     if (!def.HasFormat(c.Format)) c.Format = def.DefaultFormat;
                     res.Add(c);
                 }

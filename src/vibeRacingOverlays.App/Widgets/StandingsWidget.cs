@@ -65,31 +65,48 @@ namespace vibeRacingOverlays.App.Widgets
         static readonly (string, string)[] RatingFormats = { ("full", "4567"), ("k1", "4.5k"), ("k0", "4k") };
         static readonly (string, string)[] TempFormats = { ("C1", "32.4°C"), ("C0", "32°C"), ("F1", "90.3°F"), ("F0", "90°F"), ("CF", "32.4°C 90.3°F"), ("FC", "90.3°F 32.4°C") };
 
+        static string Digits(string format) { int d; return new string('8', int.TryParse(format, out d) ? d : 1); }
+
+        /// <summary>Widest license text per format (D is one of the widest letters).</summary>
+        static string LicenseSample(string f)
+        {
+            switch (f) { case "L2": return "D4.99"; case "L0": return "D4"; case "L": return "D"; case "SR2": return "4.99"; case "SR1": return "4.9"; case "SR0": return "4"; default: return "D4.9"; }
+        }
+
+        /// <summary>
+        /// Every column except the driver name has a fixed width: the widest content of its format (the samples),
+        /// measured at the widget's font size. Badges get some padding around their text.
+        /// </summary>
         public static ColumnDef[] Columns(SessionKind kind)
         {
             bool race = kind == SessionKind.Race;
+            const float Small = 0.85f;
             return new[]
             {
-                new ColumnDef("classbar", "Class color bar (multiclass only)", "", 4, true, Align.Left),
-                new ColumnDef("pos", "Position", "P", 26, true, Align.Right),
-                new ColumnDef("gain", "Positions gained", "+/-", 38, race, Align.Left),
-                new ColumnDef("num", "Car number", "#", 34, true, Align.Center),
-                new ColumnDef("name", "Driver name", "DRIVER", 190, true, Align.Left)
+                new ColumnDef("classbar", "Class color bar (multiclass only)", "", 4, true, Align.Left).Fit(f => "", 1f, 4),
+                new ColumnDef("pos", "Position", "P", 26, true, Align.Right).Fit("88"),
+                new ColumnDef("gain", "Positions gained", "+/-", 38, race, Align.Left).Fit("▲88"),
+                new ColumnDef("num", "Car number", "#", 34, true, Align.Center).Fit("888"),
+                new ColumnDef("name", "Driver name", "DRIVER", 190, true, Align.Left).UserWidth()
                     .WithFormats("full", ("full", "Full name"), ("short", "J. Groenewegen"), ("last", "Last name")),
-                new ColumnDef("brand", "Car brand", "CAR", 34, true, Align.Center),
-                new ColumnDef("lic", "License / SR", "LIC", 42, true, Align.Center)
+                new ColumnDef("brand", "Car brand", "CAR", 34, true, Align.Center).Fit("LAM", Small * 0.9f, 2),
+                new ColumnDef("lic", "License / SR", "LIC", 42, true, Align.Center).Fit(LicenseSample, Small, 10)
                     .WithFormats("L1", ("L2", "A3.48"), ("L1", "A3.4"), ("L0", "A3"), ("L", "A"), ("SR2", "3.48"), ("SR1", "3.4"), ("SR0", "3")),
-                new ColumnDef("ir", "iRating", "iR", 40, true, Align.Right).WithFormats("k1", RatingFormats),
-                new ColumnDef("irdelta", "iRating change (est.)", "iR+/-", 46, race, Align.Right),
-                new ColumnDef("gap", race ? "Gap to leader" : "Gap to fastest", "GAP", 50, true, Align.Right).WithFormats(race ? "1" : "3", Decimals),
-                new ColumnDef("int", race ? "Interval" : "Gap to car ahead", "INT", 50, race, Align.Right).WithFormats(race ? "1" : "3", Decimals),
-                new ColumnDef("laps", "Laps completed", "LAPS", 32, !race, Align.Right),
-                new ColumnDef("last", "Last lap", "LAST", 62, true, Align.Right).WithFormats(race ? "1" : "3", LapDecimals),
-                new ColumnDef("best", "Best lap", "BEST", 62, !race, Align.Right).WithFormats("3", LapDecimals),
+                new ColumnDef("ir", "iRating", "iR", 40, true, Align.Right).Fit(f => f == "full" ? "8888" : f == "k0" ? "88k" : "8.8k")
+                    .WithFormats("k1", RatingFormats),
+                new ColumnDef("irdelta", "iRating change (est.)", "iR+/-", 46, race, Align.Right).Fit("▲888"),
+                // race gaps: 53.0, 1:02.3 or +3L; P&Q: +0.532
+                new ColumnDef("gap", race ? "Gap to leader" : "Gap to fastest", "GAP", 50, true, Align.Right)
+                    .Fit(f => race ? "88." + Digits(f) + "|8:88.8|+88L" : "+88." + Digits(f)).WithFormats(race ? "1" : "3", Decimals),
+                new ColumnDef("int", race ? "Interval" : "Gap to car ahead", "INT", 50, race, Align.Right)
+                    .Fit(f => race ? "88." + Digits(f) + "|8:88.8|+88L" : "+88." + Digits(f)).WithFormats(race ? "1" : "3", Decimals),
+                new ColumnDef("laps", "Laps completed", "LAPS", 32, !race, Align.Right).Fit("888"),
+                new ColumnDef("last", "Last lap", "LAST", 62, true, Align.Right).Fit(f => "8:88." + Digits(f)).WithFormats(race ? "1" : "3", LapDecimals),
+                new ColumnDef("best", "Best lap", "BEST", 62, !race, Align.Right).Fit(f => "8:88." + Digits(f)).WithFormats("3", LapDecimals),
                 new ColumnDef("tire", "Tire compound", "TIRE", 22, false, Align.Center)
                     .WithFormats("differ", ("differ", "Only when mixed"), ("always", "Always")),
-                new ColumnDef("pit", "Pit status", "PIT", 42, true, Align.Center),
-                new ColumnDef("stint", "Laps in stint", "STINT", 32, race, Align.Right),
+                new ColumnDef("pit", "Pit status", "PIT", 42, true, Align.Center).Fit("TOW", Small, 10),
+                new ColumnDef("stint", "Laps in stint", "STINT", 32, race, Align.Right).Fit("88"),
             };
         }
 
@@ -122,6 +139,8 @@ namespace vibeRacingOverlays.App.Widgets
 
         [Setting("Font size", Group = "Style", Min = 8, Max = 30, Step = 0.5, Order = 20)] public double FontSize { get; set; } = 14;
         [Setting("Row height", Group = "Style", Min = 12, Max = 50, Order = 21)] public int RowHeight { get; set; } = 22;
+        [Setting("Column spacing", Group = "Style", Min = 0, Max = 30, Order = 22, Tooltip = "Space between the columns (px). Column widths follow the content and the font size.")]
+        public int ColumnSpacing { get; set; } = 8;
         [Setting("Header background", Group = "Style", IsColor = true, Order = 22)] public string HeaderColor { get; set; } = "#FF1C1C1C";
         [Setting("Row background", Group = "Style", IsColor = true, Order = 23)] public string RowColor { get; set; } = "#FF1E1E1E";
         [Setting("Alternate row", Group = "Style", IsColor = true, Order = 24)] public string RowAltColor { get; set; } = "#FF282828";
@@ -209,9 +228,9 @@ namespace vibeRacingOverlays.App.Widgets
             pr = s.For(snap.IsRace);
             bool multi = snap.Classes.Count > 1;
             compoundsDiffer = snap.Cars.Where(c => c.InWorld).Select(c => c.TireCompound).Distinct().Count() > 1;
-            var cols = pr.Columns.Where(c => c.Enabled && (multi || c.Key != "classbar")).ToList();
-            float fs = (float)s.FontSize, rh = s.RowHeight;
-            float width = Pad * 2 + cols.Sum(c => c.Width + 4);
+            float fs = (float)s.FontSize, rh = s.RowHeight, sp = Math.Max(0, s.ColumnSpacing);
+            var cols = TableColumns.Resolve(pr.Columns.Where(c => c.Enabled && (multi || c.Key != "classbar")), pr.AvailableColumns, fs, pr.ShowColumnTitles);
+            float width = Pad * 2 + cols.Sum(c => c.Width) + sp * Math.Max(0, cols.Count - 1);
             float y = 0;
 
             if (pr.ShowHeader)
@@ -227,7 +246,7 @@ namespace vibeRacingOverlays.App.Widgets
                 {
                     var def = pr.AvailableColumns.First(d => d.Key == c.Key);
                     dl.Text(x, y, c.Width, rh, def.Header, fs * 0.75f, Dim, def.Align);
-                    x += c.Width + 4;
+                    x += c.Width + sp;
                 }
                 y += rh;
             }
@@ -293,7 +312,7 @@ namespace vibeRacingOverlays.App.Widgets
                 foreach (var c in cols)
                 {
                     DrawCell(dl, c, car, snap, x, y, c.Width, rh, fs, text, car == field[0]);
-                    x += c.Width + 4;
+                    x += c.Width + Math.Max(0, s.ColumnSpacing);
                 }
                 y += rh;
                 if (r == splitAfter) y += 6;

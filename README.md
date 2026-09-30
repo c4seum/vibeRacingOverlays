@@ -23,7 +23,7 @@ vibeRacingOverlays shows live race information on top of iRacing: standings, rel
 The classification of your session.
 - Top of the field plus a window around your own position, so you always see yourself.
 - In multiclass sessions: a block per class with class name, class color, fastest lap, strength of field and number of cars. You choose how many rows your own class and the other classes get.
-- Columns you can turn on and off, reorder and resize:
+- Columns you can turn on and off and reorder. Every column has a fixed width that fits its content (it follows the font size and the chosen format); only the driver name's width is yours to set. "Column spacing" sets the space between the columns.
   - position and positions gained or lost since the start;
   - car number, driver name, car brand, license and safety rating, iRating;
   - estimated iRating change;

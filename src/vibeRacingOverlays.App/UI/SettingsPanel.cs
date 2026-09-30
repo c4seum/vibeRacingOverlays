@@ -171,7 +171,7 @@ namespace vibeRacingOverlays.App.UI
                 {
                     var defTable = (ITableSettings)d;
                     var card = Ui.Card(host, Header("Columns", () => ListIsDefault(table.Columns, defTable.Columns), () => table.Columns = CopyList(defTable.Columns)));
-                    AddHint(card, table.AvailableColumns.Any(c => c.Formats != null) ? "On / off, width in px, format and order of the columns." : "On / off, width in px and order of the columns.");
+                    AddHint(card, table.AvailableColumns.Any(c => c.Formats != null) ? "Order, on / off and format of the columns. Widths follow the content and font size; only the driver name has a width (px) of its own." : "Order and on / off of the columns. Widths follow the content and font size; only the driver name has a width (px) of its own.");
                     card.Children.Add(new ListEditor(table.Columns, table.AvailableColumns, true, Changed, this));   // rows add the card inset themselves
                 }
                 var header = t as IHeaderItems;
@@ -179,7 +179,7 @@ namespace vibeRacingOverlays.App.UI
                 {
                     var defHeader = (IHeaderItems)d;
                     var card = Ui.Card(host, Header("Header items", () => ListIsDefault(header.Header, defHeader.Header), () => header.Header = CopyList(defHeader.Header)));
-                    AddHint(card, "On / off, format and order of the header bar. Items after \"Push what follows to the right\" are right-aligned.");
+                    AddHint(card, "Order, on / off and format of the header bar. Items after \"Push what follows to the right\" are right-aligned.");
                     card.Children.Add(new ListEditor(header.Header, header.AvailableHeader, false, Changed, this));
                 }
             }
@@ -525,14 +525,28 @@ namespace vibeRacingOverlays.App.UI
                         var def = defs.First(d => d.Key == col.Key);
                         int index = i;
 
-                        // same height, inset and dividers as every other card row
-                        var g = Ui.ListRow(this, new GridLength(Ui.LabelWidth + 30), new GridLength(64),new GridLength(150), GridLength.Auto, new GridLength(1, GridUnitType.Star));
+                        // same height, inset and dividers as every other card row; order buttons first, then the check box
+                        var g = Ui.ListRow(this, GridLength.Auto, new GridLength(Ui.LabelWidth + 30), new GridLength(64), new GridLength(150), new GridLength(1, GridUnitType.Star));
+
+                        var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
+                        var up = Ui.IconButton(Ui.IconUp, "Move up");
+                        up.IsEnabled = i > 0;
+                        var down = Ui.IconButton(Ui.IconDown, "Move down");
+                        down.IsEnabled = i < list.Count - 1;
+                        up.Click += (s, e) => Move(index, -1);
+                        down.Click += (s, e) => Move(index, 1);
+                        buttons.Children.Add(up);
+                        buttons.Children.Add(down);
+                        g.Children.Add(buttons);
 
                         var cb = new CheckBox { Content = def.Label, IsChecked = col.Enabled, VerticalAlignment = VerticalAlignment.Center };
                         cb.Click += (s, e) => { col.Enabled = cb.IsChecked == true; changed(); };
+                        Grid.SetColumn(cb, 1);
                         g.Children.Add(cb);
 
-                        if (widths)
+                        // only the driver name has a width of its own; the other columns fit their content
+                        bool hasWidth = widths && def.Resizable;
+                        if (hasWidth)
                         {
                             var width = new TextBox { Text = col.Width.ToString(CultureInfo.InvariantCulture), Width = 56, ToolTip = "Width (px)", VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left };
                             width.LostFocus += (s, e) =>
@@ -541,7 +555,7 @@ namespace vibeRacingOverlays.App.UI
                                 if (float.TryParse(width.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out w) && w > 0) { col.Width = w; changed(); }
                                 else width.Text = col.Width.ToString(CultureInfo.InvariantCulture);
                             };
-                            Grid.SetColumn(width, 1);
+                            Grid.SetColumn(width, 2);
                             g.Children.Add(width);
                         }
 
@@ -550,29 +564,16 @@ namespace vibeRacingOverlays.App.UI
                             var combo = new ComboBox { ItemsSource = def.Formats.Select(f => f.Label).ToList(), Width = 142, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left, ToolTip = "Format" };
                             combo.SelectedIndex = Math.Max(0, Array.FindIndex(def.Formats, f => f.Key == (col.Format ?? def.DefaultFormat)));
                             combo.SelectionChanged += (s, e) => { if (combo.SelectedIndex >= 0) { col.Format = def.Formats[combo.SelectedIndex].Key; changed(); } };
-                            Grid.SetColumn(combo, 2);
+                            Grid.SetColumn(combo, 3);
                             g.Children.Add(combo);
                         }
-
-                        var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-                        var up = Ui.IconButton(Ui.IconUp, "Move up");
-                        up.IsEnabled = i > 0;
-                        var down = Ui.IconButton(Ui.IconDown, "Move down");
-                        down.IsEnabled = i < list.Count - 1;
-                        up.Margin = new Thickness(6, 0, 0, 0);
-                        up.Click += (s, e) => Move(index, -1);
-                        down.Click += (s, e) => Move(index, 1);
-                        buttons.Children.Add(up);
-                        buttons.Children.Add(down);
-                        Grid.SetColumn(buttons, 3);
-                        g.Children.Add(buttons);
 
                         bool hasFormat = def.Formats != null && def.Formats.Length > 1;
                         string defFormat = hasFormat ? def.Formats.First(f => f.Key == def.DefaultFormat).Label : null;
                         var reset = owner.ResetButton(
-                            () => col.Enabled == def.DefaultOn && (!widths || col.Width == def.Width) && (!hasFormat || col.Format == def.DefaultFormat),
+                            () => col.Enabled == def.DefaultOn && (!hasWidth || col.Width == def.Width) && (!hasFormat || col.Format == def.DefaultFormat),
                             () => { col.Enabled = def.DefaultOn; col.Width = def.Width; col.Format = def.DefaultFormat; },
-                            "Reset to default (" + (def.DefaultOn ? "on" : "off") + (widths ? ", " + def.Width.ToString(CultureInfo.InvariantCulture) + " px" : "")
+                            "Reset to default (" + (def.DefaultOn ? "on" : "off") + (hasWidth ? ", " + def.Width.ToString(CultureInfo.InvariantCulture) + " px" : "")
                                 + (defFormat != null ? ", " + defFormat : "") + ")");
                         reset.HorizontalAlignment = HorizontalAlignment.Right;
                         reset.VerticalAlignment = VerticalAlignment.Center;

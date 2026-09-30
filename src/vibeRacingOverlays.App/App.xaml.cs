@@ -123,18 +123,15 @@ namespace vibeRacingOverlays.App
         /// <summary>Stress test for text fitting: every column narrower than its content.</summary>
         static StandingsSettings NarrowStandings()
         {
-            var s = new StandingsSettings();
-            var widths = new Dictionary<string, float>
-            {
-                { "gain", 30 }, { "num", 30 }, { "name", 120 }, { "brand", 40 }, { "lic", 40 }, { "ir", 40 }, { "irdelta", 40 },
-                { "gap", 40 }, { "int", 40 }, { "laps", 20 }, { "last", 60 }, { "best", 60 }, { "tire", 16 }, { "pit", 40 }, { "stint", 30 },
-            };
+            // every column on with its widest format, a narrow name and no spacing: nothing may overlap
+            var s = new StandingsSettings { ColumnSpacing = 0 };
+            var widest = new Dictionary<string, string> { { "lic", "L2" }, { "ir", "full" }, { "gap", "3" }, { "int", "3" }, { "last", "3" }, { "best", "3" }, { "tire", "always" } };
             foreach (var c in s.PracticeQualify.Columns.Concat(s.Race.Columns))
             {
-                float w;
-                if (widths.TryGetValue(c.Key, out w)) c.Width = w;
+                string fmt;
+                if (widest.TryGetValue(c.Key, out fmt)) c.Format = fmt;
+                if (c.Key == "name") c.Width = 120;
                 c.Enabled = true;
-                if (c.Key == "tire") c.Format = "always";
             }
             return s;
         }

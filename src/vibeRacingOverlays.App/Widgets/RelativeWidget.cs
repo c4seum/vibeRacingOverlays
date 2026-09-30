@@ -15,6 +15,8 @@ namespace vibeRacingOverlays.App.Widgets
 
         [Setting("Font size", Group = "Style", Min = 8, Max = 30, Step = 0.5, Order = 20)] public double FontSize { get; set; } = 14;
         [Setting("Row height", Group = "Style", Min = 12, Max = 50, Order = 21)] public int RowHeight { get; set; } = 22;
+        [Setting("Column spacing", Group = "Style", Min = 0, Max = 30, Order = 21, Tooltip = "Space between the columns (px). Column widths follow the content and the font size.")]
+        public int ColumnSpacing { get; set; } = 8;
         [Setting("Row background", Group = "Style", IsColor = true, Order = 22)] public string RowColor { get; set; } = "#FF1E1E1E";
         [Setting("Alternate row", Group = "Style", IsColor = true, Order = 23)] public string RowAltColor { get; set; } = "#FF282828";
         [Setting("Player row", Group = "Style", IsColor = true, Order = 24)] public string PlayerColor { get; set; } = "#FF8E2A2A";
@@ -26,16 +28,16 @@ namespace vibeRacingOverlays.App.Widgets
 
         public static readonly ColumnDef[] Defs =
         {
-            new ColumnDef("classbar", "Class color bar (multiclass only)", "", 4, true, Align.Left),
-            new ColumnDef("pos", "Class position", "P", 26, true, Align.Right),
-            new ColumnDef("num", "Car number", "#", 34, true, Align.Center),
-            new ColumnDef("name", "Driver name", "DRIVER", 180, true, Align.Left),
-            new ColumnDef("lic", "License / SR", "LIC", 42, true, Align.Center),
-            new ColumnDef("ir", "iRating", "iR", 40, true, Align.Right),
-            new ColumnDef("pit", "Pit status", "PIT", 38, true, Align.Center),
-            new ColumnDef("last", "Last lap", "LAST", 62, false, Align.Right),
-            new ColumnDef("stint", "Laps in stint", "STINT", 32, false, Align.Right),
-            new ColumnDef("rel", "Relative time", "REL", 50, true, Align.Right),
+            new ColumnDef("classbar", "Class color bar (multiclass only)", "", 4, true, Align.Left).Fit(f => "", 1f, 4),
+            new ColumnDef("pos", "Class position", "P", 26, true, Align.Right).Fit("88"),
+            new ColumnDef("num", "Car number", "#", 34, true, Align.Center).Fit("888", 0.85f, 8),
+            new ColumnDef("name", "Driver name", "DRIVER", 180, true, Align.Left).UserWidth(),
+            new ColumnDef("lic", "License / SR", "LIC", 42, true, Align.Center).Fit("D4.9", 0.85f, 10),
+            new ColumnDef("ir", "iRating", "iR", 40, true, Align.Right).Fit("8.8k"),
+            new ColumnDef("pit", "Pit status", "PIT", 38, true, Align.Center).Fit("TOW", 0.85f, 10),
+            new ColumnDef("last", "Last lap", "LAST", 62, false, Align.Right).Fit("8:88.8"),
+            new ColumnDef("stint", "Laps in stint", "STINT", 32, false, Align.Right).Fit("88"),
+            new ColumnDef("rel", "Relative time", "REL", 50, true, Align.Right).Fit("-88.8"),
         };
 
         public IReadOnlyList<ColumnDef> AvailableColumns { get { return Defs; } }
@@ -56,9 +58,9 @@ namespace vibeRacingOverlays.App.Widgets
         public override void Draw(DisplayList dl, RaceSnapshot snap)
         {
             multi = snap.Classes.Count > 1;
-            var cols = s.Columns.Where(c => c.Enabled && (multi || c.Key != "classbar")).ToList();
-            float fs = (float)s.FontSize, rh = s.RowHeight;
-            float width = Pad * 2 + cols.Sum(c => c.Width + 4);
+            var cols = TableColumns.Resolve(s.Columns.Where(c => c.Enabled && (multi || c.Key != "classbar")), RelativeSettings.Defs, (float)s.FontSize, false);
+            float fs = (float)s.FontSize, rh = s.RowHeight, sp = Math.Max(0, s.ColumnSpacing);
+            float width = Pad * 2 + cols.Sum(c => c.Width) + sp * Math.Max(0, cols.Count - 1);
             float y = 0;
 
             if (s.ShowHeader)
@@ -93,7 +95,7 @@ namespace vibeRacingOverlays.App.Widgets
                     foreach (var col in cols)
                     {
                         DrawCell(dl, col.Key, c, x, y, col.Width, rh, fs, text);
-                        x += col.Width + 4;
+                        x += col.Width + sp;
                     }
                 }
                 y += rh;
