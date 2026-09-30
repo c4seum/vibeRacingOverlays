@@ -1,45 +1,57 @@
-# Generates app.ico (16/24/32/48/64/128/256 px, PNG-compressed) for vibeRacingOverlays.
+# Builds app.ico (16/20/24/32/40/48/64/128/256 px, PNG-compressed) from the logo in assets\logo.png.
 # Usage: .\tools\make-icon.ps1   -> writes src\vibeRacingOverlays.App\app.ico
 Add-Type -AssemblyName System.Drawing
-$out = Join-Path $PSScriptRoot '..\src\vibeRacingOverlays.App\app.ico'
-$sizes = 16, 24, 32, 48, 64, 128, 256
+$root = Join-Path $PSScriptRoot '..'
+$logoPath = Join-Path $root 'assets\logo.png'
+$out = Join-Path $root 'src\vibeRacingOverlays.App\app.ico'
+$sizes = 16, 20, 24, 32, 40, 48, 64, 128, 256
 
-function Draw-Icon([int]$s) {
+$logo = [System.Drawing.Bitmap]::FromFile((Resolve-Path $logoPath))
+
+# crop to the visible part (alpha > 0) so the logo fills the icon
+$minX = $logo.Width; $minY = $logo.Height; $maxX = -1; $maxY = -1
+$data = $logo.LockBits((New-Object System.Drawing.Rectangle 0, 0, $logo.Width, $logo.Height),
+    [System.Drawing.Imaging.ImageLockMode]::ReadOnly, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+$bytes = New-Object byte[] ($data.Stride * $logo.Height)
+[System.Runtime.InteropServices.Marshal]::Copy($data.Scan0, $bytes, 0, $bytes.Length)
+$logo.UnlockBits($data)
+for ($y = 0; $y -lt $logo.Height; $y++) {
+    $row = $y * $data.Stride
+    for ($x = 0; $x -lt $logo.Width; $x++) {
+        if ($bytes[$row + $x * 4 + 3] -gt 8) {
+            if ($x -lt $minX) { $minX = $x }; if ($x -gt $maxX) { $maxX = $x }
+            if ($y -lt $minY) { $minY = $y }; if ($y -gt $maxY) { $maxY = $y }
+        }
+    }
+}
+$cw = $maxX - $minX + 1; $ch = $maxY - $minY + 1
+$side = [Math]::Max($cw, $ch)
+
+function Render([int]$s) {
     $bmp = New-Object System.Drawing.Bitmap $s, $s, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
     $g = [System.Drawing.Graphics]::FromImage($bmp)
-    $g.SmoothingMode = 'AntiAlias'; $g.TextRenderingHint = 'AntiAliasGridFit'; $g.Clear([System.Drawing.Color]::Transparent)
-
-    # rounded dark tile
-    $r = [Math]::Max(2, $s * 0.2); $d = $r * 2
-    $path = New-Object System.Drawing.Drawing2D.GraphicsPath
-    $path.AddArc(0, 0, $d, $d, 180, 90); $path.AddArc($s - $d - 1, 0, $d, $d, 270, 90)
-    $path.AddArc($s - $d - 1, $s - $d - 1, $d, $d, 0, 90); $path.AddArc(0, $s - $d - 1, $d, $d, 90, 90); $path.CloseFigure()
-    $bg = New-Object System.Drawing.Drawing2D.LinearGradientBrush((New-Object System.Drawing.Point 0, 0), (New-Object System.Drawing.Point 0, $s),
-        [System.Drawing.Color]::FromArgb(255, 36, 40, 47), [System.Drawing.Color]::FromArgb(255, 18, 20, 24))
-    $g.FillPath($bg, $path)
-
-    # three "standings" bars, the middle one highlighted like the player row
-    $x = $s * 0.18; $w = $s * 0.64; $h = [Math]::Max(1.5, $s * 0.09); $gap = $s * 0.055
-    $y0 = $s * 0.52
-    $colors = @([System.Drawing.Color]::FromArgb(255, 90, 96, 105), [System.Drawing.Color]::FromArgb(255, 200, 52, 52), [System.Drawing.Color]::FromArgb(255, 90, 96, 105))
-    for ($i = 0; $i -lt 3; $i++) {
-        $b = New-Object System.Drawing.SolidBrush $colors[$i]
-        $g.FillRectangle($b, [float]$x, [float]($y0 + $i * ($h + $gap)), [float]($w * (1 - $i * 0.12)), [float]$h)
-    }
-
-    # blue "V" chevron on top
-    $pen = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(255, 47, 140, 255)), ([Math]::Max(1.6, $s * 0.12))
-    $pen.StartCap = 'Round'; $pen.EndCap = 'Round'; $pen.LineJoin = 'Round'
-    $pts = @((New-Object System.Drawing.PointF ($s * 0.27), ($s * 0.19)), (New-Object System.Drawing.PointF ($s * 0.5), ($s * 0.40)), (New-Object System.Drawing.PointF ($s * 0.73), ($s * 0.19)))
-    $g.DrawLines($pen, $pts)
+    $g.Clear([System.Drawing.Color]::Transparent)
+    $g.InterpolationMode = 'HighQualityBicubic'; $g.SmoothingMode = 'HighQuality'; $g.PixelOffsetMode = 'HighQuality'; $g.CompositingQuality = 'HighQuality'
+    # small margin; a bit less on tiny sizes so the logo stays readable
+    $margin = if ($s -le 24) { 0.02 } else { 0.05 }
+    $inner = $s * (1 - 2 * $margin)
+    $scale = $inner / $side
+    $w = $cw * $scale; $h = $ch * $scale
+    $dest = New-Object System.Drawing.RectangleF (($s - $w) / 2), (($s - $h) / 2), $w, $h
+    $srcRect = New-Object System.Drawing.RectangleF $minX, $minY, $cw, $ch
+    $attr = New-Object System.Drawing.Imaging.ImageAttributes
+    $attr.SetWrapMode([System.Drawing.Drawing2D.WrapMode]::TileFlipXY)   # no dark fringe at the edges
+    $destPts = [System.Drawing.PointF[]]@((New-Object System.Drawing.PointF $dest.X, $dest.Y), (New-Object System.Drawing.PointF ($dest.X + $w), $dest.Y), (New-Object System.Drawing.PointF $dest.X, ($dest.Y + $h)))
+    $g.DrawImage($logo, $destPts, $srcRect, [System.Drawing.GraphicsUnit]::Pixel, $attr)
     $g.Dispose()
     return $bmp
 }
 
 $images = foreach ($s in $sizes) {
-    $bmp = Draw-Icon $s
+    $bmp = Render $s
     $ms = New-Object System.IO.MemoryStream
     $bmp.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bmp.Dispose()
     , $ms.ToArray()
 }
 
@@ -57,7 +69,22 @@ for ($i = 0; $i -lt $sizes.Count; $i++) {
 }
 foreach ($img in $images) { $bw.Write($img) }
 $bw.Close()
-Write-Host "Wrote $out"
+Write-Host "Wrote $out (logo area ${cw}x${ch} px)"
 
-# preview for design checks
-(Draw-Icon 256).Save((Join-Path $PSScriptRoot 'app-icon-preview.png'), [System.Drawing.Imaging.ImageFormat]::Png)
+# preview for design checks: every size on a dark and a light background
+$prev = New-Object System.Drawing.Bitmap 640, 330
+$g = [System.Drawing.Graphics]::FromImage($prev)
+$g.FillRectangle((New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(32, 32, 32))), 0, 0, 640, 165)
+$g.FillRectangle((New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(243, 243, 243))), 0, 165, 640, 165)
+foreach ($band in 0, 165) {
+    $x = 10
+    foreach ($s in 16, 24, 32, 48, 64, 128) {
+        $bmp = Render $s
+        $g.DrawImage($bmp, $x, $band + (165 - $s) / 2)
+        $bmp.Dispose()
+        $x += $s + 16
+    }
+}
+$g.Dispose()
+$prev.Save((Join-Path $PSScriptRoot 'app-icon-preview.png'), [System.Drawing.Imaging.ImageFormat]::Png)
+$logo.Dispose()

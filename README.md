@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/logo.png" alt="vibeRacingOverlays logo" width="160"></p>
+
 # vibeRacingOverlays
 
 vibecoding easy to run iRacing overlays.
