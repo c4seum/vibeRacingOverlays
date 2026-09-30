@@ -33,6 +33,7 @@ The user (c4seum) speaks **Dutch**: answer in Dutch. Setup: triple screens (3× 
 - **v1.0.0**: first release (Standings, Relative, Fuel; layouts, presets, reset buttons, preview, installer).
 - **v1.0.1**: the user's vRO logo as app icon, README rewritten as a user guide.
 - **v1.1.0** (2026-09-30, built on the work laptop): position panel (anchoring, offsets, lock, snapping), Relative "Laps in stint" column, Fuel: "Last N avg" and "Stint avg" rows, stops indicator (off / next to refuel / column), laps-to-go fixes (timed race last lap, lap+time limit, clean-lap pace, after checkered, grid). Released before an in-game test: check at home (drag snapping, stint reset after a pit stop, last lap of a timed race) and fix in 1.1.x if needed.
+- **v1.1.1** (2026-09-30): new look for the app UI (Graphite / Soft light themes, cards, segmented buttons), readable setting names, fixed widths and minimum window size, preview no longer cut off, even row heights (rows 34 px, every input control 26 px, optically centred).
 
 ## History and documentation (agreed 2026-09-30)
 - **One commit per finished change** (a feature or a fix, not per prompt), made locally as soon as it works and is tested, so every change can be reverted on its own (`git revert <hash>`). The message says what changed and why. Pushing stays the user's call (end of the day); don't push unasked.

@@ -6,6 +6,8 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-09-30
+
 ### Changed
 - New look for the app (not the widgets): "Graphite" dark theme and "Soft light" light theme; compact, filled controls without outlines and 6px corners; settings as inset lists in cards with small caps titles (the widget's name and preset in a card of their own); segmented buttons for short choices; slimmer sliders and scroll bars; icons in the widget list; a status label in the top bar and a title bar that follows the theme.
 - Setting choices use readable names ("In car" instead of "InCar").
@@ -54,7 +56,8 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 - Edit layout mode (drag to move, mouse wheel to resize), global hotkeys, dark and light theme.
 - Per-user installer (no admin rights) and a portable zip.
 
-[Unreleased]: https://github.com/c4seum/vibeRacingOverlays/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/c4seum/vibeRacingOverlays/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/c4seum/vibeRacingOverlays/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/c4seum/vibeRacingOverlays/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/c4seum/vibeRacingOverlays/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/c4seum/vibeRacingOverlays/releases/tag/v1.0.0
