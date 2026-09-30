@@ -67,6 +67,39 @@ namespace vibeRacingOverlays.App.Widgets
 
         static string Digits(string format) { int d; return new string('8', int.TryParse(format, out d) ? d : 1); }
 
+        // ---- columns the standings and the relative share: same formats and widths in both widgets
+
+        public static ColumnDef NameColumn(float width)
+        {
+            return new ColumnDef("name", "Driver name", "DRIVER", width, true, Align.Left).UserWidth()
+                .WithFormats("full", ("full", "Full name"), ("short", "J. Groenewegen"), ("last", "Last name"));
+        }
+
+        public static ColumnDef LicenseColumn()
+        {
+            return new ColumnDef("lic", "License / SR", "LIC", 42, true, Align.Center).Fit(LicenseSample, 0.85f, 10)
+                .WithFormats("L1", ("L2", "A3.48"), ("L1", "A3.4"), ("L0", "A3"), ("L", "A"), ("SR2", "3.48"), ("SR1", "3.4"), ("SR0", "3"));
+        }
+
+        public static ColumnDef RatingColumn()
+        {
+            return new ColumnDef("ir", "iRating", "iR", 40, true, Align.Right).Fit(f => f == "full" ? "8888" : f == "k0" ? "88k" : "8.8k")
+                .WithFormats("k1", RatingFormats);
+        }
+
+        public static ColumnDef LastLapColumn(bool on, string defaultFormat)
+        {
+            return new ColumnDef("last", "Last lap", "LAST", 62, on, Align.Right).Fit(f => "8:88." + Digits(f)).WithFormats(defaultFormat, LapDecimals);
+        }
+
+        /// <summary>Driver name in the name column's format: "full", "short" (J. Groenewegen) or "last".</summary>
+        public static string DriverName(CarInfo c, string format)
+        {
+            if (format == "short") return c.ShortName;
+            if (format == "last") return c.Name.Contains(' ') ? c.Name.Substring(c.Name.LastIndexOf(' ') + 1) : c.Name;
+            return c.Name;
+        }
+
         /// <summary>Widest license text per format (D is one of the widest letters).</summary>
         static string LicenseSample(string f)
         {
@@ -87,13 +120,10 @@ namespace vibeRacingOverlays.App.Widgets
                 new ColumnDef("pos", "Position", "P", 26, true, Align.Right).Fit("88"),
                 new ColumnDef("gain", "Positions gained", "+/-", 38, race, Align.Left).Fit("▲88"),
                 new ColumnDef("num", "Car number", "#", 34, true, Align.Center).Fit("888"),
-                new ColumnDef("name", "Driver name", "DRIVER", 190, true, Align.Left).UserWidth()
-                    .WithFormats("full", ("full", "Full name"), ("short", "J. Groenewegen"), ("last", "Last name")),
+                NameColumn(190),
                 new ColumnDef("brand", "Car brand", "CAR", 34, true, Align.Center).Fit("LAM", Small * 0.9f, 2),
-                new ColumnDef("lic", "License / SR", "LIC", 42, true, Align.Center).Fit(LicenseSample, Small, 10)
-                    .WithFormats("L1", ("L2", "A3.48"), ("L1", "A3.4"), ("L0", "A3"), ("L", "A"), ("SR2", "3.48"), ("SR1", "3.4"), ("SR0", "3")),
-                new ColumnDef("ir", "iRating", "iR", 40, true, Align.Right).Fit(f => f == "full" ? "8888" : f == "k0" ? "88k" : "8.8k")
-                    .WithFormats("k1", RatingFormats),
+                LicenseColumn(),
+                RatingColumn(),
                 new ColumnDef("irdelta", "iRating change (est.)", "iR+/-", 46, race, Align.Right).Fit("▲888"),
                 // race gaps: 53.0, 1:02.3 or +3L; P&Q: +0.532
                 new ColumnDef("gap", race ? "Gap to leader" : "Gap to fastest", "GAP", 50, true, Align.Right)
@@ -101,7 +131,7 @@ namespace vibeRacingOverlays.App.Widgets
                 new ColumnDef("int", race ? "Interval" : "Gap to car ahead", "INT", 50, race, Align.Right)
                     .Fit(f => race ? "88." + Digits(f) + "|8:88.8|+88L" : "+88." + Digits(f)).WithFormats(race ? "1" : "3", Decimals),
                 new ColumnDef("laps", "Laps completed", "LAPS", 32, !race, Align.Right).Fit("888"),
-                new ColumnDef("last", "Last lap", "LAST", 62, true, Align.Right).Fit(f => "8:88." + Digits(f)).WithFormats(race ? "1" : "3", LapDecimals),
+                LastLapColumn(true, race ? "1" : "3"),
                 new ColumnDef("best", "Best lap", "BEST", 62, !race, Align.Right).Fit(f => "8:88." + Digits(f)).WithFormats("3", LapDecimals),
                 new ColumnDef("tire", "Tire compound", "TIRE", 22, false, Align.Center)
                     .WithFormats("differ", ("differ", "Only when mixed"), ("always", "Always")),
@@ -421,8 +451,7 @@ namespace vibeRacingOverlays.App.Widgets
                     dl.Text(x, y, w, h, c.Number, fs, text, Align.Center);
                     break;
                 case "name":
-                    string name = col.Format == "short" ? c.ShortName
-                        : col.Format == "last" ? (c.Name.Contains(' ') ? c.Name.Substring(c.Name.LastIndexOf(' ') + 1) : c.Name) : c.Name;
+                    string name = StandingsDefs.DriverName(c, col.Format);
                     dl.Text(x, y, w, h, name, fs, c.InWorld || c.LapsComplete > 0 ? text : Dim, Align.Left);
                     break;
                 case "brand":

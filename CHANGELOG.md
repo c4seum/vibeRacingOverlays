@@ -12,6 +12,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 - New columns: laps completed (on by default in practice and qualifying) and tire compound (the compound letter, only when cars run different compounds, or always).
 - Pit status column (standings and relative) shows the flag iRacing gives a driver: black flag (penalty to serve: drive-through or stop-and-go), yellow flag symbol (warning / slowdown, iRacing's furled black flag), meatball (orange dot: repair required) and DQ. `--dump` lists the per-car flags.
 - Relative: the pit status column shows "OUT" on an out lap too.
+- Relative: the columns it shares with the standings have the same formats: driver name (full / short / last name, replaces the separate "Name style" setting; your choice is kept), license, iRating and last lap.
 - Header bar items you can turn on and off, reorder and format: session, class, laps, time (remaining / total, remaining, elapsed / total), track and air temperature (°C, °F or both, with or without a decimal), humidity, strength of field (4567 / 4.5k / 4k) and cars. "Push what follows to the right" splits the bar into a left and a right group.
 
 ### Changed

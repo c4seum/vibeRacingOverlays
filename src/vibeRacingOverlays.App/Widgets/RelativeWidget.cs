@@ -4,13 +4,12 @@ using vibeRacingOverlays.Data.Model;
 
 namespace vibeRacingOverlays.App.Widgets
 {
-    public sealed class RelativeSettings : WidgetSettings, ITableSettings
+    public sealed class RelativeSettings : WidgetSettings, ITableSettings, INormalizable
     {
         public override string TypeName { get { return "Relative"; } }
 
         [Setting("Cars ahead", Group = "Content", Min = 0, Max = 10, Order = 1)] public int CarsAhead { get; set; } = 3;
         [Setting("Cars behind", Group = "Content", Min = 0, Max = 10, Order = 2)] public int CarsBehind { get; set; } = 3;
-        [Setting("Name style", Group = "Content", Order = 3)] public NameStyle NameStyle { get; set; } = NameStyle.Full;
         [Setting("Header bar", Group = "Content", Order = 4)] public bool ShowHeader { get; set; } = true;
 
         [Setting("Font size", Group = "Style", Min = 8, Max = 30, Step = 0.5, Order = 20)] public double FontSize { get; set; } = 14;
@@ -31,11 +30,11 @@ namespace vibeRacingOverlays.App.Widgets
             new ColumnDef("classbar", "Class color bar (multiclass only)", "", 4, true, Align.Left).Fit(f => "", 1f, 4),
             new ColumnDef("pos", "Class position", "P", 26, true, Align.Right).Fit("88"),
             new ColumnDef("num", "Car number", "#", 34, true, Align.Center).Fit("888", 0.85f, 8),
-            new ColumnDef("name", "Driver name", "DRIVER", 180, true, Align.Left).UserWidth(),
-            new ColumnDef("lic", "License / SR", "LIC", 42, true, Align.Center).Fit("D4.9", 0.85f, 10),
-            new ColumnDef("ir", "iRating", "iR", 40, true, Align.Right).Fit("8.8k"),
+            StandingsDefs.NameColumn(180),
+            StandingsDefs.LicenseColumn(),
+            StandingsDefs.RatingColumn(),
             new ColumnDef("pit", "Pit status and flags", "PIT", 38, true, Align.Center).Fit("TOW", 0.85f, 10),
-            new ColumnDef("last", "Last lap", "LAST", 62, false, Align.Right).Fit("8:88.8"),
+            StandingsDefs.LastLapColumn(false, "1"),
             new ColumnDef("stint", "Laps in stint", "STINT", 32, false, Align.Right).Fit("88"),
             new ColumnDef("rel", "Relative time", "REL", 50, true, Align.Right).Fit("-88.8"),
         };
@@ -44,6 +43,21 @@ namespace vibeRacingOverlays.App.Widgets
         public void MergeColumns() { Columns = TableColumns.Merge(Columns, Defs); }
 
         public RelativeSettings() { Title = "Relative"; Show = ShowWhen.InCar; MergeColumns(); }
+
+        // before 1.2 the name style was a setting of its own; now it is the name column's format
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        public NameStyle? NameStyle { get; set; }
+
+        public void Normalize()
+        {
+            MergeColumns();
+            if (NameStyle.HasValue)
+            {
+                var name = Columns.First(c => c.Key == "name");
+                name.Format = NameStyle.Value == Widgets.NameStyle.Short ? "short" : NameStyle.Value == Widgets.NameStyle.LastName ? "last" : "full";
+                NameStyle = null;
+            }
+        }
     }
 
     public sealed class RelativeWidget : Widget
@@ -94,7 +108,7 @@ namespace vibeRacingOverlays.App.Widgets
                     float x = Pad;
                     foreach (var col in cols)
                     {
-                        DrawCell(dl, col.Key, c, x, y, col.Width, rh, fs, text);
+                        DrawCell(dl, col, c, x, y, col.Width, rh, fs, text);
                         x += col.Width + sp;
                     }
                 }
@@ -104,10 +118,10 @@ namespace vibeRacingOverlays.App.Widgets
             dl.Height = y;
         }
 
-        void DrawCell(DisplayList dl, string key, CarInfo c, float x, float y, float w, float h, float fs, uint text)
+        void DrawCell(DisplayList dl, ColumnConfig col, CarInfo c, float x, float y, float w, float h, float fs, uint text)
         {
             float small = fs * 0.85f;
-            switch (key)
+            switch (col.Key)
             {
                 case "classbar": dl.Rect(x, y + 2, w, h - 4, Argb.FromRgb(c.ClassColor)); break;
                 case "pos": if (c.ClassPos > 0) dl.Text(x, y, w, h, c.ClassPos.ToString(), fs, text, Align.Right); break;
@@ -117,19 +131,18 @@ namespace vibeRacingOverlays.App.Widgets
                     dl.Badge(x, y + 3, w, h - 6, c.Number, small, cc, Argb.ContrastText(cc), 3);
                     break;
                 case "name":
-                    string name = s.NameStyle == NameStyle.Short ? c.ShortName
-                        : s.NameStyle == NameStyle.LastName ? (c.Name.Contains(' ') ? c.Name.Substring(c.Name.LastIndexOf(' ') + 1) : c.Name) : c.Name;
+                    string name = StandingsDefs.DriverName(c, col.Format);
                     dl.Text(x, y, w, h, name, fs, text);
                     break;
                 case "lic":
                     uint lc = Fmt.LicenseColor(c.LicLetter);
-                    dl.Badge(x, y + 3, w, h - 6, Fmt.License(c.LicLetter, c.LicSR), small, lc, Argb.ContrastText(lc), 4);
+                    dl.Badge(x, y + 3, w, h - 6, Fmt.License(c.LicLetter, c.LicSR, col.Format), small, lc, Argb.ContrastText(lc), 4);
                     break;
-                case "ir": dl.Text(x, y, w, h, Fmt.IRating(c.IRating), fs, text, Align.Right); break;
+                case "ir": dl.Text(x, y, w, h, Fmt.Rating(c.IRating, col.Format), fs, text, Align.Right); break;
                 case "pit":
                     DrawPitStatus(dl, c, x, y, w, h, small, false);
                     break;
-                case "last": if (c.LastLap > 0) dl.Text(x, y, w, h, Fmt.Lap(c.LastLap, 1), fs, text, Align.Right); break;
+                case "last": if (c.LastLap > 0) dl.Text(x, y, w, h, Fmt.Lap(c.LastLap, int.Parse(col.Format ?? "1")), fs, text, Align.Right); break;
                 case "stint": if (c.Lap > 0) dl.Text(x, y, w, h, c.StintLaps.ToString(), fs, text, Align.Right); break;
                 case "rel": if (!c.IsPlayer) dl.Text(x, y, w, h, Fmt.Signed(c.RelativeTime, 1), fs, text, Align.Right); break;
             }

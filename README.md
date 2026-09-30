@@ -36,6 +36,7 @@ The classification of your session.
 ### Relative
 The cars directly around you on track, with the time difference to each.
 - You choose the number of cars ahead and behind.
+- Columns that are also in the standings (driver name, license, iRating, last lap) have the same formats there.
 - Colors show whether a car is a lap ahead of you or a lap down.
 - In multiclass sessions, class color bars and car numbers in the class color.
 - Pit and tow status per car.
