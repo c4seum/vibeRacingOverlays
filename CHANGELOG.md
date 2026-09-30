@@ -6,6 +6,8 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-01
+
 ### Added
 - Standings settings per session type: "Practice & qualifying" and "Race" each have their own rows, columns, header items and formats (switch at the top of the settings; "Copy to ..." copies one to the other). Colors, font size and row height stay shared. The preview's demo session follows the switch. Existing standings keep their settings for both.
 - Formats per column, like Kapps: driver name (full / short / last name), license (A3.48 / A3.4 / A3 / A / SR only), iRating (4567 / 4.5k / 4k), gap and interval (3, 2 or 1 decimals), last and best lap (1:35.764 / 1:35.76 / 1:35.7). Defaults: 3 decimals in practice and qualifying, 1 in the race.
