@@ -75,7 +75,8 @@ src/vibeRacingOverlays.App       WPF
                           Placement (anchor + screen + offsets <-> pixel position, snapping via WM_MOVING; all in screen pixels)
   App.xaml                all control styles (buttons, switch, segments, text box, combo, slider, scroll bars, cards)
   Themes/                 Dark.xaml ("Graphite") and Light.xaml ("Soft light"): only colors, same keys in both
-  UI/                     Ui.cs (shared building blocks: card, header, row, switch, segmented, icon button),
+  UI/                     Ui.cs (shared building blocks: card, header, row, switch, segmented, icon button;
+                          every card row is Ui.RowHeight high: use Ui.Row / Ui.ListRow, never loose Grids),
                           settings panel generated from [Setting] attributes (reset buttons, presets), preview, themes,
                           PositionPanel (main window: anchor/screen/offsets and lock of the selected widget, snapping)
 src/vibeRacingOverlays.Setup     per-user installer (.NET Framework 4.8), app embedded as a resource
@@ -83,6 +84,6 @@ src/vibeRacingOverlays.Setup     per-user installer (.NET Framework 4.8), app em
 
 ## Adding a widget
 
-1. Create `XxxSettings : WidgetSettings` with `[Setting]` properties. The editor UI, the reset buttons and presets are generated from them.
+1. Create `XxxSettings : WidgetSettings` with `[Setting]` properties. The editor UI, the reset buttons and presets are generated from them, with the standard row height. Custom editors go through `Ui.Row` (or `Ui.ListRow`) too, so all rows in a block stay the same height.
 2. Create `XxxWidget : Widget` and implement `Draw(DisplayList, RaceSnapshot)`.
 3. Register both in `Widget.Create`, in `Widget.Catalog`, and with `[JsonDerivedType]` on `WidgetSettings`.

@@ -15,6 +15,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ### Fixed
 - The preview was cut off at the bottom when the window was small (side by side).
+- Rows in the settings and position blocks are always the same height, whatever they hold (check box, slider, segmented buttons, color, column list); only the anchor grid is taller.
 
 ## [1.1.0] - 2026-09-30
 

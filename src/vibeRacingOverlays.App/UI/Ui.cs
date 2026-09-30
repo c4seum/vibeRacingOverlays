@@ -14,6 +14,18 @@ namespace vibeRacingOverlays.App.UI
     {
         public const double LabelWidth = 190;
 
+        /// <summary>
+        /// Height of every row in a card, whatever it holds (check box, slider + box, segments, text box, color picker...),
+        /// so blocks look even. Only editors marked tall (see <see cref="MarkTall"/>, e.g. the 3×3 anchor grid) may grow.
+        /// Build settings rows with <see cref="Row"/> (or <see cref="ListRow"/>) and never give them their own height.
+        /// </summary>
+        public const double RowHeight = 38;
+
+        /// <summary>Lets an editor that can't fit <see cref="RowHeight"/> make its row taller.</summary>
+        public static T MarkTall<T>(T editor) where T : FrameworkElement { editor.Tag = "tall"; return editor; }
+
+        static bool IsTall(UIElement e) { return e is UniformGrid || (e is FrameworkElement fe && fe.Tag as string == "tall"); }
+
         // Segoe Fluent Icons / Segoe MDL2 Assets code points
         public const string IconAdd = "", IconCopy = "", IconDelete = "", IconReset = "",
             IconUp = "", IconDown = "", IconLeft = "", IconRight = "", IconEdit = "",
@@ -42,7 +54,7 @@ namespace vibeRacingOverlays.App.UI
         /// <summary>Card title (small caps in the accent color) with an optional quiet reset button on the right.</summary>
         public static DockPanel Header(string text, Button reset)
         {
-            var row = new DockPanel { Margin = new Thickness(14, 6, 6, 2), LastChildFill = true };
+            var row = new DockPanel { Margin = new Thickness(14, 6, 6, 2), LastChildFill = true, MinHeight = 28 };
             if (reset != null) { DockPanel.SetDock(reset, Dock.Right); row.Children.Add(reset); }
             var tb = new TextBlock { Text = text.ToUpperInvariant(), FontSize = 11, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
             tb.SetResourceReference(TextBlock.ForegroundProperty, "Accent");
@@ -81,18 +93,48 @@ namespace vibeRacingOverlays.App.UI
         {
             bool first = !card.Children.OfType<Grid>().Any(x => x.Tag as string == "row");
             if (!first) card.Children.Add(Divider());
+            bool tall = IsTall(editor);
             var g = new Grid { Tag = "row", Margin = Inset };
+            // fixed height: rows never differ because of the control they hold
+            if (tall) g.MinHeight = RowHeight; else g.Height = RowHeight;
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(labelWidth) });
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(32) });
-            var l = new TextBlock { Text = label, VerticalAlignment = editor is UniformGrid ? VerticalAlignment.Top : VerticalAlignment.Center, ToolTip = tooltip, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 12, 3) };
-            if (editor is UniformGrid) l.Margin = new Thickness(0, 8, 12, 0);
+            var l = new TextBlock { Text = label, ToolTip = tooltip, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 0, 12, 0),
+                VerticalAlignment = tall ? VerticalAlignment.Top : VerticalAlignment.Center };
+            if (tall) l.Margin = new Thickness(0, 11, 12, 0);
             Grid.SetColumn(l, 0);
             g.Children.Add(l);
             Grid.SetColumn(editor, 1);
-            if (editor is FrameworkElement fe) fe.Margin = new Thickness(fe.Margin.Left, fe.Margin.Top + 3, fe.Margin.Right, fe.Margin.Bottom + 3);
+            if (editor is FrameworkElement fe)
+            {
+                fe.VerticalAlignment = tall ? VerticalAlignment.Top : VerticalAlignment.Center;
+                fe.Margin = new Thickness(fe.Margin.Left, tall ? 6 : 0, fe.Margin.Right, tall ? 6 : 0);
+            }
             g.Children.Add(editor);
-            if (reset != null) { Grid.SetColumn(reset, 2); ((FrameworkElement)reset).HorizontalAlignment = HorizontalAlignment.Right; g.Children.Add(reset); }
+            if (reset != null)
+            {
+                var r = (FrameworkElement)reset;
+                Grid.SetColumn(reset, 2);
+                r.HorizontalAlignment = HorizontalAlignment.Right;
+                r.VerticalAlignment = tall ? VerticalAlignment.Top : VerticalAlignment.Center;
+                if (tall) r.Margin = new Thickness(r.Margin.Left, 7, r.Margin.Right, 0);
+                g.Children.Add(reset);
+            }
+            card.Children.Add(g);
+            return g;
+        }
+
+        /// <summary>
+        /// A row with its own columns (e.g. the column list: check box | width | order | reset) that still follows the
+        /// card rules: <see cref="RowHeight"/>, the card inset and a divider before every row but the first.
+        /// </summary>
+        public static Grid ListRow(Panel card, params GridLength[] columns)
+        {
+            bool first = !card.Children.OfType<Grid>().Any(x => x.Tag as string == "row");
+            if (!first) card.Children.Add(Divider());
+            var g = new Grid { Tag = "row", Margin = Inset, Height = RowHeight };
+            foreach (var c in columns) g.ColumnDefinitions.Add(new ColumnDefinition { Width = c });
             card.Children.Add(g);
             return g;
         }

@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
@@ -105,7 +105,7 @@ namespace vibeRacingOverlays.App.UI
                     var colHint = Ui.Caption("On / off, width in px and order of the columns.");
                     colHint.Margin = new Thickness(14, 0, 10, 4);
                     card.Children.Add(colHint);
-                    card.Children.Add(new ColumnsEditor(table, Changed, this) { Margin = Ui.Inset });
+                    card.Children.Add(new ColumnsEditor(table, Changed, this));   // rows add the card inset themselves
                 }
             }
 
@@ -419,17 +419,14 @@ namespace vibeRacingOverlays.App.UI
                         var def = table.AvailableColumns.First(d => d.Key == col.Key);
                         int index = i;
 
-                        var g = new Grid { Margin = new Thickness(0, 1, 0, 1) };
-                        g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Ui.LabelWidth + 60) });
-                        g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(70) });
-                        g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                        g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                        // same height, inset and dividers as every other card row
+                        var g = Ui.ListRow(this, new GridLength(Ui.LabelWidth + 60), new GridLength(70), GridLength.Auto, new GridLength(1, GridUnitType.Star));
 
-                        var cb = new CheckBox { Content = def.Label, IsChecked = col.Enabled };
+                        var cb = new CheckBox { Content = def.Label, IsChecked = col.Enabled, VerticalAlignment = VerticalAlignment.Center };
                         cb.Click += (s, e) => { col.Enabled = cb.IsChecked == true; changed(); };
                         g.Children.Add(cb);
 
-                        var width = new TextBox { Text = col.Width.ToString(CultureInfo.InvariantCulture), Width = 56, ToolTip = "Width (px)" };
+                        var width = new TextBox { Text = col.Width.ToString(CultureInfo.InvariantCulture), Width = 56, ToolTip = "Width (px)", VerticalAlignment = VerticalAlignment.Center };
                         width.LostFocus += (s, e) =>
                         {
                             float w;
@@ -439,7 +436,7 @@ namespace vibeRacingOverlays.App.UI
                         Grid.SetColumn(width, 1);
                         g.Children.Add(width);
 
-                        var buttons = new StackPanel { Orientation = Orientation.Horizontal };
+                        var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
                         var buttonsMargin = new Thickness(6, 0, 0, 0);
                         var up = Ui.IconButton(Ui.IconUp, "Move up");
                         up.IsEnabled = i > 0;
@@ -457,10 +454,10 @@ namespace vibeRacingOverlays.App.UI
                             () => { col.Enabled = def.DefaultOn; col.Width = def.Width; },
                             "Reset to default (" + (def.DefaultOn ? "on" : "off") + ", " + def.Width.ToString(CultureInfo.InvariantCulture) + " px)");
                         reset.HorizontalAlignment = HorizontalAlignment.Right;
+                        reset.VerticalAlignment = VerticalAlignment.Center;
                         Grid.SetColumn(reset, 3);
                         g.Children.Add(reset);
 
-                        Children.Add(g);
                     }
                 }
 
