@@ -191,6 +191,13 @@ namespace vibeRacingOverlays.Data.Engine
 
             int playerIdx = s.PlayerCarIdx >= 0 ? s.PlayerCarIdx : session.DriverCarIdx;
 
+            // iRacing's own results list (session info) is the reference for positions and lap times: the per-car
+            // telemetry (CarIdxPosition / CarIdxBestLapTime / CarIdxLastLapTime) is only filled for a few cars
+            // (the player and cars near the camera) and ranks cars without a lap time arbitrarily.
+            var results = new Dictionary<int, ResultPosition>();
+            if (sess != null) foreach (var r in sess.Results) if (r.CarIdx >= 0) results[r.CarIdx] = r;
+            bool isRace = sess != null && sess.IsRace;
+
             // ---- cars
             foreach (var d in session.Drivers.Values)
             {
@@ -214,6 +221,25 @@ namespace vibeRacingOverlays.Data.Engine
                     PitCount = tr.PitCount, Towing = tr.Towing, PitLaneTime = tr.PitLaneTime,
                     PaceLap = tr.PaceLap(),
                 };
+                ResultPosition res;
+                results.TryGetValue(i, out res);
+                if (res != null)
+                {
+                    // the fastest lap iRacing lists; the last lap from telemetry when it has one (it's live), else from the results
+                    if (res.FastestTime > 0) c.BestLap = (float)res.FastestTime;
+                    if (c.LastLap <= 0 && res.LastTime > 0) c.LastLap = (float)res.LastTime;
+                }
+                if (!isRace)
+                {
+                    // practice / qualifying: iRacing ranks by fastest lap, exactly as its results list; no result = no position yet
+                    c.OverallPos = res != null ? res.Position : 0;
+                    c.ClassPos = res != null ? res.ClassPosition : 0;
+                }
+                else if (res != null)
+                {
+                    if (c.OverallPos <= 0) c.OverallPos = res.Position;
+                    if (c.ClassPos <= 0) c.ClassPos = res.ClassPosition;
+                }
                 c.InWorld = c.Surface != TrackSurface.NotInWorld && c.LapDistPct >= 0;
                 c.InPitStall = c.Surface == TrackSurface.InPitStall;
                 c.Progress = double.IsNaN(tr.LastProgress) ? c.LapCompleted : tr.LastProgress;
@@ -321,6 +347,9 @@ namespace vibeRacingOverlays.Data.Engine
                     if (b.BestLap <= 0) return -1;
                     return a.BestLap.CompareTo(b.BestLap);
                 }
+                // no position and no lap time: iRacing lists these by car number (CarNumberRaw, so "012" comes after "811")
+                int na = a.Driver.CarNumberRaw, nb = b.Driver.CarNumberRaw;
+                if (na != nb) return na.CompareTo(nb);
                 return a.CarIdx.CompareTo(b.CarIdx);
             });
         }

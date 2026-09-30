@@ -9,6 +9,8 @@ namespace vibeRacingOverlays.Data.IRSdk
         public string Initials = "";
         public string TeamName = "";
         public string CarNumber = "";
+        /// <summary>iRacing's numeric car number; leading zeros are encoded (e.g. "012" sorts after "811"), used to order cars without a lap time.</summary>
+        public int CarNumberRaw;
         public string CarScreenName = "";
         public string CarScreenNameShort = "";
         public string CarPath = "";
@@ -114,6 +116,7 @@ namespace vibeRacingOverlays.Data.IRSdk
                     Initials = YamlLite.Str(o, "Initials"),
                     TeamName = YamlLite.Str(o, "TeamName"),
                     CarNumber = YamlLite.Str(o, "CarNumber"),
+                    CarNumberRaw = YamlLite.Int(o, "CarNumberRaw"),
                     CarScreenName = YamlLite.Str(o, "CarScreenName"),
                     CarScreenNameShort = YamlLite.Str(o, "CarScreenNameShort"),
                     CarPath = YamlLite.Str(o, "CarPath"),

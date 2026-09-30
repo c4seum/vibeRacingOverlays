@@ -55,6 +55,8 @@ namespace vibeRacingOverlays.App
             base.OnExit(e);
         }
 
+        static string Truncate(string s, int n) { return string.IsNullOrEmpty(s) ? "" : (s.Length <= n ? s : s.Substring(0, n)); }
+
         /// <summary>Diagnostics: writes the raw per-car telemetry of one iRacing frame to a text file.</summary>
         static void DumpRaw(string file)
         {
@@ -79,6 +81,25 @@ namespace vibeRacingOverlays.App
                     if (pos[i] > 0 || surf[i] >= 0)
                         sb.AppendLine(string.Format(System.Globalization.CultureInfo.InvariantCulture,
                             "{0,2} pos{1,3} lap{2,4} pct {3:0.0000} est {4,8:0.000} f2 {5,8:0.000} surf {6}", i, pos[i], lap[i], pct[i], est[i], f2[i], surf[i]));
+
+                // per car: telemetry lap data next to the session results iRacing shows in its own lists
+                var info = Data.IRSdk.SessionInfo.Parse(yaml);
+                var sess = info.Session(f.Int("SessionNum"));
+                var cpos = f.IntArray("CarIdxClassPosition", 64); var best = f.FloatArray("CarIdxBestLapTime", 64); var last = f.FloatArray("CarIdxLastLapTime", 64);
+                var done = f.IntArray("CarIdxLapCompleted", 64);
+                sb.AppendLine("--- cars (session " + (sess != null ? sess.Type : "?") + ", results " + (sess != null ? sess.Results.Count : 0) + ")");
+                sb.AppendLine("idx  num  raw   class        tPos tCls  tBest    tLast   done | rPos rCls  rFast    rLast   rLaps  name");
+                foreach (var d in info.Drivers.Values.OrderBy(d => d.CarIdx))
+                {
+                    int i = d.CarIdx;
+                    var r = sess != null ? sess.Results.FirstOrDefault(x => x.CarIdx == i) : null;
+                    sb.AppendLine(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                        "{0,3} {1,4} {2,5} {3,-12} {4,4} {5,4} {6,8:0.000} {7,8:0.000} {8,4} | {9,4} {10,4} {11,8:0.000} {12,8:0.000} {13,5}  {14}",
+                        i, d.CarNumber, d.CarNumberRaw, Truncate(d.CarClassShortName, 12), pos[i], cpos[i], best[i], last[i], done[i],
+                        r != null ? r.Position : 0, r != null ? r.ClassPosition : 0, r != null ? r.FastestTime : 0, r != null ? r.LastTime : 0, r != null ? r.LapsComplete : 0,
+                        d.UserName));
+                }
+                File.WriteAllText(file + ".yaml", yaml);
             }
             using (var svc = new TelemetryService { Mode = SourceMode.IRacing })
             {

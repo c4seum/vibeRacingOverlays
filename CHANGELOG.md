@@ -6,6 +6,9 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ## [Unreleased]
 
+### Fixed
+- Standings in practice and qualifying: drivers with a lap time were missing or in the wrong place, and lap times of most drivers were empty. The standings now follow iRacing's own results list: ranked by fastest lap, with the fastest and last lap iRacing shows, and drivers without a lap time after them in car-number order (as iRacing lists them). In races, iRacing's results fill in positions and lap times the live telemetry doesn't have.
+
 ## [1.1.1] - 2026-09-30
 
 ### Changed
