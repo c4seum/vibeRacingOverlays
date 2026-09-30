@@ -24,6 +24,7 @@ namespace vibeRacingOverlays.Data.Engine
             public double PitEnterTime = -1;
             public double PitLaneTime;
             public bool Towing;
+            public double TowStart;
             public int LastKey = int.MinValue;
             public readonly Dictionary<int, double> Times = new Dictionary<int, double>();
 
@@ -46,6 +47,8 @@ namespace vibeRacingOverlays.Data.Engine
         public bool LivePositions = true;
 
         readonly Tracker[] trackers = new Tracker[TelemetryState.MaxCars];
+        /// <summary>Longest we believe another car is being towed (a tow takes minutes at most; after that it's a disconnect).</summary>
+        const double TowMax = 300;
         readonly FuelTracker fuel = new FuelTracker();
         SessionInfo session;
         int sessionNum = -1;
@@ -80,6 +83,8 @@ namespace vibeRacingOverlays.Data.Engine
         {
             if (session == null) return;
             if (s.SessionNum != sessionNum) { sessionNum = s.SessionNum; ResetTrackers(); }
+            var current = session.Session(s.SessionNum);
+            bool isRace = current != null && current.IsRace;
 
             fuel.Update(s);
             double t = s.SessionTime;
@@ -93,11 +98,19 @@ namespace vibeRacingOverlays.Data.Engine
 
                 if (surface == (int)TrackSurface.OnTrack || surface == (int)TrackSurface.OffTrack) tr.LastOnTrackTime = t;
 
-                // tow / reset: back in the pit stall without driving down the pit lane
-                if (surface == (int)TrackSurface.InPitStall && tr.PrevSurface != (int)TrackSurface.InPitStall
-                    && tr.PrevSurface != (int)TrackSurface.ApproachingPits && !tr.PrevOnPit && t - tr.LastOnTrackTime < 120)
-                    tr.Towing = true;
-                if (!onPit && surface != (int)TrackSurface.InPitStall && surface != (int)TrackSurface.NotInWorld) tr.Towing = false;
+                // Tow = iRacing's tow timeout, which only exists in a race: a reset takes the car off the track and
+                // puts it in its pit box when the tow time has run out. In practice and qualifying a reset is instant
+                // (straight to the pit box), so it's just being in the pits, not a tow.
+                // Other cars: off the track (not in world) without driving down the pit lane. That can also be a
+                // disconnect, so it ends after TowMax. Own car: iRacing's exact tow timer.
+                if (!isRace) tr.Towing = false;
+                else if (i == s.PlayerCarIdx) tr.Towing = s.PlayerCarTowTime > 0;
+                else
+                {
+                    if (surface == (int)TrackSurface.NotInWorld && tr.PrevSurface >= 0 && tr.PrevSurface != (int)TrackSurface.InPitStall && !tr.PrevOnPit)
+                    { tr.Towing = true; tr.TowStart = t; }
+                    if (tr.Towing && (surface != (int)TrackSurface.NotInWorld || t - tr.TowStart > TowMax)) tr.Towing = false;
+                }
 
                 if (onPit && !tr.PrevOnPit) tr.PitEnterTime = t;
                 if (onPit && tr.PitEnterTime >= 0) tr.PitLaneTime = t - tr.PitEnterTime;

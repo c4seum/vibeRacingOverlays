@@ -65,13 +65,14 @@ namespace vibeRacingOverlays.App.Widgets
         const float Pad = 6;
         const uint Dim = 0xFF9A9A9A, Orange = 0xFFF08C1E, Red = 0xFFE8433A;
         readonly RelativeSettings s;
-        bool multi;
+        bool multi, race;
 
         public RelativeWidget(RelativeSettings s) : base(s) { this.s = s; }
 
         public override void Draw(DisplayList dl, RaceSnapshot snap)
         {
             multi = snap.Classes.Count > 1;
+            race = snap.IsRace;
             var cols = TableColumns.Resolve(s.Columns.Where(c => c.Enabled && (multi || c.Key != "classbar")), RelativeSettings.Defs, (float)s.FontSize, false);
             float fs = (float)s.FontSize, rh = s.RowHeight, sp = Math.Max(0, s.ColumnSpacing);
             float width = Pad * 2 + cols.Sum(c => c.Width) + sp * Math.Max(0, cols.Count - 1);
@@ -140,7 +141,7 @@ namespace vibeRacingOverlays.App.Widgets
                     break;
                 case "ir": dl.Text(x, y, w, h, Fmt.Rating(c.IRating, col.Format), fs, text, Align.Right); break;
                 case "pit":
-                    DrawPitStatus(dl, c, x, y, w, h, small, false);
+                    DrawPitStatus(dl, c, x, y, w, h, small, false, race);
                     break;
                 case "last": if (c.LastLap > 0) dl.Text(x, y, w, h, Fmt.Lap(c.LastLap, int.Parse(col.Format ?? "1")), fs, text, Align.Right); break;
                 case "stint": if (c.Lap > 0) dl.Text(x, y, w, h, c.StintLaps.ToString(), fs, text, Align.Right); break;

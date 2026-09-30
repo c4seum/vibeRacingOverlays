@@ -33,6 +33,8 @@ namespace vibeRacingOverlays.Data.Telemetry
         public double SessionTimeOfDay;
 
         public int PlayerCarIdx = -1;
+        /// <summary>Seconds left of the player's tow (race only; 0 = not being towed).</summary>
+        public float PlayerCarTowTime;
         public bool IsOnTrack;
         public bool IsReplayPlaying;
         public bool OnPitRoad;
@@ -76,6 +78,7 @@ namespace vibeRacingOverlays.Data.Telemetry
                 SessionLapsRemain = f.Int("SessionLapsRemainEx", 32767),
                 SessionTimeOfDay = f.Float("SessionTimeOfDay"),
                 PlayerCarIdx = f.Int("PlayerCarIdx", -1),
+                PlayerCarTowTime = f.Float("PlayerCarTowTime"),
                 IsOnTrack = f.Bool("IsOnTrack"),
                 IsReplayPlaying = f.Bool("IsReplayPlaying"),
                 OnPitRoad = f.Bool("OnPitRoad"),

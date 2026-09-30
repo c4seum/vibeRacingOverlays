@@ -508,7 +508,7 @@ namespace vibeRacingOverlays.App.Widgets
                     }
                     break;
                 case "pit":
-                    DrawPitStatus(dl, c, x, y, w, h, small, true);
+                    DrawPitStatus(dl, c, x, y, w, h, small, true, snap.IsRace);
                     break;
                 case "stint":
                     if (c.Lap > 0) dl.Text(x, y, w, h, c.StintLaps.ToString(), fs, text, Align.Right);

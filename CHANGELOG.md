@@ -22,6 +22,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 - Numbers in all widgets use equal-width digits, so lap times, gaps and ratings line up exactly in their columns ("1:11.1" is as wide as "1:08.8"), whatever the font.
 
 ### Fixed
+- TOW only shows in a race, while iRacing tows a car back after a reset (the tow timeout); for your own car it uses iRacing's tow timer. In practice and qualifying a reset is instant, so the list no longer fills up with TOW. In practice and qualifying a car in its pit box shows a grey "PIT" (in the pits between runs, not on track); the orange PIT badge is for driving in the pit lane, and in a race for a pit stop. The number of stops (P2) only shows in a race.
 - "OUT" stays for the whole out lap. On tracks where the pit exit lies before the start/finish line it disappeared at the line, a few hundred meters after the pit exit.
 - Standings in practice and qualifying: drivers with a lap time were missing or in the wrong place, and lap times of most drivers were empty. The standings now follow iRacing's own results list: ranked by fastest lap, with the fastest and last lap iRacing shows, and drivers without a lap time after them in car-number order (as iRacing lists them). In races, iRacing's results fill in positions and lap times the live telemetry doesn't have.
 

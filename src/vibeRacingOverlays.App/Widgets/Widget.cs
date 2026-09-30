@@ -154,25 +154,29 @@ namespace vibeRacingOverlays.App.Widgets
         protected uint Bg(uint color) { return Argb.WithAlpha(color, Settings.BackgroundOpacity); }
 
         /// <summary>
-        /// Pit status column: disqualified, towing, on pit road, then the flag iRacing shows the driver
-        /// (black flag = penalty to serve, furled black flag = warning / slow down, meatball = repair),
-        /// then the out lap (held for the whole first lap after the pit lane) and (with <paramref name="stops"/>) the number of stops.
+        /// Pit status column. What matters differs per session:
+        /// race: TOW (iRacing's tow timeout after a reset), PIT (a pit stop: pit lane or pit box) and the number of stops;
+        /// practice / qualifying: a reset is instant and sitting in the pits between runs is normal, so the pit box is
+        /// only a grey "PIT" (not on track), the orange badge is for driving in the pit lane, and stops aren't counted.
+        /// Always: DQ, the flag iRacing shows the driver (black flag = penalty to serve, furled black flag = warning /
+        /// slow down, meatball = repair) and OUT for the whole first lap after the pit lane.
         /// </summary>
-        protected static void DrawPitStatus(DisplayList dl, CarInfo c, float x, float y, float w, float h, float small, bool stops)
+        protected static void DrawPitStatus(DisplayList dl, CarInfo c, float x, float y, float w, float h, float small, bool stops, bool race)
         {
             const uint Red = 0xFFE8433A, Orange = 0xFFF08C1E, Yellow = 0xFFF2C318, Dim = 0xFF9A9A9A;
             var f = c.DriverFlags;
             float by = y + 3, bh = h - 6;
             if ((f & Data.Telemetry.SessionFlags.Disqualify) != 0) FlagBadge(dl, x, by, w, bh, "DQ", small, 0xFF000000, 0xFFFFFFFF);
             else if (c.Towing) dl.Badge(x, by, w, bh, "TOW", small, Red, 0xFFFFFFFF);
-            else if (c.OnPitRoad || c.InPitStall) dl.Badge(x, by, w, bh, "PIT", small, Orange, 0xFF000000);
+            else if (race && (c.OnPitRoad || c.InPitStall)) dl.Badge(x, by, w, bh, "PIT", small, Orange, 0xFF000000);
+            else if (c.InPitStall) dl.Text(x, y, w, h, "PIT", small, Dim, Align.Center);
+            else if (c.OnPitRoad) dl.Badge(x, by, w, bh, "PIT", small, Orange, 0xFF000000);
             else if ((f & Data.Telemetry.SessionFlags.Black) != 0) FlagBadge(dl, x, by, w, bh, "⚑", small, 0xFF000000, 0xFFFFFFFF);
             else if ((f & Data.Telemetry.SessionFlags.Furled) != 0) dl.Badge(x, by, w, bh, "⚑", small, Yellow, 0xFF000000);
             else if ((f & Data.Telemetry.SessionFlags.Repair) != 0) FlagBadge(dl, x, by, w, bh, "●", small, 0xFF000000, Orange);
             else if (c.OutLap) dl.Text(x, y, w, h, "OUT", small, Orange, Align.Center);
-            else if (stops && c.PitCount > 0) dl.Text(x, y, w, h, "P" + c.PitCount, small, Dim, Align.Center);
+            else if (stops && race && c.PitCount > 0) dl.Text(x, y, w, h, "P" + c.PitCount, small, Dim, Align.Center);
         }
-
         /// <summary>Black flag badge with a thin white edge, so it stays visible on dark rows.</summary>
         static void FlagBadge(DisplayList dl, float x, float y, float w, float h, string text, float size, uint bg, uint fg)
         {
