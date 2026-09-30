@@ -22,9 +22,10 @@
                 <Setter Property="Background" Value="{DynamicResource Field}"/>
                 <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                 <Setter Property="BorderBrush" Value="Transparent"/>
-                <Setter Property="Padding" Value="12,3"/>
+                <Setter Property="Padding" Value="12,0"/>
                 <Setter Property="Margin" Value="0,0,6,0"/>
                 <Setter Property="MinHeight" Value="26"/>
+                <Setter Property="Height" Value="26"/>
                 <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                 <Setter Property="Template">
                     <Setter.Value>
@@ -179,7 +180,7 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="RadioButton">
-                            <Border x:Name="b" Background="Transparent" CornerRadius="4" Padding="10,3">
+                            <Border x:Name="b" Background="Transparent" CornerRadius="4" Padding="10,0">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <ControlTemplate.Triggers>
@@ -203,8 +204,9 @@
                 <Setter Property="BorderBrush" Value="Transparent"/>
                 <Setter Property="CaretBrush" Value="{DynamicResource Fg}"/>
                 <Setter Property="SelectionBrush" Value="{DynamicResource Accent}"/>
-                <Setter Property="Padding" Value="6,2"/>
+                <Setter Property="Padding" Value="6,0"/>
                 <Setter Property="MinHeight" Value="26"/>
+                <Setter Property="Height" Value="26"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
                 <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                 <Setter Property="Template">
@@ -259,6 +261,7 @@
                 <Setter Property="Background" Value="{DynamicResource Field}"/>
                 <Setter Property="BorderBrush" Value="Transparent"/>
                 <Setter Property="MinHeight" Value="26"/>
+                <Setter Property="Height" Value="26"/>
                 <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                 <Setter Property="Template">
                     <Setter.Value>

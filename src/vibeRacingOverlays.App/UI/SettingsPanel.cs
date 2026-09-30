@@ -364,7 +364,7 @@ namespace vibeRacingOverlays.App.UI
             UIElement ColorEditor(PropertyInfo p)
             {
                 var panel = new StackPanel { Orientation = Orientation.Horizontal };
-                var swatch = new Border { Width = 34, Height = 26, CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 8, 0), Cursor = System.Windows.Input.Cursors.Hand, ToolTip = "Pick a color" };
+                var swatch = new Border { Width = 34, Height = Ui.ControlHeight, CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 8, 0), Cursor = System.Windows.Input.Cursors.Hand, ToolTip = "Pick a color" };
                 swatch.SetResourceReference(Border.BorderBrushProperty, "Border");
                 var box = new TextBox { Width = 104, Text = (string)p.GetValue(ws), FontFamily = new FontFamily("Consolas") };
                 Action refresh = () =>

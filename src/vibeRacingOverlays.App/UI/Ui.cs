@@ -19,7 +19,13 @@ namespace vibeRacingOverlays.App.UI
         /// so blocks look even. Only editors marked tall (see <see cref="MarkTall"/>, e.g. the 3×3 anchor grid) may grow.
         /// Build settings rows with <see cref="Row"/> (or <see cref="ListRow"/>) and never give them their own height.
         /// </summary>
-        public const double RowHeight = 32;
+        public const double RowHeight = 34;
+
+        /// <summary>
+        /// Height of every input control in a row (text box, combo, button, segmented, color swatch; set in App.xaml
+        /// and here), so each row has the same (RowHeight - ControlHeight) / 2 of air above and below.
+        /// </summary>
+        public const double ControlHeight = 26;
 
         /// <summary>Lets an editor that can't fit <see cref="RowHeight"/> make its row taller.</summary>
         public static T MarkTall<T>(T editor) where T : FrameworkElement { editor.Tag = "tall"; return editor; }
@@ -165,7 +171,7 @@ namespace vibeRacingOverlays.App.UI
                 rb.Checked += (s, e) => onPick(value);
                 panel.Children.Add(rb);
             }
-            var b = new Border { Child = panel, CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1), Padding = new Thickness(2), HorizontalAlignment = HorizontalAlignment.Left };
+            var b = new Border { Child = panel, CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1), Padding = new Thickness(2), HorizontalAlignment = HorizontalAlignment.Left, Height = ControlHeight };
             b.SetResourceReference(Border.BackgroundProperty, "Field");
             b.BorderBrush = Brushes.Transparent;   // filled, no outline (like all controls)
             return b;
