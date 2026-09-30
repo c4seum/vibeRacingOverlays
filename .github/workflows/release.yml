@@ -2,6 +2,7 @@
 #   git tag v1.0.1
 #   git push origin v1.0.1
 # Builds the installer + portable zip (build-release.ps1) and attaches them to a GitHub Release.
+# The release notes come from the version's section in CHANGELOG.md (move [Unreleased] to the version before tagging).
 name: Release
 
 on:
@@ -27,10 +28,18 @@ jobs:
           $version = "${{ github.ref_name }}".TrimStart('v')
           ./build-release.ps1 -Version $version
 
+      - name: Release notes from CHANGELOG.md
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          ./tools/changelog-section.ps1 -Version $version -Out release-notes.md
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           name: vibeRacingOverlays ${{ github.ref_name }}
+          # the version's CHANGELOG section, followed by GitHub's list of commits
+          body_path: release-notes.md
           generate_release_notes: true
           files: |
             dist/*.exe
