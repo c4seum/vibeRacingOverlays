@@ -156,9 +156,9 @@ namespace vibeRacingOverlays.App.Widgets
         /// <summary>
         /// Pit status column: disqualified, towing, on pit road, then the flag iRacing shows the driver
         /// (black flag = penalty to serve, furled black flag = warning / slow down, meatball = repair),
-        /// then (with <paramref name="history"/>) out lap or number of stops.
+        /// then the out lap (held for the whole first lap after the pit lane) and (with <paramref name="stops"/>) the number of stops.
         /// </summary>
-        protected static void DrawPitStatus(DisplayList dl, CarInfo c, float x, float y, float w, float h, float small, bool history)
+        protected static void DrawPitStatus(DisplayList dl, CarInfo c, float x, float y, float w, float h, float small, bool stops)
         {
             const uint Red = 0xFFE8433A, Orange = 0xFFF08C1E, Yellow = 0xFFF2C318, Dim = 0xFF9A9A9A;
             var f = c.DriverFlags;
@@ -169,9 +169,8 @@ namespace vibeRacingOverlays.App.Widgets
             else if ((f & Data.Telemetry.SessionFlags.Black) != 0) FlagBadge(dl, x, by, w, bh, "⚑", small, 0xFF000000, 0xFFFFFFFF);
             else if ((f & Data.Telemetry.SessionFlags.Furled) != 0) dl.Badge(x, by, w, bh, "⚑", small, Yellow, 0xFF000000);
             else if ((f & Data.Telemetry.SessionFlags.Repair) != 0) FlagBadge(dl, x, by, w, bh, "●", small, 0xFF000000, Orange);
-            else if (!history) return;
             else if (c.OutLap) dl.Text(x, y, w, h, "OUT", small, Orange, Align.Center);
-            else if (c.PitCount > 0) dl.Text(x, y, w, h, "P" + c.PitCount, small, Dim, Align.Center);
+            else if (stops && c.PitCount > 0) dl.Text(x, y, w, h, "P" + c.PitCount, small, Dim, Align.Center);
         }
 
         /// <summary>Black flag badge with a thin white edge, so it stays visible on dark rows.</summary>

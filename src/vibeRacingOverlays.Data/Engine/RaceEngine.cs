@@ -20,6 +20,7 @@ namespace vibeRacingOverlays.Data.Engine
             public double LastOnTrackTime = -1000;
             public int PitCount;
             public int LapAtPitExit = -1;
+            public int OutLapUntil = -1;   // last LapCompleted value that still counts as the out lap
             public double PitEnterTime = -1;
             public double PitLaneTime;
             public bool Towing;
@@ -104,6 +105,9 @@ namespace vibeRacingOverlays.Data.Engine
                 {
                     tr.PitCount++;
                     tr.LapAtPitExit = s.CarIdxLapCompleted[i];
+                    // out lap = the first full lap after the pit lane: where the pit exit lies before the line,
+                    // the short bit up to the line doesn't count, so hold it one line crossing longer
+                    tr.OutLapUntil = s.CarIdxLapCompleted[i] + (pct > 0.5f ? 1 : 0);
                 }
                 tr.PrevOnPit = onPit;
                 tr.PrevSurface = surface;
@@ -248,7 +252,7 @@ namespace vibeRacingOverlays.Data.Engine
                 c.InPitStall = c.Surface == TrackSurface.InPitStall;
                 c.Progress = double.IsNaN(tr.LastProgress) ? c.LapCompleted : tr.LastProgress;
                 c.StintLaps = Math.Max(0, tr.LapAtPitExit >= 0 ? c.LapCompleted - tr.LapAtPitExit : c.LapCompleted);
-                c.OutLap = tr.LapAtPitExit >= 0 && c.LapCompleted == tr.LapAtPitExit && !c.OnPitRoad;
+                c.OutLap = tr.OutLapUntil >= 0 && c.LapCompleted <= tr.OutLapUntil && !c.OnPitRoad;
                 ParseLicense(d.LicString, c);
                 snap.Cars.Add(c);
             }
