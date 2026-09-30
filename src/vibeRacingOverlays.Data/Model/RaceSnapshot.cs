@@ -53,6 +53,8 @@ namespace vibeRacingOverlays.Data.Model
         public bool OnPitRoad;
         public bool InPitStall;
         public bool Towing;
+        /// <summary>Flags iRacing shows this driver (black flag, slowdown warning, meatball, DQ).</summary>
+        public SessionFlags DriverFlags;
         public bool OutLap;
         public int PitCount;
         public int StintLaps;

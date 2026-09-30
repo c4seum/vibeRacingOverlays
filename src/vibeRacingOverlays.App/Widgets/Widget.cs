@@ -153,6 +153,35 @@ namespace vibeRacingOverlays.App.Widgets
 
         protected uint Bg(uint color) { return Argb.WithAlpha(color, Settings.BackgroundOpacity); }
 
+        /// <summary>
+        /// Pit status column: disqualified, towing, on pit road, then the flag iRacing shows the driver
+        /// (black flag = penalty to serve, furled black flag = warning / slow down, meatball = repair),
+        /// then (with <paramref name="history"/>) out lap or number of stops.
+        /// </summary>
+        protected static void DrawPitStatus(DisplayList dl, CarInfo c, float x, float y, float w, float h, float small, bool history)
+        {
+            const uint Red = 0xFFE8433A, Orange = 0xFFF08C1E, Yellow = 0xFFF2C318, Dim = 0xFF9A9A9A;
+            var f = c.DriverFlags;
+            float by = y + 3, bh = h - 6;
+            if ((f & Data.Telemetry.SessionFlags.Disqualify) != 0) FlagBadge(dl, x, by, w, bh, "DQ", small, 0xFF000000, 0xFFFFFFFF);
+            else if (c.Towing) dl.Badge(x, by, w, bh, "TOW", small, Red, 0xFFFFFFFF);
+            else if (c.OnPitRoad || c.InPitStall) dl.Badge(x, by, w, bh, "PIT", small, Orange, 0xFF000000);
+            else if ((f & Data.Telemetry.SessionFlags.Black) != 0) FlagBadge(dl, x, by, w, bh, "⚑", small, 0xFF000000, 0xFFFFFFFF);
+            else if ((f & Data.Telemetry.SessionFlags.Furled) != 0) dl.Badge(x, by, w, bh, "⚑", small, Yellow, 0xFF000000);
+            else if ((f & Data.Telemetry.SessionFlags.Repair) != 0) FlagBadge(dl, x, by, w, bh, "●", small, 0xFF000000, Orange);
+            else if (!history) return;
+            else if (c.OutLap) dl.Text(x, y, w, h, "OUT", small, Orange, Align.Center);
+            else if (c.PitCount > 0) dl.Text(x, y, w, h, "P" + c.PitCount, small, Dim, Align.Center);
+        }
+
+        /// <summary>Black flag badge with a thin white edge, so it stays visible on dark rows.</summary>
+        static void FlagBadge(DisplayList dl, float x, float y, float w, float h, string text, float size, uint bg, uint fg)
+        {
+            dl.Rect(x, y, w, h, 0xFFFFFFFF, 3);
+            dl.Rect(x + 1, y + 1, w - 2, h - 2, bg, 2);
+            dl.Text(x, y, w, h, text, size, fg, Align.Center);
+        }
+
         public static Widget Create(WidgetSettings s)
         {
             if (s is StandingsSettings) return new StandingsWidget((StandingsSettings)s);

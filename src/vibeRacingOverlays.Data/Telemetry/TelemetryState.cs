@@ -12,6 +12,9 @@ namespace vibeRacingOverlays.Data.Telemetry
         Checkered = 0x1, White = 0x2, Green = 0x4, Yellow = 0x8, Red = 0x10, Blue = 0x20, Debris = 0x40, Crossed = 0x80,
         YellowWaving = 0x100, OneLapToGreen = 0x200, GreenHeld = 0x400, TenToGo = 0x800, FiveToGo = 0x1000,
         RandomWaving = 0x2000, Caution = 0x4000, CautionWaving = 0x8000,
+        // per driver (CarIdxSessionFlags): Black = penalty to serve (drive-through / stop-and-go),
+        // Furled = rolled-up black flag (warning, e.g. slow down after cutting), Repair = meatball
+        Black = 0x10000, Disqualify = 0x20000, Servicible = 0x40000, Furled = 0x80000, Repair = 0x100000,
     }
 
     /// <summary>
@@ -59,6 +62,7 @@ namespace vibeRacingOverlays.Data.Telemetry
         public float[] CarIdxF2Time = new float[MaxCars];
         public float[] CarIdxEstTime = new float[MaxCars];
         public int[] CarIdxTireCompound = new int[MaxCars];
+        public int[] CarIdxSessionFlags = new int[MaxCars];
 
         public static TelemetryState FromFrame(RawFrame f)
         {
@@ -99,6 +103,7 @@ namespace vibeRacingOverlays.Data.Telemetry
                 CarIdxF2Time = f.FloatArray("CarIdxF2Time", MaxCars),
                 CarIdxEstTime = f.FloatArray("CarIdxEstTime", MaxCars),
                 CarIdxTireCompound = f.IntArray("CarIdxTireCompound", MaxCars),
+                CarIdxSessionFlags = f.IntArray("CarIdxSessionFlags", MaxCars),
             };
             return s;
         }

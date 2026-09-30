@@ -271,6 +271,8 @@ namespace vibeRacingOverlays.Data.Telemetry
                 s.CarIdxPosition[ci] = i + 1;
                 s.CarIdxClassPosition[ci] = cp;
                 s.CarIdxOnPitRoad[ci] = pitLane;
+                // a few drivers with a flag, so the pit column's symbols show up in the demo
+                s.CarIdxSessionFlags[ci] = ci == 5 ? (int)SessionFlags.Furled : ci == 9 ? (int)SessionFlags.Black : ci == 14 ? (int)SessionFlags.Repair : 0;
                 s.CarIdxTrackSurface[ci] = c.TowUntil > simTime ? (int)TrackSurface.NotInWorld
                     : inPit ? (int)TrackSurface.InPitStall : (pitLane ? (int)TrackSurface.ApproachingPits : (int)TrackSurface.OnTrack);
                 s.CarIdxLastLapTime[ci] = c.Last;

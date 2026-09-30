@@ -34,7 +34,7 @@ namespace vibeRacingOverlays.App.Widgets
             new ColumnDef("name", "Driver name", "DRIVER", 180, true, Align.Left).UserWidth(),
             new ColumnDef("lic", "License / SR", "LIC", 42, true, Align.Center).Fit("D4.9", 0.85f, 10),
             new ColumnDef("ir", "iRating", "iR", 40, true, Align.Right).Fit("8.8k"),
-            new ColumnDef("pit", "Pit status", "PIT", 38, true, Align.Center).Fit("TOW", 0.85f, 10),
+            new ColumnDef("pit", "Pit status and flags", "PIT", 38, true, Align.Center).Fit("TOW", 0.85f, 10),
             new ColumnDef("last", "Last lap", "LAST", 62, false, Align.Right).Fit("8:88.8"),
             new ColumnDef("stint", "Laps in stint", "STINT", 32, false, Align.Right).Fit("88"),
             new ColumnDef("rel", "Relative time", "REL", 50, true, Align.Right).Fit("-88.8"),
@@ -127,8 +127,7 @@ namespace vibeRacingOverlays.App.Widgets
                     break;
                 case "ir": dl.Text(x, y, w, h, Fmt.IRating(c.IRating), fs, text, Align.Right); break;
                 case "pit":
-                    if (c.Towing) dl.Badge(x, y + 3, w, h - 6, "TOW", small, Red, 0xFFFFFFFF);
-                    else if (c.OnPitRoad || c.InPitStall) dl.Badge(x, y + 3, w, h - 6, "PIT", small, Orange, 0xFF000000);
+                    DrawPitStatus(dl, c, x, y, w, h, small, false);
                     break;
                 case "last": if (c.LastLap > 0) dl.Text(x, y, w, h, Fmt.Lap(c.LastLap, 1), fs, text, Align.Right); break;
                 case "stint": if (c.Lap > 0) dl.Text(x, y, w, h, c.StintLaps.ToString(), fs, text, Align.Right); break;

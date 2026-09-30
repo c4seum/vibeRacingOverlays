@@ -220,6 +220,7 @@ namespace vibeRacingOverlays.Data.Engine
                     BestLap = s.CarIdxBestLapTime[i] > 0 ? s.CarIdxBestLapTime[i] : 0,
                     OnPitRoad = s.CarIdxOnPitRoad[i],
                     TireCompound = s.CarIdxTireCompound[i],
+                    DriverFlags = (SessionFlags)(uint)s.CarIdxSessionFlags[i],
                     PitCount = tr.PitCount, Towing = tr.Towing, PitLaneTime = tr.PitLaneTime,
                     PaceLap = tr.PaceLap(),
                 };

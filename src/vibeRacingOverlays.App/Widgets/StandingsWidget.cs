@@ -105,7 +105,7 @@ namespace vibeRacingOverlays.App.Widgets
                 new ColumnDef("best", "Best lap", "BEST", 62, !race, Align.Right).Fit(f => "8:88." + Digits(f)).WithFormats("3", LapDecimals),
                 new ColumnDef("tire", "Tire compound", "TIRE", 22, false, Align.Center)
                     .WithFormats("differ", ("differ", "Only when mixed"), ("always", "Always")),
-                new ColumnDef("pit", "Pit status", "PIT", 42, true, Align.Center).Fit("TOW", Small, 10),
+                new ColumnDef("pit", "Pit status and flags", "PIT", 42, true, Align.Center).Fit("TOW", Small, 10),
                 new ColumnDef("stint", "Laps in stint", "STINT", 32, race, Align.Right).Fit("88"),
             };
         }
@@ -479,10 +479,7 @@ namespace vibeRacingOverlays.App.Widgets
                     }
                     break;
                 case "pit":
-                    if (c.Towing) dl.Badge(x, y + 3, w, h - 6, "TOW", small, Red, 0xFFFFFFFF);
-                    else if (c.OnPitRoad || c.InPitStall) dl.Badge(x, y + 3, w, h - 6, "PIT", small, Orange, 0xFF000000);
-                    else if (c.OutLap) dl.Text(x, y, w, h, "OUT", small, Orange, Align.Center);
-                    else if (c.PitCount > 0) dl.Text(x, y, w, h, "P" + c.PitCount, small, Dim, Align.Center);
+                    DrawPitStatus(dl, c, x, y, w, h, small, true);
                     break;
                 case "stint":
                     if (c.Lap > 0) dl.Text(x, y, w, h, c.StintLaps.ToString(), fs, text, Align.Right);

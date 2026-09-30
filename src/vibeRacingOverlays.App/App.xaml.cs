@@ -87,18 +87,18 @@ namespace vibeRacingOverlays.App
                 var info = Data.IRSdk.SessionInfo.Parse(yaml);
                 var sess = info.Session(f.Int("SessionNum"));
                 var cpos = f.IntArray("CarIdxClassPosition", 64); var best = f.FloatArray("CarIdxBestLapTime", 64); var last = f.FloatArray("CarIdxLastLapTime", 64);
-                var done = f.IntArray("CarIdxLapCompleted", 64);
+                var done = f.IntArray("CarIdxLapCompleted", 64); var flags = f.IntArray("CarIdxSessionFlags", 64);
                 sb.AppendLine("--- cars (session " + (sess != null ? sess.Type : "?") + ", results " + (sess != null ? sess.Results.Count : 0) + ")");
-                sb.AppendLine("idx  num  raw   class        tPos tCls  tBest    tLast   done | rPos rCls  rFast    rLast   rLaps  name");
+                sb.AppendLine("idx  num  raw   class        tPos tCls  tBest    tLast   done | rPos rCls  rFast    rLast   rLaps  flags     name");
                 foreach (var d in info.Drivers.Values.OrderBy(d => d.CarIdx))
                 {
                     int i = d.CarIdx;
                     var r = sess != null ? sess.Results.FirstOrDefault(x => x.CarIdx == i) : null;
                     sb.AppendLine(string.Format(System.Globalization.CultureInfo.InvariantCulture,
-                        "{0,3} {1,4} {2,5} {3,-12} {4,4} {5,4} {6,8:0.000} {7,8:0.000} {8,4} | {9,4} {10,4} {11,8:0.000} {12,8:0.000} {13,5}  {14}",
+                        "{0,3} {1,4} {2,5} {3,-12} {4,4} {5,4} {6,8:0.000} {7,8:0.000} {8,4} | {9,4} {10,4} {11,8:0.000} {12,8:0.000} {13,5}  {15,8:X}  {14}",
                         i, d.CarNumber, d.CarNumberRaw, Truncate(d.CarClassShortName, 12), pos[i], cpos[i], best[i], last[i], done[i],
                         r != null ? r.Position : 0, r != null ? r.ClassPosition : 0, r != null ? r.FastestTime : 0, r != null ? r.LastTime : 0, r != null ? r.LapsComplete : 0,
-                        d.UserName));
+                        d.UserName, flags[i]));
                 }
                 File.WriteAllText(file + ".yaml", yaml);
             }
