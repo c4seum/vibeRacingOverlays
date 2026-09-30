@@ -443,12 +443,12 @@ namespace vibeRacingOverlays.App.Widgets
                     }
                     break;
                 case "gap":
-                    if (leaderRow) { if (snap.IsRace) dl.Text(x, y, w, h, "GAP", small, Dim, Align.Right); }
+                    if (leaderRow) dl.Text(x, y, w, h, "GAP", small, Dim, Align.Right);   // P1 of each class: column label instead of a value
                     else if (snap.IsRace && c.LapsDown > 0) dl.Text(x, y, w, h, "+" + c.LapsDown + "L", fs, text, Align.Right);
                     else if (c.GapToClassLeader.HasValue) dl.Text(x, y, w, h, GapText(c.GapToClassLeader.Value, Dec(col, 1), snap.IsRace), fs, text, Align.Right);
                     break;
                 case "int":
-                    if (leaderRow) { if (snap.IsRace) dl.Text(x, y, w, h, "INT", small, Dim, Align.Right); }
+                    if (leaderRow) dl.Text(x, y, w, h, "INT", small, Dim, Align.Right);
                     else if (snap.IsRace && c.IntervalLaps > 0) dl.Text(x, y, w, h, "+" + c.IntervalLaps + "L", fs, text, Align.Right);
                     else if (c.Interval.HasValue) dl.Text(x, y, w, h, GapText(c.Interval.Value, Dec(col, 1), snap.IsRace), fs, text, Align.Right);
                     break;

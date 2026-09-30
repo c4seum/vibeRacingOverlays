@@ -14,6 +14,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ### Changed
 - Standings and relative: every column has a fixed width that fits its widest content at the chosen font size and format (for example "8:88.888" for a lap time with 3 decimals), so nothing gets cut off or shrunk. Only the driver name keeps a width you set. The new style setting "Column spacing" (default 8 px) sets the space between the columns.
+- Standings: the P1 row of each class shows "GAP" and "INT" in those columns in practice and qualifying too (was race only).
 - Column list in the settings: the move up / down buttons are now in front of each column, and only the driver name has a width box.
 - Numbers in all widgets use equal-width digits, so lap times, gaps and ratings line up exactly in their columns ("1:11.1" is as wide as "1:08.8"), whatever the font.
 
