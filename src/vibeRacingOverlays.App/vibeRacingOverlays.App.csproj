@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\vibeRacingOverlays.Data\vibeRacingOverlays.Data.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>vibeRacingOverlays</AssemblyName>
+    <RootNamespace>vibeRacingOverlays.App</RootNamespace>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <Version>1.0.0</Version>
+    <Product>vibeRacingOverlays</Product>
+    <Company>vibeRacingOverlays</Company>
+    <AssemblyTitle>vibeRacingOverlays</AssemblyTitle>
+    <!-- local builds are DEV builds; release builds pass -p:ReleaseBuild=true (see BuildInfo.cs) -->
+    <ReleaseBuild Condition="'$(ReleaseBuild)' == ''">false</ReleaseBuild>
+    <Copyright>vibeRacingOverlays</Copyright>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ReleaseBuild)' != 'true'">
+    <DefineConstants>$(DefineConstants);DEV</DefineConstants>
+    <AssemblyTitle>vibeRacingOverlays DEV</AssemblyTitle>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WinForms is only used for the color picker; keep its types out of the global namespace -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+</Project>

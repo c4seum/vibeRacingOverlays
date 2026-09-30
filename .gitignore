@@ -1,0 +1,15 @@
+# build output
+bin/
+obj/
+publish/
+artifacts/
+dist/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# generated
+tools/app-icon-preview.png

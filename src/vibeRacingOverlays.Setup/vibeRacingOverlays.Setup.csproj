@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Installer for vibeRacingOverlays. Targets .NET Framework 4.8 (built into Windows 10/11), so the
+    installer itself needs nothing extra. The self-contained app exe is embedded as "payload.exe":
+    build with  -p:PayloadPath=<path to published vibeRacingOverlays.exe>  (see build-release.ps1).
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>vibeRacingOverlays-Setup</AssemblyName>
+    <RootNamespace>vibeRacingOverlays.Setup</RootNamespace>
+    <ApplicationIcon>..\vibeRacingOverlays.App\app.ico</ApplicationIcon>
+    <ApplicationManifest>setup.manifest</ApplicationManifest>
+    <Version>1.0.0</Version>
+    <Product>vibeRacingOverlays</Product>
+    <AssemblyTitle>vibeRacingOverlays Setup</AssemblyTitle>
+    <Company>vibeRacingOverlays</Company>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(PayloadPath)' != ''">
+    <EmbeddedResource Include="$(PayloadPath)" LogicalName="payload.exe" />
+  </ItemGroup>
+
+  <!-- small copy of this program without the payload, installed as uninstall.exe -->
+  <ItemGroup Condition="'$(UninstallerPath)' != ''">
+    <EmbeddedResource Include="$(UninstallerPath)" LogicalName="uninstall.exe" />
+  </ItemGroup>
+
+</Project>

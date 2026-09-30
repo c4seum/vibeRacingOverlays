@@ -1,0 +1,37 @@
+# Publishes a release when a version tag is pushed:
+#   git tag v1.0.1
+#   git push origin v1.0.1
+# Builds the installer + portable zip (build-release.ps1) and attaches them to a GitHub Release.
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build installer and portable zip
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          ./build-release.ps1 -Version $version
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: vibeRacingOverlays ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            dist/*.exe
+            dist/*.zip
