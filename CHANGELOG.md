@@ -6,6 +6,16 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ## [Unreleased]
 
+### Changed
+- New look for the app (not the widgets): "Graphite" dark theme and "Soft light" light theme; compact, filled controls without outlines and 6px corners; settings as inset lists in cards with small caps titles (the widget's name and preset in a card of their own); segmented buttons for short choices; slimmer sliders and scroll bars; icons in the widget list; a status label in the top bar and a title bar that follows the theme.
+- Setting choices use readable names ("In car" instead of "InCar").
+- Side by side: the preview and the position panel share the height, so the preview stays large.
+- The settings and position blocks have a fixed width and are centred in their area (stacked: each gets half of the width); the preview is centred too.
+- The window can't be made smaller than its content any more (limited to the screen size).
+
+### Fixed
+- The preview was cut off at the bottom when the window was small (side by side).
+
 ## [1.1.0] - 2026-09-30
 
 ### Added

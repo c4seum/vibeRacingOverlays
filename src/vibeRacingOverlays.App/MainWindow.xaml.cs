@@ -1,7 +1,8 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using System.Windows.Threading;
 using vibeRacingOverlays.App.Core;
 using vibeRacingOverlays.App.Overlay;
@@ -121,6 +122,7 @@ namespace vibeRacingOverlays.App
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
+            ThemeManager.ApplyTitleBar(this);
             overlays.RegisterHotkeys(new WindowInteropHelper(this).Handle);
         }
 
@@ -128,6 +130,11 @@ namespace vibeRacingOverlays.App
         /// Stacked: preview on top, below it the settings with the position panel on their right.
         /// Side by side: settings left, splitter, preview right with the position panel below it.
         /// </summary>
+        // fixed widths of the settings and position blocks (their rows don't stretch); set in MainWindow.xaml too
+        // area = block + padding on both sides + the vertical scroll bar
+        const double SidebarWidth = 250, SettingsArea = 620 + 2 * 20 + 10, PositionArea = 480 + 2 * 20 + 10, SplitterWidth = 4;
+        const double WindowChrome = 16;   // resize borders of a normal window
+
         void ApplyEditorLayout()
         {
             bool side = settings.PreviewSideBySide;
@@ -135,15 +142,16 @@ namespace vibeRacingOverlays.App
             var rows = EditorGrid.RowDefinitions;
             if (side)
             {
-                // settings keep their natural width (splitter adjustable), the preview gets the rest
-                cols[0].Width = new GridLength(680);
+                // settings in a column of their own width (the splitter can only make it wider),
+                // the right column holds the preview above the position panel, sharing the height
+                cols[0].Width = new GridLength(SettingsArea);
+                cols[0].MinWidth = SettingsArea;
                 cols[1].Width = GridLength.Auto;
                 cols[2].Width = new GridLength(1, GridUnitType.Star);
-                cols[2].MinWidth = 520;
-                // the preview fills the space above the position panel
+                cols[2].MinWidth = PositionArea;
                 rows[0].Height = new GridLength(1, GridUnitType.Star);
-                rows[0].MinHeight = 180;
-                rows[1].Height = GridLength.Auto;
+                rows[0].MinHeight = 200;
+                rows[1].Height = new GridLength(1, GridUnitType.Star);
                 Place(SettingsScroll, 0, 0, 2, 1);
                 Place(EditorSplitter, 0, 1, 2, 1);
                 Place(PreviewHost, 0, 2, 1, 1);
@@ -152,10 +160,12 @@ namespace vibeRacingOverlays.App
             }
             else
             {
+                // preview across the top; settings and position each get half of the rest, centred in it
                 cols[0].Width = new GridLength(1, GridUnitType.Star);
+                cols[0].MinWidth = SettingsArea;
                 cols[1].Width = new GridLength(0);
-                cols[2].Width = GridLength.Auto;
-                cols[2].MinWidth = 0;
+                cols[2].Width = new GridLength(1, GridUnitType.Star);
+                cols[2].MinWidth = PositionArea;
                 rows[0].Height = GridLength.Auto;
                 rows[0].MinHeight = 0;
                 rows[1].Height = new GridLength(1, GridUnitType.Star);
@@ -164,12 +174,16 @@ namespace vibeRacingOverlays.App
                 Place(PositionScroll, 1, 2, 1, 1);
                 EditorSplitter.Visibility = Visibility.Collapsed;
             }
-            // make room for settings + preview / position panel when the window is narrow
-            double target = Math.Min(side ? 1600 : 1440, SystemParameters.WorkArea.Width - 40);
+
+            // the window can't get smaller than its content (limited to the screen, e.g. a laptop at 150% scaling)
+            var work = SystemParameters.WorkArea;
+            MinWidth = Math.Min(SidebarWidth + SettingsArea + PositionArea + (side ? SplitterWidth : 0) + WindowChrome, work.Width);
+            MinHeight = Math.Min(side ? 640 : 760, work.Height);
+            double target = Math.Min(Math.Max(MinWidth, side ? 1600 : 1480), work.Width - 40);
             if (WindowState == WindowState.Normal && Width < target)
             {
                 Width = target;
-                Left = Math.Max(SystemParameters.WorkArea.Left, Math.Min(Left, SystemParameters.WorkArea.Right - Width));
+                Left = Math.Max(work.Left, Math.Min(Left, work.Right - Width));
             }
             preview.SetSideBySide(side);
         }
@@ -189,21 +203,29 @@ namespace vibeRacingOverlays.App
             string src = telemetry.ActiveSource;
             if (src == "iRacing" && live)
             {
-                StatusDot.Fill = Brushes.LimeGreen;
+                StatusDot.SetResourceReference(Shape.FillProperty, "Success");
                 StatusText.Text = snap.Connected && snap.Source == "iRacing"
                     ? "iRacing connected - " + snap.SessionType + " @ " + snap.TrackName
                     : "iRacing connected - loading session...";
             }
             else if (src == "Demo")
             {
-                StatusDot.Fill = Brushes.Orange;
+                StatusDot.SetResourceReference(Shape.FillProperty, "Warning");
                 StatusText.Text = "Demo race (iRacing not running)";
             }
             else
             {
-                StatusDot.Fill = Brushes.Gray;
+                StatusDot.SetResourceReference(Shape.FillProperty, "Muted");
                 StatusText.Text = "Waiting for iRacing...";
             }
+        }
+
+        static string TypeIcon(WidgetSettings w)
+        {
+            if (w is StandingsSettings) return Ui.IconList;
+            if (w is RelativeSettings) return Ui.IconSort;
+            if (w is FuelSettings) return Ui.IconFuel;
+            return Ui.IconWidget;
         }
 
         void RefreshList()
@@ -214,14 +236,22 @@ namespace vibeRacingOverlays.App
             foreach (var ws in settings.Widgets)
             {
                 var w = ws;
-                // only the box toggles the overlay; clicking the name selects it (opens its settings)
-                var cb = new CheckBox { IsChecked = w.Enabled, Margin = new Thickness(2, 4, 8, 4), ToolTip = "Show / hide this widget" };
-                cb.Click += (s, e) => { w.Enabled = cb.IsChecked == true; overlays.Invalidate(w); };
+                // only the switch shows / hides the widget; clicking the name selects it (opens its settings)
+                var sw = Ui.Toggle(w.Enabled);
+                sw.ToolTip = "Show / hide this widget";
+                sw.Margin = new Thickness(8, 0, 0, 0);
+                RoutedEventHandler onSwitch = (s, e) => { bool v = sw.IsChecked == true; if (w.Enabled != v) { w.Enabled = v; overlays.Invalidate(w); } };
+                sw.Checked += onSwitch;
+                sw.Unchecked += onSwitch;
+                DockPanel.SetDock(sw, Dock.Right);
+                var icon = new TextBlock { Text = TypeIcon(w), FontFamily = (FontFamily)FindResource("IconFont"), FontSize = 14, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+                icon.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
                 // display name (user editable) + the widget type, shown when the name differs from it
                 var name = new TextBlock { VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
                 SetListName(name, w);
-                var row = new DockPanel { Background = Brushes.Transparent };   // transparent = whole row is clickable
-                row.Children.Add(cb);
+                var row = new DockPanel { Background = Brushes.Transparent, MinHeight = 26 };   // transparent = whole row is clickable
+                row.Children.Add(sw);
+                row.Children.Add(icon);
                 row.Children.Add(name);
                 var item = new ListBoxItem { Content = row, Tag = w };
                 WidgetList.Items.Add(item);
@@ -332,7 +362,7 @@ namespace vibeRacingOverlays.App
             SettingsPanel.Build(SettingsHost, ws, () => overlays.Invalidate(ws), () =>
             {
                 foreach (ListBoxItem item in WidgetList.Items)
-                    if (item.Tag == ws) SetListName((TextBlock)((DockPanel)item.Content).Children[1], ws);
+                    if (item.Tag == ws) SetListName((TextBlock)((DockPanel)item.Content).Children[2], ws);
             });
         }
 

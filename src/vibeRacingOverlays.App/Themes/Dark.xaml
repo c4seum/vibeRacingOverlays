@@ -1,13 +1,24 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <SolidColorBrush x:Key="Bg" Color="#FF1B1D21"/>
-    <SolidColorBrush x:Key="Panel" Color="#FF24272C"/>
-    <SolidColorBrush x:Key="Field" Color="#FF30343A"/>
-    <SolidColorBrush x:Key="FieldHover" Color="#FF3A3F46"/>
-    <SolidColorBrush x:Key="Border" Color="#FF3C4148"/>
-    <SolidColorBrush x:Key="Fg" Color="#FFE8E8E8"/>
-    <SolidColorBrush x:Key="Muted" Color="#FF9AA0A6"/>
-    <SolidColorBrush x:Key="Accent" Color="#FF2F8CFF"/>
+    <!-- "Graphite": neutral dark greys, one calm blue accent -->
+    <SolidColorBrush x:Key="Bg" Color="#FF1B1D21"/>            <!-- content area -->
+    <SolidColorBrush x:Key="Panel" Color="#FF1F2226"/>         <!-- top bar, sidebar, footer -->
+    <SolidColorBrush x:Key="Card" Color="#FF25282D"/>          <!-- setting groups -->
+    <SolidColorBrush x:Key="CardBorder" Color="#FF33373D"/>
+    <SolidColorBrush x:Key="Field" Color="#FF2C3036"/>         <!-- inputs, buttons -->
+    <SolidColorBrush x:Key="FieldHover" Color="#FF353A41"/>
+    <SolidColorBrush x:Key="Border" Color="#FF3A3F47"/>        <!-- control outlines -->
+    <SolidColorBrush x:Key="Divider" Color="#FF2F3339"/>       <!-- lines between rows / areas -->
+    <SolidColorBrush x:Key="Track" Color="#FF3A3F47"/>         <!-- slider track, switch off -->
+    <SolidColorBrush x:Key="SegmentOn" Color="#FF3F454E"/>     <!-- selected segment -->
+    <SolidColorBrush x:Key="Fg" Color="#FFE6E8EB"/>
+    <SolidColorBrush x:Key="Muted" Color="#FF9AA1AA"/>
+    <SolidColorBrush x:Key="Accent" Color="#FF4C8DF6"/>
+    <SolidColorBrush x:Key="AccentHover" Color="#FF6A9FF8"/>
     <SolidColorBrush x:Key="AccentFg" Color="#FFFFFFFF"/>
-    <SolidColorBrush x:Key="Selection" Color="#FF2B4A73"/>
+    <SolidColorBrush x:Key="Selection" Color="#FF253247"/>     <!-- selected list item -->
+    <SolidColorBrush x:Key="Warning" Color="#FFE0A93A"/>
+    <SolidColorBrush x:Key="Success" Color="#FF4CC38A"/>
+    <!-- no visible shadow on dark surfaces -->
+    <DropShadowEffect x:Key="CardShadow" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
 </ResourceDictionary>

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
@@ -69,22 +69,16 @@ namespace vibeRacingOverlays.App.UI
             {
                 host.Children.Clear();
 
-                var typeLabel = new TextBlock { Text = ws.TypeName.ToUpperInvariant(), FontSize = 11, Margin = new Thickness(0, 0, 0, 4) };
-                typeLabel.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
-                host.Children.Add(typeLabel);
-
-                var titleRow = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
-                var resetAll = new Button { Content = "↺  Reset widget", Margin = new Thickness(10, 0, 0, 0), Padding = new Thickness(10, 3, 10, 3),
-                    ToolTip = "Reset all settings of this widget to the defaults (name and position are kept)" };
+                // first card: the widget itself (type, display name, preset) with "Reset widget"
+                var resetAll = Ui.HeaderReset("Reset all settings of this widget to the defaults (name and position are kept)");
+                ((StackPanel)resetAll.Content).Children.OfType<TextBlock>().Last().Text = "Reset widget";
                 resetAll.Click += (s, e) => ResetWidget();
                 Track(resetAll, () => AllProps().All(IsDefault) && ColumnsAreDefault());
-                DockPanel.SetDock(resetAll, Dock.Right);
-                titleRow.Children.Add(resetAll);
-                var title = new TextBox { Text = ws.Title, FontSize = 16, ToolTip = "Only changes the name shown in the app; it stays a " + ws.TypeName + " widget." };
+                var widgetCard = Ui.Card(host, Ui.Header(ws.TypeName + " widget", resetAll));
+                var title = new TextBox { Text = ws.Title, FontWeight = FontWeights.SemiBold, ToolTip = "Only changes the name shown in the app; it stays a " + ws.TypeName + " widget." };
                 title.TextChanged += (s, e) => { ws.Title = string.IsNullOrWhiteSpace(title.Text) ? ws.TypeName : title.Text; titleChanged(); changed(); };
-                titleRow.Children.Add(title);
-                host.Children.Add(titleRow);
-                if (App != null) host.Children.Add(PresetRow());
+                Ui.Row(widgetCard, "Display name", title, "Only changes the name shown in the app", null);
+                if (App != null) Ui.Row(widgetCard, "Preset", PresetRow(), "Saved settings of this widget type, available in every layout", null);
 
                 var props = ws.GetType().GetProperties()
                     .Select(p => new { P = p, A = p.GetCustomAttribute<SettingAttribute>() })
@@ -95,20 +89,23 @@ namespace vibeRacingOverlays.App.UI
                 foreach (var group in props.GroupBy(x => x.A.Group))
                 {
                     var groupProps = group.Select(x => x.P).ToList();
-                    host.Children.Add(Header(group.Key, () => groupProps.All(IsDefault), () => { foreach (var p in groupProps) ResetProp(p); }));
+                    var card = Ui.Card(host, Header(group.Key, () => groupProps.All(IsDefault), () => { foreach (var p in groupProps) ResetProp(p); }));
                     foreach (var x in group)
                     {
                         var p = x.P;
                         var reset = ResetButton(() => IsDefault(p), () => ResetProp(p), "Reset to default (" + Describe(p.GetValue(defaults)) + ")");
-                        host.Children.Add(Row(x.A.Label, CreateEditor(p, x.A), x.A.Tooltip, reset));
+                        Ui.Row(card, x.A.Label, CreateEditor(p, x.A), x.A.Tooltip, reset);
                     }
                 }
 
                 var table = ws as ITableSettings;
                 if (table != null)
                 {
-                    host.Children.Add(Header("Columns", ColumnsAreDefault, () => table.Columns = FreshColumns()));
-                    host.Children.Add(new ColumnsEditor(table, Changed, this));
+                    var card = Ui.Card(host, Header("Columns", ColumnsAreDefault, () => table.Columns = FreshColumns()));
+                    var colHint = Ui.Caption("On / off, width in px and order of the columns.");
+                    colHint.Margin = new Thickness(14, 0, 10, 4);
+                    card.Children.Add(colHint);
+                    card.Children.Add(new ColumnsEditor(table, Changed, this) { Margin = Ui.Inset });
                 }
             }
 
@@ -119,25 +116,24 @@ namespace vibeRacingOverlays.App.UI
                 return App.Presets.Where(p => p.TypeName == ws.TypeName).OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase);
             }
 
-            UIElement PresetRow()
+            /// <summary>Preset combo with Load / Save / Delete (the editor part of the "Preset" row).</summary>
+            FrameworkElement PresetRow()
             {
-                var row = new DockPanel { Margin = new Thickness(0, 0, 0, 4) };
-                var label = new TextBlock { Text = "Preset", VerticalAlignment = VerticalAlignment.Center, Width = 60 };
-                label.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
-                row.Children.Add(label);
+                var row = new StackPanel { Orientation = Orientation.Horizontal };
 
                 var list = PresetsOfType().ToList();
                 var combo = new ComboBox
                 {
-                    Width = 220, ItemsSource = list, VerticalAlignment = VerticalAlignment.Center,
+                    Width = 170, ItemsSource = list, VerticalAlignment = VerticalAlignment.Center,
                     ToolTip = list.Count == 0 ? "No " + ws.TypeName + " presets yet: use Save" : "Saved " + ws.TypeName + " presets (available in every layout)",
                 };
                 combo.SelectedItem = list.FirstOrDefault(p => p.Id == ws.PresetId);
                 row.Children.Add(combo);
 
-                var load = new Button { Content = "Load", Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(10, 2, 10, 2), ToolTip = "Apply the selected preset to this widget (name and position are kept)" };
-                var save = new Button { Content = "Save", Margin = new Thickness(6, 0, 0, 0), Padding = new Thickness(10, 2, 10, 2), ToolTip = "Save this widget's settings as a preset" };
-                var del = new Button { Content = "Delete", Margin = new Thickness(6, 0, 0, 0), Padding = new Thickness(10, 2, 10, 2), ToolTip = "Delete the selected preset" };
+                var load = new Button { Content = "Load", Margin = new Thickness(8, 0, 0, 0), ToolTip = "Apply the selected preset to this widget (name and position are kept)" };
+                var save = new Button { Content = "Save", Margin = new Thickness(6, 0, 0, 0), ToolTip = "Save this widget's settings as a preset" };
+                var del = Ui.IconButton(Ui.IconDelete, "Delete the selected preset");
+                del.Margin = new Thickness(2, 0, 0, 0);
                 Action updateButtons = () => { load.IsEnabled = del.IsEnabled = combo.SelectedItem != null; };
                 combo.SelectionChanged += (s, e) => updateButtons();
                 updateButtons();
@@ -256,7 +252,7 @@ namespace vibeRacingOverlays.App.UI
             /// <summary>Small reset button, enabled only while the value differs from the default.</summary>
             public Button ResetButton(Func<bool> isDefault, Action reset, string tooltip)
             {
-                var b = new Button { Content = "↺", Padding = new Thickness(7, 0, 7, 1), Margin = new Thickness(8, 0, 0, 0), FontSize = 14, ToolTip = tooltip };
+                var b = Ui.RowReset(tooltip);
                 b.Click += (s, e) => { reset(); changed(); Rebuild(); };
                 Track(b, isDefault);
                 return b;
@@ -278,32 +274,13 @@ namespace vibeRacingOverlays.App.UI
 
             // ------------------------------------------------------------ layout helpers
 
+            /// <summary>Card header: group name plus "Reset" (enabled while any setting of the group differs from its default).</summary>
             UIElement Header(string text, Func<bool> isDefault, Action reset)
             {
-                var row = new DockPanel { Margin = new Thickness(0, 16, 0, 6), LastChildFill = false };
-                var tb = new TextBlock { Text = text.ToUpperInvariant(), FontSize = 11, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
-                tb.SetResourceReference(TextBlock.ForegroundProperty, "Accent");   // follows theme switches
-                var b = new Button { Content = "↺  Reset", FontSize = 11, Padding = new Thickness(8, 1, 8, 1), Margin = new Thickness(12, 0, 0, 0),
-                    ToolTip = "Reset all " + text + " settings to the defaults" };
+                var b = Ui.HeaderReset("Reset all " + text.ToLowerInvariant() + " settings to the defaults");
                 b.Click += (s, e) => { reset(); changed(); Rebuild(); };
                 Track(b, isDefault);
-                row.Children.Add(tb);
-                row.Children.Add(b);
-                return row;
-            }
-
-            static UIElement Row(string label, UIElement editor, string tooltip, UIElement reset)
-            {
-                var g = new Grid { Margin = new Thickness(0, 3, 0, 3) };
-                g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(210) });
-                g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                g.Children.Add(new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center, ToolTip = tooltip });
-                Grid.SetColumn(editor, 1);
-                g.Children.Add(editor);
-                Grid.SetColumn(reset, 2);
-                g.Children.Add(reset);
-                return g;
+                return Ui.Header(text, b);
             }
 
             // ------------------------------------------------------------ editors
@@ -313,14 +290,22 @@ namespace vibeRacingOverlays.App.UI
                 var t = p.PropertyType;
                 if (t == typeof(bool))
                 {
-                    var cb = new CheckBox { IsChecked = (bool)p.GetValue(ws) };
-                    cb.Click += (s, e) => { p.SetValue(ws, cb.IsChecked == true); Changed(); };
-                    return cb;
+                    var sw = Ui.Toggle((bool)p.GetValue(ws));
+                    // Checked/Unchecked instead of Click: also fires for keyboard and UI Automation
+                    RoutedEventHandler onSwitch = (s, e) => { bool v = sw.IsChecked == true; if ((bool)p.GetValue(ws) != v) { p.SetValue(ws, v); Changed(); } };
+                    sw.Checked += onSwitch;
+                    sw.Unchecked += onSwitch;
+                    return sw;
                 }
                 if (t.IsEnum)
                 {
-                    var combo = new ComboBox { ItemsSource = Enum.GetValues(t), SelectedItem = p.GetValue(ws), Width = 180, HorizontalAlignment = HorizontalAlignment.Left };
-                    combo.SelectionChanged += (s, e) => { if (combo.SelectedItem != null) { p.SetValue(ws, combo.SelectedItem); Changed(); } };
+                    var values = Enum.GetValues(t).Cast<object>().ToList();
+                    // a few short choices: segmented control; otherwise a drop-down
+                    if (values.Count <= 3 && values.All(v => Ui.Label(v).Length <= 14))
+                        return Ui.Segmented(values, p.GetValue(ws), v => { if (!Equals(p.GetValue(ws), v)) { p.SetValue(ws, v); Changed(); } });
+                    var items = values.Select(v => new Ui.EnumItem { Value = v }).ToList();
+                    var combo = new ComboBox { ItemsSource = items, SelectedItem = items.First(i => Equals(i.Value, p.GetValue(ws))), Width = 200, HorizontalAlignment = HorizontalAlignment.Left };
+                    combo.SelectionChanged += (s, e) => { var i = combo.SelectedItem as Ui.EnumItem; if (i != null) { p.SetValue(ws, i.Value); Changed(); } };
                     return combo;
                 }
                 if (t == typeof(int) || t == typeof(double)) return NumberEditor(p, a);
@@ -379,8 +364,9 @@ namespace vibeRacingOverlays.App.UI
             UIElement ColorEditor(PropertyInfo p)
             {
                 var panel = new StackPanel { Orientation = Orientation.Horizontal };
-                var swatch = new Border { Width = 34, Height = 22, CornerRadius = new CornerRadius(3), BorderThickness = new Thickness(1), BorderBrush = Brushes.Gray, Margin = new Thickness(0, 0, 8, 0), Cursor = System.Windows.Input.Cursors.Hand };
-                var box = new TextBox { Width = 100, Text = (string)p.GetValue(ws) };
+                var swatch = new Border { Width = 34, Height = 26, CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 8, 0), Cursor = System.Windows.Input.Cursors.Hand, ToolTip = "Pick a color" };
+                swatch.SetResourceReference(Border.BorderBrushProperty, "Border");
+                var box = new TextBox { Width = 104, Text = (string)p.GetValue(ws), FontFamily = new FontFamily("Consolas") };
                 Action refresh = () =>
                 {
                     uint c = Argb.Parse(box.Text, 0);
@@ -400,7 +386,10 @@ namespace vibeRacingOverlays.App.UI
                 };
                 panel.Children.Add(swatch);
                 panel.Children.Add(box);
-                panel.Children.Add(new TextBlock { Text = "#AARRGGBB", Foreground = Brushes.Gray, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) });
+                var hint = Ui.Caption("#AARRGGBB");
+                hint.VerticalAlignment = VerticalAlignment.Center;
+                hint.Margin = new Thickness(8, 0, 0, 0);
+                panel.Children.Add(hint);
                 return panel;
             }
 
@@ -430,11 +419,11 @@ namespace vibeRacingOverlays.App.UI
                         var def = table.AvailableColumns.First(d => d.Key == col.Key);
                         int index = i;
 
-                        var g = new Grid { Margin = new Thickness(0, 2, 0, 2) };
-                        g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(210) });
+                        var g = new Grid { Margin = new Thickness(0, 1, 0, 1) };
+                        g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Ui.LabelWidth + 60) });
                         g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(70) });
                         g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                        g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                        g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
                         var cb = new CheckBox { Content = def.Label, IsChecked = col.Enabled };
                         cb.Click += (s, e) => { col.Enabled = cb.IsChecked == true; changed(); };
@@ -451,8 +440,12 @@ namespace vibeRacingOverlays.App.UI
                         g.Children.Add(width);
 
                         var buttons = new StackPanel { Orientation = Orientation.Horizontal };
-                        var up = new Button { Content = "▲", Padding = new Thickness(6, 0, 6, 0), IsEnabled = i > 0 };
-                        var down = new Button { Content = "▼", Padding = new Thickness(6, 0, 6, 0), IsEnabled = i < table.Columns.Count - 1 };
+                        var buttonsMargin = new Thickness(6, 0, 0, 0);
+                        var up = Ui.IconButton(Ui.IconUp, "Move up");
+                        up.IsEnabled = i > 0;
+                        var down = Ui.IconButton(Ui.IconDown, "Move down");
+                        down.IsEnabled = i < table.Columns.Count - 1;
+                        up.Margin = buttonsMargin;
                         up.Click += (s, e) => Move(index, -1);
                         down.Click += (s, e) => Move(index, 1);
                         buttons.Children.Add(up);
@@ -463,7 +456,7 @@ namespace vibeRacingOverlays.App.UI
                         var reset = owner.ResetButton(() => col.Enabled == def.DefaultOn && col.Width == def.Width,
                             () => { col.Enabled = def.DefaultOn; col.Width = def.Width; },
                             "Reset to default (" + (def.DefaultOn ? "on" : "off") + ", " + def.Width.ToString(CultureInfo.InvariantCulture) + " px)");
-                        reset.Margin = new Thickness(2, 0, 0, 0);
+                        reset.HorizontalAlignment = HorizontalAlignment.Right;
                         Grid.SetColumn(reset, 3);
                         g.Children.Add(reset);
 

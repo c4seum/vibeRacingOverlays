@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -69,11 +69,11 @@ namespace vibeRacingOverlays.App.UI
         readonly PreviewData data;
         readonly AppSettings settings;
         readonly ComboBox sourceBox = new ComboBox { Width = 170 };
-        readonly TextBlock info = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0), FontSize = 11 };
+        readonly TextBlock info = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0), FontSize = 12 };
         readonly Surface surface = new Surface();
         readonly TextBlock empty = new TextBlock { Text = "No data for this widget in the selected source.", Margin = new Thickness(0, 8, 0, 8) };
         readonly DispatcherTimer timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
-        readonly Button layoutButton = new Button { Padding = new Thickness(10, 2, 10, 2), Margin = new Thickness(0) };
+        readonly Button layoutButton = new Button { Style = Ui.Style("GhostButton"), Margin = new Thickness(0) };
         WpfRenderer renderer;
         WidgetSettings ws;
         bool sideBySide;
@@ -87,10 +87,10 @@ namespace vibeRacingOverlays.App.UI
         {
             this.data = data;
             this.settings = settings;
-            Padding = new Thickness(18, 10, 18, 12);
+            Padding = new Thickness(24, 10, 24, 12);
             BorderThickness = new Thickness(0, 0, 0, 1);
             SetResourceReference(BackgroundProperty, "Panel");
-            SetResourceReference(BorderBrushProperty, "Border");
+            SetResourceReference(BorderBrushProperty, "Divider");
             info.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
             empty.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
 
@@ -99,11 +99,11 @@ namespace vibeRacingOverlays.App.UI
             sourceBox.SelectedIndex = (int)chosen.Value;
             sourceBox.SelectionChanged += (s, e) => { chosen = (PreviewSource)sourceBox.SelectedIndex; Refresh(); };
 
-            var title = new TextBlock { Text = "PREVIEW", FontSize = 11, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+            var title = new TextBlock { Text = "PREVIEW", FontSize = 11, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
             title.SetResourceReference(TextBlock.ForegroundProperty, "Accent");
             layoutButton.Click += (s, e) => { if (LayoutToggleRequested != null) LayoutToggleRequested(); };
             DockPanel.SetDock(layoutButton, Dock.Right);
-            var top = new DockPanel { Margin = new Thickness(0, 0, 0, 8), LastChildFill = false };
+            var top = new DockPanel { Margin = new Thickness(0, 0, 0, 10), LastChildFill = false };
             top.Children.Add(layoutButton);
             top.Children.Add(title);
             top.Children.Add(sourceBox);
@@ -181,14 +181,20 @@ namespace vibeRacingOverlays.App.UI
             }
             empty.Visibility = Visibility.Collapsed;
 
-            // show at the overlay's own scale, shrunk when it doesn't fit the panel
+            // show at the overlay's own scale, shrunk when it doesn't fit the panel: the height left over after the
+            // header lines above the image (side by side the info text has a line of its own) and the image's own margin
+            double used = Padding.Top + Padding.Bottom + Pad * 2;
+            var stack = Child as StackPanel;
+            if (stack != null)
+                foreach (var c in stack.Children.OfType<FrameworkElement>())
+                    if (c != surface && c.Visibility == Visibility.Visible) used += c.ActualHeight + c.Margin.Top + c.Margin.Bottom;
             double avail = Math.Max(100, ActualWidth - Padding.Left - Padding.Right - Pad * 2);
-            double maxH = sideBySide ? Math.Max(120, ActualHeight - Padding.Top - Padding.Bottom - 50) : MaxPreviewHeight;
+            double maxH = sideBySide ? Math.Max(60, ActualHeight - used) : MaxPreviewHeight;
             double scale = Math.Min(ws.Scale, Math.Min(avail / dl.Width, maxH / dl.Height));
             double w = dl.Width * scale + Pad * 2, h = dl.Height * scale + Pad * 2;
             info.Text = layout + "   " + (int)Math.Round(scale * 100) + "%";
             surface.Width = w; surface.Height = h;
-            surface.HorizontalAlignment = HorizontalAlignment.Left;
+            surface.HorizontalAlignment = HorizontalAlignment.Center;
             using (var dc = surface.Visual.RenderOpen()) PreviewRenderer.Draw(dc, renderer, dl, scale, Pad, w, h);
         }
     }

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -63,19 +63,21 @@ namespace vibeRacingOverlays.App.UI
             refreshers.Clear();
             if (ws == null) return;
 
-            var typeLabel = new TextBlock { Text = "POSITION", FontSize = 11, Margin = new Thickness(0, 0, 0, 4) };
-            typeLabel.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
+            var typeLabel = Ui.Caption("Position");
+            typeLabel.Margin = new Thickness(0, 0, 0, 4);
             Children.Add(typeLabel);
-            var title = new TextBlock { FontSize = 16, Margin = new Thickness(0, 3, 0, 4) };
+            var title = new TextBlock { FontSize = 16, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 5, 0, 6) };
             refreshers.Add(() => title.Text = ws.Title);
             Children.Add(title);
-            Children.Add(Hint("Drag widgets on screen in Edit layout (hold Shift to drag without snapping), or set them here."));
+            var hint = Ui.Caption("Drag widgets on screen in Edit layout (hold Shift to drag without snapping), or set them here.");
+            hint.Margin = new Thickness(0, 0, 0, 14);
+            Children.Add(hint);
 
             // ---- anchor & position
-            Children.Add(Header("Anchoring & positioning", () => ws.Anchor == Anchor.TopLeft && ws.OffsetX == 0 && ws.OffsetY == 0,
+            var card = Ui.Card(this, Header("Anchoring and positioning", () => ws.Anchor == Anchor.TopLeft && ws.OffsetX == 0 && ws.OffsetY == 0,
                 () => { ws.Anchor = Anchor.TopLeft; ws.OffsetX = 0; ws.OffsetY = 0; }, "Back to the top left corner of the screen"));
 
-            var screen = new ComboBox { Width = 190, HorizontalAlignment = HorizontalAlignment.Left };
+            var screen = new ComboBox { Width = 200, HorizontalAlignment = HorizontalAlignment.Left };
             screen.SelectionChanged += (s, e) =>
             {
                 var m = screen.SelectedItem as Placement.Monitor;
@@ -89,8 +91,7 @@ namespace vibeRacingOverlays.App.UI
                 screen.ItemsSource = monitors;
                 screen.SelectedItem = Placement.Find(monitors, ws.Screen) ?? monitors.FirstOrDefault(m => m.Primary);
             });
-            var screenRow = Row("Screen", screen, "Screens are remembered as Left / Middle / Right, so the layout lands on the same screen on another PC", null);
-            Children.Add(screenRow);
+            var screenRow = Ui.Row(card, "Screen", screen, "Screens are remembered as Left / Middle / Right, so the layout lands on the same screen on another PC", null, LabelWidth);
 
             var grid = new UniformGrid { Rows = 3, Columns = 3, HorizontalAlignment = HorizontalAlignment.Left };
             var anchors = new ToggleButton[9];
@@ -99,10 +100,10 @@ namespace vibeRacingOverlays.App.UI
                 var a = (Anchor)i;
                 var mark = new System.Windows.Shapes.Path
                 {
-                    Data = Geometry.Parse(AnchorPaths[i]), Width = 16, Height = 16, StrokeThickness = 3,
-                    StrokeStartLineCap = PenLineCap.Square, StrokeEndLineCap = PenLineCap.Square,
+                    Data = Geometry.Parse(AnchorPaths[i]), Width = 16, Height = 16, StrokeThickness = 2.5,
+                    StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round,
                 };
-                var b = new ToggleButton { Content = mark, Width = 36, Height = 36, Padding = new Thickness(0), Margin = new Thickness(0, 0, 4, 4), ToolTip = "Anchor: " + AnchorNames[i] };
+                var b = new ToggleButton { Content = mark, Width = 34, Height = 34, MinHeight = 0, Padding = new Thickness(0), Margin = new Thickness(0, 0, 4, 4), ToolTip = "Anchor: " + AnchorNames[i] };
                 // the mark takes the button's text colour (white on the selected, blue button)
                 mark.SetBinding(System.Windows.Shapes.Shape.StrokeProperty, new System.Windows.Data.Binding("Foreground") { Source = b });
                 System.Windows.Automation.AutomationProperties.SetName(b, "Anchor " + AnchorNames[i]);
@@ -118,32 +119,29 @@ namespace vibeRacingOverlays.App.UI
                 grid.Children.Add(b);
             }
             refreshers.Add(() => { for (int i = 0; i < 9; i++) anchors[i].IsChecked = (int)ws.Anchor == i; });
-            var anchorRow = Row("Anchor", grid, "The corner, edge or centre of the screen the widget sticks to. It grows away from it when it gets bigger.", null);
-            anchorRow.VerticalAlignment = VerticalAlignment.Top;
-            Children.Add(anchorRow);
+            var anchorRow = Ui.Row(card, "Anchor", grid, "The corner, edge or centre of the screen the widget sticks to. It grows away from it when it gets bigger.", null, LabelWidth);
 
-            var offX = Stepper(() => ws.OffsetX, v => { ws.OffsetX = v; Moved(); });
-            var offY = Stepper(() => ws.OffsetY, v => { ws.OffsetY = v; Moved(); });
-            var offXRow = Row("X offset (px)", offX, "Distance from the anchor towards the middle of the screen (centre: + is right)",
-                ResetButton(() => ws.OffsetX == 0, () => { ws.OffsetX = 0; Moved(); }, "Reset to 0"));
-            var offYRow = Row("Y offset (px)", offY, "Distance from the anchor towards the middle of the screen (centre: + is down)",
-                ResetButton(() => ws.OffsetY == 0, () => { ws.OffsetY = 0; Moved(); }, "Reset to 0"));
-            Children.Add(offXRow);
-            Children.Add(offYRow);
+            var offXRow = Ui.Row(card, "X offset (px)", Stepper(() => ws.OffsetX, v => { ws.OffsetX = v; Moved(); }),
+                "Distance from the anchor towards the middle of the screen (centre: + is right)",
+                ResetButton(() => ws.OffsetX == 0, () => { ws.OffsetX = 0; Moved(); }, "Reset to 0"), LabelWidth);
+            var offYRow = Ui.Row(card, "Y offset (px)", Stepper(() => ws.OffsetY, v => { ws.OffsetY = v; Moved(); }),
+                "Distance from the anchor towards the middle of the screen (centre: + is down)",
+                ResetButton(() => ws.OffsetY == 0, () => { ws.OffsetY = 0; Moved(); }, "Reset to 0"), LabelWidth);
 
-            var lockBox = new CheckBox { ToolTip = "A locked widget can't be dragged or resized by accident" };
+            var lockBox = Ui.Toggle(false);
+            lockBox.ToolTip = "A locked widget can't be dragged or resized by accident";
             RoutedEventHandler onLock = (s, e) => { bool v = lockBox.IsChecked == true; if (!updating && ws.Locked != v) { ws.Locked = v; overlays.Invalidate(ws); } };
             lockBox.Checked += onLock;
             lockBox.Unchecked += onLock;
-            var lockLine = new StackPanel { Orientation = Orientation.Horizontal };
-            lockLine.Children.Add(lockBox);
-            var lockAll = new Button { Content = "Lock all", Margin = new Thickness(16, 0, 6, 0), Padding = new Thickness(10, 2, 10, 2), ToolTip = "Lock every widget of this layout" };
-            var unlockAll = new Button { Content = "Unlock all", Padding = new Thickness(10, 2, 10, 2), ToolTip = "Unlock every widget of this layout" };
+            var lockLine = new DockPanel { LastChildFill = false };
+            var lockAll = new Button { Content = "Lock all", Margin = new Thickness(16, 0, 6, 0), ToolTip = "Lock every widget of this layout" };
+            var unlockAll = new Button { Content = "Unlock all", Margin = new Thickness(0), ToolTip = "Unlock every widget of this layout" };
             lockAll.Click += (s, e) => SetAllLocked(true);
             unlockAll.Click += (s, e) => SetAllLocked(false);
+            lockLine.Children.Add(lockBox);
             lockLine.Children.Add(lockAll);
             lockLine.Children.Add(unlockAll);
-            Children.Add(Row("Lock position and size", lockLine, null, null));
+            Ui.Row(card, "Lock position and size", lockLine, null, null, LabelWidth);
 
             // a locked widget can't be moved from here either
             refreshers.Add(() =>
@@ -153,23 +151,23 @@ namespace vibeRacingOverlays.App.UI
             });
 
             // ---- snapping (app-wide)
-            Children.Add(Header("Snapping (all widgets)",
+            var snapCard = Ui.Card(this, Header("Snapping (all widgets)",
                 () => settings.SnapEnabled == SnapDefaults.SnapEnabled && settings.SnapDistance == SnapDefaults.SnapDistance && settings.SnapMargin == SnapDefaults.SnapMargin,
                 () => { settings.SnapEnabled = SnapDefaults.SnapEnabled; settings.SnapDistance = SnapDefaults.SnapDistance; settings.SnapMargin = SnapDefaults.SnapMargin; overlays.ScheduleSave(); },
                 "Reset the snapping settings to the defaults"));
-            var snap = new CheckBox();
+            var snap = Ui.Toggle(settings.SnapEnabled);
             RoutedEventHandler onSnap = (s, e) => { if (!updating) { settings.SnapEnabled = snap.IsChecked == true; overlays.ScheduleSave(); Refresh(); } };
             snap.Checked += onSnap;
             snap.Unchecked += onSnap;
             refreshers.Add(() => snap.IsChecked = settings.SnapEnabled);
-            Children.Add(Row("Snap when dragging", snap, "Dragged widgets snap to the edges and corners of other widgets and of the screen",
-                ResetButton(() => settings.SnapEnabled == SnapDefaults.SnapEnabled, () => { settings.SnapEnabled = SnapDefaults.SnapEnabled; overlays.ScheduleSave(); }, "Reset to default (on)")));
-            Children.Add(Row("Snap distance (px)", Number(1, 50, () => settings.SnapDistance, v => { settings.SnapDistance = (int)v; overlays.ScheduleSave(); }),
+            Ui.Row(snapCard, "Snap when dragging", snap, "Dragged widgets snap to the edges and corners of other widgets and of the screen",
+                ResetButton(() => settings.SnapEnabled == SnapDefaults.SnapEnabled, () => { settings.SnapEnabled = SnapDefaults.SnapEnabled; overlays.ScheduleSave(); }, "Reset to default (on)"), LabelWidth);
+            Ui.Row(snapCard, "Snap distance (px)", Number(1, 50, () => settings.SnapDistance, v => { settings.SnapDistance = (int)v; overlays.ScheduleSave(); }),
                 "How close an edge must come before it snaps",
-                ResetButton(() => settings.SnapDistance == SnapDefaults.SnapDistance, () => { settings.SnapDistance = SnapDefaults.SnapDistance; overlays.ScheduleSave(); }, "Reset to default (" + SnapDefaults.SnapDistance + ")")));
-            Children.Add(Row("Snap margin (px)", Number(0, 50, () => settings.SnapMargin, v => { settings.SnapMargin = (int)v; overlays.ScheduleSave(); }),
+                ResetButton(() => settings.SnapDistance == SnapDefaults.SnapDistance, () => { settings.SnapDistance = SnapDefaults.SnapDistance; overlays.ScheduleSave(); }, "Reset to default (" + SnapDefaults.SnapDistance + ")"), LabelWidth);
+            Ui.Row(snapCard, "Snap margin (px)", Number(0, 50, () => settings.SnapMargin, v => { settings.SnapMargin = (int)v; overlays.ScheduleSave(); }),
                 "Space kept between snapped widgets and from the screen edge",
-                ResetButton(() => settings.SnapMargin == SnapDefaults.SnapMargin, () => { settings.SnapMargin = SnapDefaults.SnapMargin; overlays.ScheduleSave(); }, "Reset to default (" + SnapDefaults.SnapMargin + ")")));
+                ResetButton(() => settings.SnapMargin == SnapDefaults.SnapMargin, () => { settings.SnapMargin = SnapDefaults.SnapMargin; overlays.ScheduleSave(); }, "Reset to default (" + SnapDefaults.SnapMargin + ")"), LabelWidth);
 
             Refresh();
         }
@@ -190,48 +188,21 @@ namespace vibeRacingOverlays.App.UI
 
         // ---------------------------------------------------------------- building blocks (same look as SettingsPanel)
 
-        static TextBlock Hint(string text)
-        {
-            var t = new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 2) };
-            t.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
-            return t;
-        }
-
         UIElement Header(string text, Func<bool> isDefault, Action reset, string tooltip)
         {
-            var row = new DockPanel { Margin = new Thickness(0, 16, 0, 6), LastChildFill = false };
-            var tb = new TextBlock { Text = text.ToUpperInvariant(), FontSize = 11, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
-            tb.SetResourceReference(TextBlock.ForegroundProperty, "Accent");
-            var b = new Button { Content = "↺  Reset", FontSize = 11, Padding = new Thickness(8, 1, 8, 1), Margin = new Thickness(12, 0, 0, 0), ToolTip = tooltip };
+            var b = Ui.HeaderReset(tooltip);
             b.Click += (s, e) => { reset(); Moved(); };
             refreshers.Add(() => b.IsEnabled = !isDefault());
-            row.Children.Add(tb);
-            row.Children.Add(b);
-            return row;
+            return Ui.Header(text, b);
         }
 
         /// <summary>Small reset button, enabled only while the value differs from the default.</summary>
         Button ResetButton(Func<bool> isDefault, Action reset, string tooltip)
         {
-            var b = new Button { Content = "↺", Padding = new Thickness(7, 0, 7, 1), Margin = new Thickness(8, 0, 0, 0), FontSize = 14, ToolTip = tooltip, VerticalAlignment = VerticalAlignment.Center };
+            var b = Ui.RowReset(tooltip);
             b.Click += (s, e) => { reset(); Refresh(); };
             refreshers.Add(() => b.IsEnabled = !isDefault());
             return b;
-        }
-
-        static Grid Row(string label, UIElement editor, string tooltip, UIElement reset)
-        {
-            var g = new Grid { Margin = new Thickness(0, 3, 0, 3) };
-            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(LabelWidth) });
-            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var l = new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center, ToolTip = tooltip, TextWrapping = TextWrapping.Wrap };
-            if (editor is UniformGrid) l.VerticalAlignment = VerticalAlignment.Top;
-            g.Children.Add(l);
-            Grid.SetColumn(editor, 1);
-            g.Children.Add(editor);
-            if (reset != null) { Grid.SetColumn(reset, 2); g.Children.Add(reset); }
-            return g;
         }
 
         /// <summary>◀ [value] ▶: the buttons and Up/Down change it by 1 (Shift: 10); typing applies on Enter / leaving the field.</summary>
@@ -252,8 +223,10 @@ namespace vibeRacingOverlays.App.UI
                 else if (e.Key == Key.Up || e.Key == Key.Down) { step(e.Key == Key.Up ? 1 : -1); box.SelectAll(); e.Handled = true; }
             };
             refreshers.Add(() => { if (!box.IsKeyboardFocused) box.Text = Math.Round(get()).ToString(Inv); });
-            var minus = new Button { Content = "◀", Padding = new Thickness(6, 0, 6, 0), Margin = new Thickness(0, 0, 4, 0), ToolTip = "-1 (Shift: -10)" };
-            var plus = new Button { Content = "▶", Padding = new Thickness(6, 0, 6, 0), Margin = new Thickness(4, 0, 0, 0), ToolTip = "+1 (Shift: +10)" };
+            var minus = Ui.IconButton(Ui.IconLeft, "-1 (Shift: -10)");
+            minus.Margin = new Thickness(0, 0, 4, 0);
+            var plus = Ui.IconButton(Ui.IconRight, "+1 (Shift: +10)");
+            plus.Margin = new Thickness(4, 0, 0, 0);
             minus.Click += (s, e) => step(-1);
             plus.Click += (s, e) => step(1);
             var p = new StackPanel { Orientation = Orientation.Horizontal };

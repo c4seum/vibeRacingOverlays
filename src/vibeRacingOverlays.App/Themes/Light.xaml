@@ -1,13 +1,23 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- "Soft light": light grey canvas, white cards with a very soft shadow, clear blue accent -->
     <SolidColorBrush x:Key="Bg" Color="#FFF3F4F6"/>
     <SolidColorBrush x:Key="Panel" Color="#FFFFFFFF"/>
-    <SolidColorBrush x:Key="Field" Color="#FFFFFFFF"/>
-    <SolidColorBrush x:Key="FieldHover" Color="#FFEEF3FA"/>
-    <SolidColorBrush x:Key="Border" Color="#FFC9CED6"/>
-    <SolidColorBrush x:Key="Fg" Color="#FF1D2127"/>
-    <SolidColorBrush x:Key="Muted" Color="#FF636B75"/>
-    <SolidColorBrush x:Key="Accent" Color="#FF1F6FE0"/>
+    <SolidColorBrush x:Key="Card" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="CardBorder" Color="#FFE6E8EB"/>
+    <SolidColorBrush x:Key="Field" Color="#FFF0F2F5"/>           <!-- filled controls without outline: a bit darker than the white cards -->
+    <SolidColorBrush x:Key="FieldHover" Color="#FFE6E9EE"/>
+    <SolidColorBrush x:Key="Border" Color="#FFD8DCE2"/>
+    <SolidColorBrush x:Key="Divider" Color="#FFEEF0F2"/>
+    <SolidColorBrush x:Key="Track" Color="#FFD8DCE2"/>
+    <SolidColorBrush x:Key="SegmentOn" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="Fg" Color="#FF1E2329"/>
+    <SolidColorBrush x:Key="Muted" Color="#FF6B7480"/>
+    <SolidColorBrush x:Key="Accent" Color="#FF2F6FDE"/>
+    <SolidColorBrush x:Key="AccentHover" Color="#FF255FC4"/>
     <SolidColorBrush x:Key="AccentFg" Color="#FFFFFFFF"/>
-    <SolidColorBrush x:Key="Selection" Color="#FFD6E6FB"/>
+    <SolidColorBrush x:Key="Selection" Color="#FFE7EFFC"/>
+    <SolidColorBrush x:Key="Warning" Color="#FFC98A12"/>
+    <SolidColorBrush x:Key="Success" Color="#FF1F9D64"/>
+    <DropShadowEffect x:Key="CardShadow" BlurRadius="6" ShadowDepth="1" Direction="270" Color="#FF101828" Opacity="0.07"/>
 </ResourceDictionary>

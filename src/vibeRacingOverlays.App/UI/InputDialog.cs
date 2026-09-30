@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -19,22 +19,25 @@ namespace vibeRacingOverlays.App.UI
             ShowInTaskbar = false;
             SetResourceReference(BackgroundProperty, "Panel");
             SetResourceReference(ForegroundProperty, "Fg");
+            FontFamily = (System.Windows.Media.FontFamily)FindResource("UiFont");
+            FontSize = 13;
 
-            var stack = new StackPanel { Margin = new Thickness(16) };
+            var stack = new StackPanel { Margin = new Thickness(20, 18, 20, 18) };
             stack.Children.Add(new TextBlock { Text = prompt, Margin = new Thickness(0, 0, 0, 8) });
             box = new TextBox { Text = initial ?? "", Margin = new Thickness(0, 0, 0, 14) };
             box.KeyDown += (s, e) => { if (e.Key == Key.Enter) Accept(); };
             stack.Children.Add(box);
 
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            var ok = new Button { Content = "OK", IsDefault = true, MinWidth = 70 };
+            var ok = new Button { Content = "OK", IsDefault = true, MinWidth = 80, Style = Ui.Style("PrimaryButton") };
             ok.Click += (s, e) => Accept();
-            var cancel = new Button { Content = "Cancel", IsCancel = true, MinWidth = 70, Margin = new Thickness(0) };
+            var cancel = new Button { Content = "Cancel", IsCancel = true, MinWidth = 80, Margin = new Thickness(0) };
             buttons.Children.Add(ok);
             buttons.Children.Add(cancel);
             stack.Children.Add(buttons);
             Content = stack;
 
+            SourceInitialized += (s, e) => ThemeManager.ApplyTitleBar(this);
             Loaded += (s, e) => { box.Focus(); box.SelectAll(); };
         }
 

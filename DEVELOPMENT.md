@@ -73,7 +73,10 @@ src/vibeRacingOverlays.App       WPF
   Rendering/              DisplayList, WpfRenderer, preview renderer, formatting
   Overlay/                OverlayWindow (transparent/topmost/click-through), OverlayManager (hotkeys, layouts, saving),
                           Placement (anchor + screen + offsets <-> pixel position, snapping via WM_MOVING; all in screen pixels)
-  UI/                     settings panel generated from [Setting] attributes (reset buttons, presets), preview, themes,
+  App.xaml                all control styles (buttons, switch, segments, text box, combo, slider, scroll bars, cards)
+  Themes/                 Dark.xaml ("Graphite") and Light.xaml ("Soft light"): only colors, same keys in both
+  UI/                     Ui.cs (shared building blocks: card, header, row, switch, segmented, icon button),
+                          settings panel generated from [Setting] attributes (reset buttons, presets), preview, themes,
                           PositionPanel (main window: anchor/screen/offsets and lock of the selected widget, snapping)
 src/vibeRacingOverlays.Setup     per-user installer (.NET Framework 4.8), app embedded as a resource
 ```
