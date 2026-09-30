@@ -11,6 +11,8 @@ The user (c4seum) speaks **Dutch**: answer in Dutch. Setup: triple screens (3× 
   - `Core/Settings.cs`: `AppSettings` holds Layouts (sets of widgets), Presets (per widget type), theme etc. Stored in `%APPDATA%\vibeRacingOverlays[-dev]\settings.json`.
   - `UI/`: settings panel with reset buttons (per setting / group / widget), live preview (live or demo single class / multiclass), side-by-side layout.
 - `src/vibeRacingOverlays.Setup`: .NET Framework 4.8 per-user installer (no admin rights). The app exe is embedded as a resource, plus a small uninstaller.
+- `assets/logo.png`: the user's own "vRO" logo (transparent). `tools/make-icon.ps1` turns it into `src/vibeRacingOverlays.App/app.ico` (all sizes); rerun it after changing the logo.
+- Docs: `README.md` is a **user guide** (features, widgets, installation, usage, FAQ), with no implementation details. Technical notes (dev build, releasing, structure, adding widgets) go in `DEVELOPMENT.md`. Keep both up to date when features change.
 
 ## Terms (user's wishes)
 - In the UI they are called **widgets** (not overlays). The "Toggle overlay" button shows/hides all widgets.
@@ -22,6 +24,11 @@ The user (c4seum) speaks **Dutch**: answer in Dutch. Setup: triple screens (3× 
 - Design checks without iRacing: `vibeRacingOverlays.exe --snapshot <folder>` (PNG per widget, demo single and multi, plus the user's saved widgets and a narrow-columns test). `--snapshot <folder> --live` uses live iRacing data. `--dump <file>` writes raw iRacing values.
 - Release: `.\build-release.ps1 -Version x.y.z` locally, or push a tag `vX.Y.Z` so GitHub Actions (`release.yml`) builds the installer and portable zip and creates a GitHub Release. **Never push a version tag without the user's explicit consent.**
 - Versions: last digit = fixes only, middle digit = new features.
+- A normal `git push` only runs the "Build" check (`build.yml`); only a pushed `vX.Y.Z` tag creates a release.
+
+## Release history
+- **v1.0.0**: first release (Standings, Relative, Fuel; layouts, presets, reset buttons, preview, installer).
+- **v1.0.1**: the user's vRO logo as app icon, README rewritten as a user guide.
 
 ## Working rules
 - Before UI tests: back up `settings.json` and restore it afterwards. Close test instances (also leftover Debug instances).
@@ -30,7 +37,14 @@ The user (c4seum) speaks **Dutch**: answer in Dutch. Setup: triple screens (3× 
   `$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')`.
 - Commits as `c4seum <c4seum@users.noreply.github.com>` (no personal email address).
 
+## Working on several PCs
+- The user works on a home PC (with iRacing) and a work laptop (probably without iRacing: develop with the demo race, test in-game at home).
+- Start a session with `git pull`, end it with `git push`.
+- Layouts/presets/settings are not in git: copy `%APPDATA%\vibeRacingOverlays-dev\settings.json` between PCs if needed.
+- New PC setup: `winget install` Git.Git, GitHub.cli and Microsoft.DotNet.SDK.8, restart the Claude app, run `gh auth login` and `gh auth setup-git`, `git clone https://github.com/c4seum/vibeRacingOverlays.git`, then `.\publish-dev.ps1`.
+
 ## Ideas for next versions (as discussed)
-- 1.0.1: hide the fuel calculator in replays/spectating, set hotkeys in the UI, tray icon / autostart, FPS measurement in a race.
-- 1.1.0: widgets Inputs (throttle/brake/steering), Delta bar, Radar/spotter, Flags, Trackmap, Session info.
-- Later: update notification, brand logos, layout export/import (settings don't sync between PCs).
+- Next fix release (1.0.x): hide the fuel calculator in replays/spectating (it shows 0.00 there), set hotkeys in the UI, tray icon / start minimized / autostart with Windows or iRacing, FPS measurement in a race.
+- 1.1.0 (suggested first: Inputs + Delta bar): widgets Inputs (throttle/brake/steering trace), Delta bar, Radar/spotter, Flags, Trackmap, Session info.
+- Later: update notification (easiest if the repo is public), brand logos instead of text, layout export/import (settings don't sync between PCs), pit history from before the app started.
+- Known: the GitHub action `softprops/action-gh-release@v2` still runs on Node 20 (warning only); update when a newer major version exists.
