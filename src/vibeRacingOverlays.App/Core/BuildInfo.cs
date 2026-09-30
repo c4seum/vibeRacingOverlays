@@ -7,11 +7,11 @@ namespace vibeRacingOverlays.App.Core
     public static class BuildInfo
     {
 #if DEV
-        public const bool IsDev = true;
+        public static readonly bool IsDev = true;
         public const string AppName = "vibeRacingOverlays DEV";
         public const string SettingsFolderName = "vibeRacingOverlays-dev";
 #else
-        public const bool IsDev = false;
+        public static readonly bool IsDev = false;   // not const: code that only runs in DEV builds would be "unreachable" (CS0162) in releases
         public const string AppName = "vibeRacingOverlays";
         public const string SettingsFolderName = "vibeRacingOverlays";
 #endif
