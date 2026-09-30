@@ -12,10 +12,44 @@ namespace vibeRacingOverlays.App.Widgets
         public float Width;
         public bool DefaultOn;
         public Align Align;
+        /// <summary>Display formats the user can pick (key + example label, e.g. ("k1", "4.5k")); null = none.</summary>
+        public (string Key, string Label)[] Formats;
+        public string DefaultFormat;
         public ColumnDef(string key, string label, string header, float width, bool on, Align align)
         {
             Key = key; Label = label; Header = header; Width = width; DefaultOn = on; Align = align;
         }
+
+        public ColumnDef WithFormats(string defaultFormat, params (string Key, string Label)[] formats)
+        {
+            Formats = formats;
+            DefaultFormat = defaultFormat;
+            return this;
+        }
+
+        public bool HasFormat(string key) { return Formats != null && Formats.Any(f => f.Key == key); }
+    }
+
+    /// <summary>Settings that need fixing up after loading (migration of older files, new defaults).</summary>
+    public interface INormalizable
+    {
+        void Normalize();
+    }
+
+    /// <summary>Practice / qualifying and race are configured separately (e.g. the standings).</summary>
+    public enum SessionKind { PracticeQualify, Race }
+
+    /// <summary>Widgets with a settings profile per session kind; the editor shows a P&amp;Q / Race switch.</summary>
+    public interface ISessionProfiles
+    {
+        object Profile(SessionKind kind);
+    }
+
+    /// <summary>Settings with a list of header items (on/off, order, format), edited like the column list.</summary>
+    public interface IHeaderItems
+    {
+        List<ColumnConfig> Header { get; set; }
+        IReadOnlyList<ColumnDef> AvailableHeader { get; }
     }
 
     public interface ITableSettings
@@ -37,10 +71,11 @@ namespace vibeRacingOverlays.App.Widgets
                     var def = defs.FirstOrDefault(d => d.Key == c.Key);
                     if (def == null || res.Any(r => r.Key == c.Key)) continue;
                     if (c.Width <= 0) c.Width = def.Width;
+                    if (!def.HasFormat(c.Format)) c.Format = def.DefaultFormat;
                     res.Add(c);
                 }
             foreach (var d in defs)
-                if (!res.Any(r => r.Key == d.Key)) res.Add(new ColumnConfig { Key = d.Key, Enabled = d.DefaultOn, Width = d.Width });
+                if (!res.Any(r => r.Key == d.Key)) res.Add(new ColumnConfig { Key = d.Key, Enabled = d.DefaultOn, Width = d.Width, Format = d.DefaultFormat });
             return res;
         }
     }

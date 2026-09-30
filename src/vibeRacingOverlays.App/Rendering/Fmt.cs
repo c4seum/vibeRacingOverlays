@@ -67,6 +67,56 @@ namespace vibeRacingOverlays.App.Rendering
         }
 
         /// <summary>iRacing license colors (the SDK reports Pro as black; we use purple like most overlays).</summary>
+        /// <summary>
+        /// License in one of the standings formats: "L2" A3.48, "L1" A3.4, "L0" A3, "L" A, "SR2" 3.48, "SR1" 3.4, "SR0" 3.
+        /// The SR is cut, not rounded (like iRacing shows it).
+        /// </summary>
+        public static string License(char letter, double sr, string format)
+        {
+            if (letter == ' ') return "";
+            string f = format ?? "L1";
+            int dec = f.EndsWith("2") ? 2 : f.EndsWith("1") ? 1 : 0;
+            double cut = Math.Floor(sr * Math.Pow(10, dec)) / Math.Pow(10, dec);
+            string num = cut.ToString(dec == 0 ? "0" : "0." + new string('0', dec), Inv);
+            if (f == "L") return letter.ToString();
+            if (f.StartsWith("SR")) return num;
+            return letter + num;
+        }
+
+        /// <summary>iRating / SOF: "full" 4567, "k1" 4.5k, "k0" 4k (cut, not rounded).</summary>
+        public static string Rating(int ir, string format)
+        {
+            if (ir <= 0) return "";
+            switch (format)
+            {
+                case "full": return ir.ToString(Inv);
+                case "k0": return (ir / 1000).ToString(Inv) + "k";
+                default: return ir >= 1000 ? (Math.Floor(ir / 100.0) / 10).ToString("0.0", Inv) + "k" : ir.ToString(Inv);
+            }
+        }
+
+        /// <summary>Temperature from °C: "C1" 32.4°C, "C0" 32°C, "F1" 90.3°F, "F0" 90°F, "CF" 32.4°C 90.3°F, "FC" 90.3°F 32.4°C.</summary>
+        public static string Temperature(double celsius, string format)
+        {
+            double f = celsius * 9 / 5 + 32;
+            string c1 = celsius.ToString("0.0", Inv) + "°C", f1 = f.ToString("0.0", Inv) + "°F";
+            switch (format)
+            {
+                case "C0": return celsius.ToString("0", Inv) + "°C";
+                case "F1": return f1;
+                case "F0": return f.ToString("0", Inv) + "°F";
+                case "CF": return c1 + " " + f1;
+                case "FC": return f1 + " " + c1;
+                default: return c1;
+            }
+        }
+
+        /// <summary>Relative humidity (0..1) as a percentage: "1" 55.2%, "0" 55%.</summary>
+        public static string Humidity(double fraction, string format)
+        {
+            return (fraction * 100).ToString(format == "0" ? "0" : "0.0", Inv) + "%";
+        }
+
         public static uint LicenseColor(char letter)
         {
             switch (letter)

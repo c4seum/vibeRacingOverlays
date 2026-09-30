@@ -18,7 +18,7 @@ Local builds are **DEV builds**. They are called "vibeRacingOverlays DEV" (orang
 
 Command-line options for design and debugging:
 
-- `vibeRacingOverlays.exe --snapshot <folder>`: renders every widget to PNG with the demo race (single class and multiclass), plus your saved widgets and a narrow-columns test.
+- `vibeRacingOverlays.exe --snapshot <folder>`: renders every widget to PNG with the demo race and demo practice (single class and multiclass; practice files end in `_pq`), plus your saved widgets and a narrow-columns test.
 - `--snapshot <folder> --live`: the same, with live iRacing data.
 - `--dump <file>`: writes raw iRacing values (per car) to a text file.
 
@@ -85,5 +85,7 @@ src/vibeRacingOverlays.Setup     per-user installer (.NET Framework 4.8), app em
 ## Adding a widget
 
 1. Create `XxxSettings : WidgetSettings` with `[Setting]` properties. The editor UI, the reset buttons and presets are generated from them, with the standard row height. Custom editors go through `Ui.Row` (or `Ui.ListRow`) too, so all rows in a block stay the same height.
-2. Create `XxxWidget : Widget` and implement `Draw(DisplayList, RaceSnapshot)`.
+   - Column lists: implement `ITableSettings` with `ColumnDef`s; `ColumnDef.WithFormats(default, (key, example)...)` adds a format drop-down per column (the label is an example of the result, like "1:35.764"). Header item lists work the same via `IHeaderItems`.
+   - Settings that differ per session type: put them in a profile object and implement `ISessionProfiles` (the editor shows the P&Q / Race switch and edits that profile; the rest of the widget's settings stay shared), plus `INormalizable` for migrations after loading. See `StandingsSettings`.
+2. Create `XxxWidget : Widget` and implement `Draw(DisplayList, RaceSnapshot)`. Text is drawn with equal-width digits (`TabularText`), so numbers in a column line up; measure texts for flowing layouts with `DisplayList.Measure`.
 3. Register both in `Widget.Create`, in `Widget.Catalog`, and with `[JsonDerivedType]` on `WidgetSettings`.

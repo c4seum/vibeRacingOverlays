@@ -33,6 +33,8 @@ namespace vibeRacingOverlays.Data.Model
         public int LapCompleted;
         public float LapDistPct;
         public double Progress;          // laps completed + fraction
+        /// <summary>Laps completed in this session (telemetry or iRacing's results, whichever knows more).</summary>
+        public int LapsComplete;
         public TrackSurface Surface;
         public bool InWorld;
 
@@ -127,6 +129,10 @@ namespace vibeRacingOverlays.Data.Model
         public double TrackLengthKm;
         public float TrackTemp;
         public float AirTemp;
+        /// <summary>Relative humidity 0..1.</summary>
+        public float Humidity;
+        /// <summary>Tire compound names by CarIdxTireCompound index (from the player's car; empty when unknown).</summary>
+        public Dictionary<int, string> TireNames = new Dictionary<int, string>();
         public double TimeRemain = -1;
         public double TimeTotal = -1;
         public double TimeOfDay;

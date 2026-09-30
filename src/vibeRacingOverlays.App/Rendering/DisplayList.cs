@@ -26,6 +26,9 @@ namespace vibeRacingOverlays.App.Rendering
 
         public void Clear() { Ops.Clear(); Width = Height = 0; }
 
+        /// <summary>Width a text will take when drawn (same font and tabular digits as the renderer).</summary>
+        public float Measure(string text, float size, bool bold = true) { return TextMeasure.Measure(text, size, bold); }
+
         public void Rect(float x, float y, float w, float h, uint color, float radius = 0)
         {
             if ((color >> 24) == 0 || w <= 0 || h <= 0) return;

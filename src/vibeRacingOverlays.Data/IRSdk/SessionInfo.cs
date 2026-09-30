@@ -70,6 +70,8 @@ namespace vibeRacingOverlays.Data.IRSdk
         public Dictionary<int, DriverEntry> Drivers = new Dictionary<int, DriverEntry>();
         public List<SessionEntry> Sessions = new List<SessionEntry>();
         public List<ResultPosition> QualifyResults = new List<ResultPosition>();
+        /// <summary>Tire compound names of the player's car by CarIdxTireCompound index ("Hard", "Wet"...).</summary>
+        public Dictionary<int, string> TireNames = new Dictionary<int, string>();
 
         public DriverEntry Player
         {
@@ -104,6 +106,12 @@ namespace vibeRacingOverlays.Data.IRSdk
             s.FuelMaxLtr = YamlLite.Num(root, "DriverInfo.DriverCarFuelMaxLtr");
             s.MaxFuelPct = YamlLite.Num(root, "DriverInfo.DriverCarMaxFuelPct", 1);
             s.DriverCarEstLapTime = YamlLite.Num(root, "DriverInfo.DriverCarEstLapTime");
+
+            foreach (var o in YamlLite.List(root, "DriverInfo.DriverTires"))
+            {
+                int idx = YamlLite.Int(o, "TireIndex", -1);
+                if (idx >= 0) s.TireNames[idx] = YamlLite.Str(o, "TireCompoundType");
+            }
 
             foreach (var o in YamlLite.List(root, "DriverInfo.Drivers"))
             {

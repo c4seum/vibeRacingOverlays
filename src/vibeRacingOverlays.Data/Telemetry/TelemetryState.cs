@@ -40,6 +40,8 @@ namespace vibeRacingOverlays.Data.Telemetry
         public float FuelUsePerHour;
         public float TrackTemp;
         public float AirTemp;
+        /// <summary>Relative humidity 0..1.</summary>
+        public float Humidity;
         public float LapLastLapTime;
         public float LapBestLapTime;
         public float Speed;
@@ -80,6 +82,7 @@ namespace vibeRacingOverlays.Data.Telemetry
                 FuelUsePerHour = f.Float("FuelUsePerHour"),
                 TrackTemp = f.Float("TrackTempCrew", f.Float("TrackTemp")),
                 AirTemp = f.Float("AirTemp"),
+                Humidity = f.Float("RelativeHumidity"),
                 LapLastLapTime = f.Float("LapLastLapTime"),
                 LapBestLapTime = f.Float("LapBestLapTime"),
                 Speed = f.Float("Speed"),

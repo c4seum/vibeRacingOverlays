@@ -19,27 +19,27 @@ namespace vibeRacingOverlays.App.UI
     public sealed class PreviewData : IDisposable
     {
         readonly TelemetryService main;
-        TelemetryService single, multi;
+        TelemetryService single, multi, singlePractice, multiPractice;
 
         public PreviewData(TelemetryService main) { this.main = main; }
 
         public bool LiveAvailable { get { return main.IRacingConnected; } }
 
-        public RaceSnapshot Get(PreviewSource src)
+        public RaceSnapshot Get(PreviewSource src, bool practice = false)
         {
             switch (src)
             {
-                case PreviewSource.DemoSingleClass: return Demo(ref single, false).Latest;
-                case PreviewSource.DemoMulticlass: return Demo(ref multi, true).Latest;
+                case PreviewSource.DemoSingleClass: return (practice ? Demo(ref singlePractice, false, true) : Demo(ref single, false, false)).Latest;
+                case PreviewSource.DemoMulticlass: return (practice ? Demo(ref multiPractice, true, true) : Demo(ref multi, true, false)).Latest;
                 default: return main.Latest;
             }
         }
 
-        static TelemetryService Demo(ref TelemetryService svc, bool multiClass)
+        static TelemetryService Demo(ref TelemetryService svc, bool multiClass, bool practice)
         {
             if (svc == null)
             {
-                svc = new TelemetryService { Mode = SourceMode.Demo, DemoMultiClass = multiClass, SnapshotHz = 5 };
+                svc = new TelemetryService { Mode = SourceMode.Demo, DemoMultiClass = multiClass, DemoPractice = practice, SnapshotHz = 5 };
                 svc.Start();
             }
             return svc;
@@ -49,6 +49,8 @@ namespace vibeRacingOverlays.App.UI
         {
             if (single != null) single.Dispose();
             if (multi != null) multi.Dispose();
+            if (singlePractice != null) singlePractice.Dispose();
+            if (multiPractice != null) multiPractice.Dispose();
         }
     }
 
@@ -155,7 +157,9 @@ namespace vibeRacingOverlays.App.UI
         {
             if (ws == null || !IsVisible) return;
             var src = (PreviewSource)Math.Max(0, sourceBox.SelectedIndex);
-            var snap = data.Get(src);
+            // widgets with session profiles: the demo session follows the P&Q / Race switch of the settings
+            bool practice = ws is ISessionProfiles && SettingsPanel.Kind == SessionKind.PracticeQualify;
+            var snap = data.Get(src, practice);
 
             if (renderer == null) renderer = new WpfRenderer(settings.Font);
             renderer.SetFont(settings.Font);
@@ -168,7 +172,7 @@ namespace vibeRacingOverlays.App.UI
                 try { Widget.Create(ws).Draw(dl, snap); } catch { dl.Clear(); }
             }
 
-            string layout = !hasData ? "" : snap.Classes.Count > 1 ? "Multiclass (" + snap.Classes.Count + " classes)" : "Single class";
+            string layout = !hasData ? "" : (snap.Classes.Count > 1 ? "Multiclass (" + snap.Classes.Count + " classes)" : "Single class") + (snap.IsRace ? ", race" : ", " + (snap.SessionType ?? "practice").ToLowerInvariant());
             if (src == PreviewSource.Live && !data.LiveAvailable) layout = "iRacing is not running: pick a demo source";
 
             if (!hasData || dl.Width <= 0 || dl.Height <= 0)

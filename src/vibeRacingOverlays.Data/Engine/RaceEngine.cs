@@ -183,6 +183,8 @@ namespace vibeRacingOverlays.Data.Engine
             snap.TrackLengthKm = session.TrackLengthKm;
             snap.TrackTemp = s.TrackTemp;
             snap.AirTemp = s.AirTemp;
+            snap.Humidity = s.Humidity;
+            snap.TireNames = session.TireNames;
             snap.TimeOfDay = s.SessionTimeOfDay;
             snap.Incidents = s.Incidents;
             snap.TimeRemain = s.SessionTimeRemain > 0 && s.SessionTimeRemain < 7 * 24 * 3600 ? s.SessionTimeRemain : -1;
@@ -240,6 +242,7 @@ namespace vibeRacingOverlays.Data.Engine
                     if (c.OverallPos <= 0) c.OverallPos = res.Position;
                     if (c.ClassPos <= 0) c.ClassPos = res.ClassPosition;
                 }
+                c.LapsComplete = Math.Max(Math.Max(0, c.LapCompleted), res != null ? res.LapsComplete : 0);
                 c.InWorld = c.Surface != TrackSurface.NotInWorld && c.LapDistPct >= 0;
                 c.InPitStall = c.Surface == TrackSurface.InPitStall;
                 c.Progress = double.IsNaN(tr.LastProgress) ? c.LapCompleted : tr.LastProgress;

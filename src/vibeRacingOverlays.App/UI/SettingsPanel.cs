@@ -19,6 +19,10 @@ namespace vibeRacingOverlays.App.UI
         /// <summary>App settings (holds the widget presets); set by the main window.</summary>
         public static AppSettings App;
 
+        /// <summary>Session kind being edited (P&amp;Q or race) for widgets with session profiles; the preview follows it.</summary>
+        public static SessionKind Kind = SessionKind.Race;
+        public static event Action KindChanged;
+
         public static void Build(Panel host, WidgetSettings ws, Action changed, Action titleChanged)
         {
             new Editor(host, ws, changed, titleChanged).Render();
@@ -73,14 +77,74 @@ namespace vibeRacingOverlays.App.UI
                 var resetAll = Ui.HeaderReset("Reset all settings of this widget to the defaults (name and position are kept)");
                 ((StackPanel)resetAll.Content).Children.OfType<TextBlock>().Last().Text = "Reset widget";
                 resetAll.Click += (s, e) => ResetWidget();
-                Track(resetAll, () => AllProps().All(IsDefault) && ColumnsAreDefault());
+                Track(resetAll, () => AllProps(ws).All(p => IsDefault(p, ws, defaults)) && ColumnsAreDefault());
                 var widgetCard = Ui.Card(host, Ui.Header(ws.TypeName + " widget", resetAll));
                 var title = new TextBox { Text = ws.Title, FontWeight = FontWeights.SemiBold, ToolTip = "Only changes the name shown in the app; it stays a " + ws.TypeName + " widget." };
                 title.TextChanged += (s, e) => { ws.Title = string.IsNullOrWhiteSpace(title.Text) ? ws.TypeName : title.Text; titleChanged(); changed(); };
                 Ui.Row(widgetCard, "Display name", title, "Only changes the name shown in the app", null);
                 if (App != null) Ui.Row(widgetCard, "Preset", PresetRow(), "Saved settings of this widget type, available in every layout", null);
 
-                var props = ws.GetType().GetProperties()
+                var profiles = ws as ISessionProfiles;
+                if (profiles != null)
+                {
+                    object profile = profiles.Profile(Kind), defProfile = ((ISessionProfiles)defaults).Profile(Kind);
+                    SessionCard(profiles, profile);
+                    RenderProps(profile, defProfile);
+                    RenderLists(profile, defProfile);
+                }
+                RenderProps(ws, defaults);
+                RenderLists(ws, defaults);
+            }
+
+            static string KindName(SessionKind k) { return k == SessionKind.Race ? "Race" : "Practice & qualifying"; }
+
+            PropertyInfo ProfileProp(object profile) { return ws.GetType().GetProperties().First(p => p.GetIndexParameters().Length == 0 && ReferenceEquals(p.GetValue(ws), profile)); }
+
+            /// <summary>P&amp;Q / Race switch: the cards below edit the content of that session kind; the style is shared.</summary>
+            void SessionCard(ISessionProfiles profiles, object profile)
+            {
+                var prop = ProfileProp(profile);
+                var reset = Ui.HeaderReset("Reset all " + KindName(Kind).ToLowerInvariant() + " settings (rows, columns, header) to the defaults");
+                ((StackPanel)reset.Content).Children.OfType<TextBlock>().Last().Text = Kind == SessionKind.Race ? "Reset race" : "Reset P&Q";
+                reset.Click += (s, e) => { ResetProp(prop, ws, defaults); changed(); Rebuild(); };
+                Track(reset, () => IsDefault(prop, ws, defaults));
+                var card = Ui.Card(host, Ui.Header("Session", reset));
+
+                var kinds = new object[] { KindName(SessionKind.PracticeQualify), KindName(SessionKind.Race) };
+                var seg = Ui.Segmented(kinds, KindName(Kind), v =>
+                {
+                    var k = (string)v == KindName(SessionKind.Race) ? SessionKind.Race : SessionKind.PracticeQualify;
+                    if (k == Kind) return;
+                    Kind = k;
+                    if (KindChanged != null) KindChanged();
+                    host.Dispatcher.BeginInvoke(new Action(Rebuild));   // not while the segment is still handling its click
+                });
+                Ui.Row(card, "Settings for", seg, "Rows, columns and header can differ per session type; the style (colors, size) is shared", null);
+
+                var other = Kind == SessionKind.Race ? SessionKind.PracticeQualify : SessionKind.Race;
+                var copy = new Button { Content = "Copy to " + KindName(other).ToLowerInvariant(), HorizontalAlignment = HorizontalAlignment.Left, ToolTip = "Use these rows, columns and header also for " + KindName(other).ToLowerInvariant() };
+                copy.Click += (s, e) =>
+                {
+                    var owner = Window.GetWindow(host);
+                    if (MessageBox.Show(owner, "Replace the " + KindName(other).ToLowerInvariant() + " settings with these " + KindName(Kind).ToLowerInvariant() + " settings?",
+                        "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+                    var target = ProfileProp(profiles.Profile(other));
+                    var clone = AppSettings.CloneValue(profile, profile.GetType());
+                    var kindProp = clone.GetType().GetProperty("Kind");
+                    if (kindProp != null) kindProp.SetValue(clone, other);
+                    target.SetValue(ws, clone);
+                    var norm = ws as INormalizable;
+                    if (norm != null) norm.Normalize();   // columns that only exist for the other session kind
+                    changed();
+                    Rebuild();
+                };
+                Ui.Row(card, "Copy", copy, null, null);
+            }
+
+            /// <summary>One card per [Setting] group of <paramref name="t"/> (the widget or its session profile).</summary>
+            void RenderProps(object t, object d)
+            {
+                var props = t.GetType().GetProperties()
                     .Select(p => new { P = p, A = p.GetCustomAttribute<SettingAttribute>() })
                     .Where(x => x.A != null)
                     .OrderBy(x => GroupRank(x.A.Group)).ThenBy(x => x.A.Order)
@@ -89,24 +153,43 @@ namespace vibeRacingOverlays.App.UI
                 foreach (var group in props.GroupBy(x => x.A.Group))
                 {
                     var groupProps = group.Select(x => x.P).ToList();
-                    var card = Ui.Card(host, Header(group.Key, () => groupProps.All(IsDefault), () => { foreach (var p in groupProps) ResetProp(p); }));
+                    var card = Ui.Card(host, Header(group.Key, () => groupProps.All(p => IsDefault(p, t, d)), () => { foreach (var p in groupProps) ResetProp(p, t, d); }));
                     foreach (var x in group)
                     {
                         var p = x.P;
-                        var reset = ResetButton(() => IsDefault(p), () => ResetProp(p), "Reset to default (" + Describe(p.GetValue(defaults)) + ")");
-                        Ui.Row(card, x.A.Label, CreateEditor(p, x.A), x.A.Tooltip, reset);
+                        var reset = ResetButton(() => IsDefault(p, t, d), () => ResetProp(p, t, d), "Reset to default (" + Describe(p.GetValue(d)) + ")");
+                        Ui.Row(card, x.A.Label, CreateEditor(p, x.A, t), x.A.Tooltip, reset);
                     }
                 }
+            }
 
-                var table = ws as ITableSettings;
+            /// <summary>The column list and the header item list of <paramref name="t"/>, if it has them.</summary>
+            void RenderLists(object t, object d)
+            {
+                var table = t as ITableSettings;
                 if (table != null)
                 {
-                    var card = Ui.Card(host, Header("Columns", ColumnsAreDefault, () => table.Columns = FreshColumns()));
-                    var colHint = Ui.Caption("On / off, width in px and order of the columns.");
-                    colHint.Margin = new Thickness(14, 0, 10, 4);
-                    card.Children.Add(colHint);
-                    card.Children.Add(new ColumnsEditor(table, Changed, this));   // rows add the card inset themselves
+                    var defTable = (ITableSettings)d;
+                    var card = Ui.Card(host, Header("Columns", () => ListIsDefault(table.Columns, defTable.Columns), () => table.Columns = CopyList(defTable.Columns)));
+                    AddHint(card, table.AvailableColumns.Any(c => c.Formats != null) ? "On / off, width in px, format and order of the columns." : "On / off, width in px and order of the columns.");
+                    card.Children.Add(new ListEditor(table.Columns, table.AvailableColumns, true, Changed, this));   // rows add the card inset themselves
                 }
+                var header = t as IHeaderItems;
+                if (header != null)
+                {
+                    var defHeader = (IHeaderItems)d;
+                    var card = Ui.Card(host, Header("Header items", () => ListIsDefault(header.Header, defHeader.Header), () => header.Header = CopyList(defHeader.Header)));
+                    AddHint(card, "On / off, format and order of the header bar. Items after \"Push what follows to the right\" are right-aligned.");
+                    card.Children.Add(new ListEditor(header.Header, header.AvailableHeader, false, Changed, this));
+                }
+            }
+
+            static void AddHint(Panel card, string text)
+            {
+                var hint = Ui.Caption(text);
+                hint.TextWrapping = TextWrapping.Wrap;
+                hint.Margin = new Thickness(14, 0, 10, 4);
+                card.Children.Add(hint);
             }
 
             // ------------------------------------------------------------ presets
@@ -194,47 +277,65 @@ namespace vibeRacingOverlays.App.UI
             /// <summary>Copies all widget settings from another settings object; instance settings (name, position...) are kept.</summary>
             void ApplyFrom(WidgetSettings source)
             {
-                foreach (var p in AllProps()) p.SetValue(ws, p.GetValue(source));
+                foreach (var p in AllProps(ws)) p.SetValue(ws, p.GetValue(source));
                 var t = ws as ITableSettings;
                 if (t != null) { t.Columns = ((ITableSettings)source).Columns; t.MergeColumns(); }
+                var norm = ws as INormalizable;
+                if (norm != null) norm.Normalize();
             }
 
             void ResetToDefaults()
             {
-                foreach (var p in AllProps()) ResetProp(p);
+                foreach (var p in AllProps(ws)) ResetProp(p, ws, defaults);
                 var t = ws as ITableSettings;
-                if (t != null) t.Columns = FreshColumns();
+                if (t != null) t.Columns = CopyList(((ITableSettings)defaults).Columns);
             }
 
             // ------------------------------------------------------------ defaults / reset
 
-            IEnumerable<PropertyInfo> AllProps()
+            /// <summary>Settings of <paramref name="t"/> that a reset covers (the lists have their own reset; session profiles are compared deep).</summary>
+            static IEnumerable<PropertyInfo> AllProps(object t)
             {
-                return ws.GetType().GetProperties().Where(p => p.CanRead && p.CanWrite && !InstanceProps.Contains(p.Name)
-                    && p.GetCustomAttribute<System.Text.Json.Serialization.JsonIgnoreAttribute>() == null && p.Name != "Columns");
+                return t.GetType().GetProperties().Where(p => p.CanRead && p.CanWrite && !InstanceProps.Contains(p.Name)
+                    && p.GetCustomAttribute<System.Text.Json.Serialization.JsonIgnoreAttribute>() == null
+                    && p.Name != "Columns" && p.Name != "Header" && p.Name != "Kind");
             }
 
-            bool IsDefault(PropertyInfo p)
+            static bool IsSimple(Type t) { return t.IsPrimitive || t.IsEnum || t == typeof(string) || t == typeof(decimal); }
+
+            static bool IsDefault(PropertyInfo p, object t, object d)
             {
-                object a = p.GetValue(ws), b = p.GetValue(defaults);
+                object a = p.GetValue(t), b = p.GetValue(d);
                 if (a is string && b is string) return string.Equals(((string)a).Trim(), (string)b, StringComparison.OrdinalIgnoreCase);
-                return Equals(a, b);
+                if (IsSimple(p.PropertyType)) return Equals(a, b);
+                return AppSettings.ToJson(a, p.PropertyType) == AppSettings.ToJson(b, p.PropertyType);
             }
 
-            void ResetProp(PropertyInfo p) { p.SetValue(ws, p.GetValue(defaults)); }
+            /// <summary>Sets the default; complex values are copied so the widget never shares an object with the defaults.</summary>
+            static void ResetProp(PropertyInfo p, object t, object d)
+            {
+                object v = p.GetValue(d);
+                p.SetValue(t, IsSimple(p.PropertyType) ? v : AppSettings.CloneValue(v, p.PropertyType));
+            }
 
-            /// <summary>A new default column list owned only by this widget (never shared with another widget or layout).</summary>
-            List<ColumnConfig> FreshColumns() { return ((ITableSettings)Activator.CreateInstance(ws.GetType())).Columns; }
+            /// <summary>A copy of a default list, owned only by this widget (never shared with another widget or layout).</summary>
+            static List<ColumnConfig> CopyList(List<ColumnConfig> list)
+            {
+                return list.Select(c => new ColumnConfig { Key = c.Key, Enabled = c.Enabled, Width = c.Width, Format = c.Format }).ToList();
+            }
+
+            static bool ListIsDefault(List<ColumnConfig> a, List<ColumnConfig> d)
+            {
+                if (a.Count != d.Count) return false;
+                for (int i = 0; i < d.Count; i++)
+                    if (a[i].Key != d[i].Key || a[i].Enabled != d[i].Enabled || a[i].Width != d[i].Width || a[i].Format != d[i].Format) return false;
+                return true;
+            }
 
             bool ColumnsAreDefault()
             {
                 var t = ws as ITableSettings;
-                if (t == null) return true;
-                var d = ((ITableSettings)defaults).Columns;
-                if (t.Columns.Count != d.Count) return false;
-                for (int i = 0; i < d.Count; i++)
-                    if (t.Columns[i].Key != d[i].Key || t.Columns[i].Enabled != d[i].Enabled || t.Columns[i].Width != d[i].Width) return false;
-                return true;
+                return t == null || ListIsDefault(t.Columns, ((ITableSettings)defaults).Columns);
             }
 
             void ResetWidget()
@@ -242,9 +343,7 @@ namespace vibeRacingOverlays.App.UI
                 var owner = Window.GetWindow(host);
                 if (MessageBox.Show(owner, "Reset all settings of '" + ws.Title + "' to the defaults?\nThe name and position are kept.",
                     "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
-                foreach (var p in AllProps()) ResetProp(p);
-                var t = ws as ITableSettings;
-                if (t != null) t.Columns = FreshColumns();
+                ResetToDefaults();
                 changed();
                 Rebuild();
             }
@@ -285,7 +384,7 @@ namespace vibeRacingOverlays.App.UI
 
             // ------------------------------------------------------------ editors
 
-            UIElement CreateEditor(PropertyInfo p, SettingAttribute a)
+            UIElement CreateEditor(PropertyInfo p, SettingAttribute a, object ws)
             {
                 var t = p.PropertyType;
                 if (t == typeof(bool))
@@ -308,15 +407,15 @@ namespace vibeRacingOverlays.App.UI
                     combo.SelectionChanged += (s, e) => { var i = combo.SelectedItem as Ui.EnumItem; if (i != null) { p.SetValue(ws, i.Value); Changed(); } };
                     return combo;
                 }
-                if (t == typeof(int) || t == typeof(double)) return NumberEditor(p, a);
-                if (t == typeof(string) && a.IsColor) return ColorEditor(p);
+                if (t == typeof(int) || t == typeof(double)) return NumberEditor(p, a, ws);
+                if (t == typeof(string) && a.IsColor) return ColorEditor(p, ws);
 
                 var tb = new TextBox { Text = Convert.ToString(p.GetValue(ws)), Width = 220, HorizontalAlignment = HorizontalAlignment.Left };
                 tb.TextChanged += (s, e) => { p.SetValue(ws, tb.Text); Changed(); };
                 return tb;
             }
 
-            UIElement NumberEditor(PropertyInfo p, SettingAttribute a)
+            UIElement NumberEditor(PropertyInfo p, SettingAttribute a, object ws)
             {
                 bool isInt = p.PropertyType == typeof(int);
                 double value = Convert.ToDouble(p.GetValue(ws), Inv);
@@ -361,7 +460,7 @@ namespace vibeRacingOverlays.App.UI
                 return v.ToString("F" + decimals, Inv);
             }
 
-            UIElement ColorEditor(PropertyInfo p)
+            UIElement ColorEditor(PropertyInfo p, object ws)
             {
                 var panel = new StackPanel { Orientation = Orientation.Horizontal };
                 var swatch = new Border { Width = 34, Height = Ui.ControlHeight, CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 8, 0), Cursor = System.Windows.Input.Cursors.Hand, ToolTip = "Pick a color" };
@@ -395,16 +494,23 @@ namespace vibeRacingOverlays.App.UI
 
             // ------------------------------------------------------------ columns
 
-            /// <summary>Column list with on/off, width, ordering and a reset (on/off + width) per column.</summary>
-            sealed class ColumnsEditor : StackPanel
+            /// <summary>
+            /// Column (or header item) list with on/off, width, format, ordering and a reset per entry.
+            /// The format choices show an example of the result ("1:35.764", "4.5k"...).
+            /// </summary>
+            sealed class ListEditor : StackPanel
             {
-                readonly ITableSettings table;
+                readonly List<ColumnConfig> list;
+                readonly IReadOnlyList<ColumnDef> defs;
+                readonly bool widths;
                 readonly Action changed;
                 readonly Editor owner;
 
-                public ColumnsEditor(ITableSettings table, Action changed, Editor owner)
+                public ListEditor(List<ColumnConfig> list, IReadOnlyList<ColumnDef> defs, bool widths, Action changed, Editor owner)
                 {
-                    this.table = table;
+                    this.list = list;
+                    this.defs = defs;
+                    this.widths = widths;
                     this.changed = changed;
                     this.owner = owner;
                     Build();
@@ -413,61 +519,75 @@ namespace vibeRacingOverlays.App.UI
                 void Build()
                 {
                     Children.Clear();
-                    for (int i = 0; i < table.Columns.Count; i++)
+                    for (int i = 0; i < list.Count; i++)
                     {
-                        var col = table.Columns[i];
-                        var def = table.AvailableColumns.First(d => d.Key == col.Key);
+                        var col = list[i];
+                        var def = defs.First(d => d.Key == col.Key);
                         int index = i;
 
                         // same height, inset and dividers as every other card row
-                        var g = Ui.ListRow(this, new GridLength(Ui.LabelWidth + 60), new GridLength(70), GridLength.Auto, new GridLength(1, GridUnitType.Star));
+                        var g = Ui.ListRow(this, new GridLength(Ui.LabelWidth + 30), new GridLength(64),new GridLength(150), GridLength.Auto, new GridLength(1, GridUnitType.Star));
 
                         var cb = new CheckBox { Content = def.Label, IsChecked = col.Enabled, VerticalAlignment = VerticalAlignment.Center };
                         cb.Click += (s, e) => { col.Enabled = cb.IsChecked == true; changed(); };
                         g.Children.Add(cb);
 
-                        var width = new TextBox { Text = col.Width.ToString(CultureInfo.InvariantCulture), Width = 56, ToolTip = "Width (px)", VerticalAlignment = VerticalAlignment.Center };
-                        width.LostFocus += (s, e) =>
+                        if (widths)
                         {
-                            float w;
-                            if (float.TryParse(width.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out w) && w > 0) { col.Width = w; changed(); }
-                            else width.Text = col.Width.ToString(CultureInfo.InvariantCulture);
-                        };
-                        Grid.SetColumn(width, 1);
-                        g.Children.Add(width);
+                            var width = new TextBox { Text = col.Width.ToString(CultureInfo.InvariantCulture), Width = 56, ToolTip = "Width (px)", VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left };
+                            width.LostFocus += (s, e) =>
+                            {
+                                float w;
+                                if (float.TryParse(width.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out w) && w > 0) { col.Width = w; changed(); }
+                                else width.Text = col.Width.ToString(CultureInfo.InvariantCulture);
+                            };
+                            Grid.SetColumn(width, 1);
+                            g.Children.Add(width);
+                        }
+
+                        if (def.Formats != null && def.Formats.Length > 1)
+                        {
+                            var combo = new ComboBox { ItemsSource = def.Formats.Select(f => f.Label).ToList(), Width = 142, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left, ToolTip = "Format" };
+                            combo.SelectedIndex = Math.Max(0, Array.FindIndex(def.Formats, f => f.Key == (col.Format ?? def.DefaultFormat)));
+                            combo.SelectionChanged += (s, e) => { if (combo.SelectedIndex >= 0) { col.Format = def.Formats[combo.SelectedIndex].Key; changed(); } };
+                            Grid.SetColumn(combo, 2);
+                            g.Children.Add(combo);
+                        }
 
                         var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-                        var buttonsMargin = new Thickness(6, 0, 0, 0);
                         var up = Ui.IconButton(Ui.IconUp, "Move up");
                         up.IsEnabled = i > 0;
                         var down = Ui.IconButton(Ui.IconDown, "Move down");
-                        down.IsEnabled = i < table.Columns.Count - 1;
-                        up.Margin = buttonsMargin;
+                        down.IsEnabled = i < list.Count - 1;
+                        up.Margin = new Thickness(6, 0, 0, 0);
                         up.Click += (s, e) => Move(index, -1);
                         down.Click += (s, e) => Move(index, 1);
                         buttons.Children.Add(up);
                         buttons.Children.Add(down);
-                        Grid.SetColumn(buttons, 2);
+                        Grid.SetColumn(buttons, 3);
                         g.Children.Add(buttons);
 
-                        var reset = owner.ResetButton(() => col.Enabled == def.DefaultOn && col.Width == def.Width,
-                            () => { col.Enabled = def.DefaultOn; col.Width = def.Width; },
-                            "Reset to default (" + (def.DefaultOn ? "on" : "off") + ", " + def.Width.ToString(CultureInfo.InvariantCulture) + " px)");
+                        bool hasFormat = def.Formats != null && def.Formats.Length > 1;
+                        string defFormat = hasFormat ? def.Formats.First(f => f.Key == def.DefaultFormat).Label : null;
+                        var reset = owner.ResetButton(
+                            () => col.Enabled == def.DefaultOn && (!widths || col.Width == def.Width) && (!hasFormat || col.Format == def.DefaultFormat),
+                            () => { col.Enabled = def.DefaultOn; col.Width = def.Width; col.Format = def.DefaultFormat; },
+                            "Reset to default (" + (def.DefaultOn ? "on" : "off") + (widths ? ", " + def.Width.ToString(CultureInfo.InvariantCulture) + " px" : "")
+                                + (defFormat != null ? ", " + defFormat : "") + ")");
                         reset.HorizontalAlignment = HorizontalAlignment.Right;
                         reset.VerticalAlignment = VerticalAlignment.Center;
-                        Grid.SetColumn(reset, 3);
+                        Grid.SetColumn(reset, 4);
                         g.Children.Add(reset);
-
                     }
                 }
 
                 void Move(int index, int delta)
                 {
                     int j = index + delta;
-                    if (j < 0 || j >= table.Columns.Count) return;
-                    var c = table.Columns[index];
-                    table.Columns.RemoveAt(index);
-                    table.Columns.Insert(j, c);
+                    if (j < 0 || j >= list.Count) return;
+                    var c = list[index];
+                    list.RemoveAt(index);
+                    list.Insert(j, c);
                     changed();
                     Build();
                 }

@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
 
@@ -8,24 +7,33 @@ namespace vibeRacingOverlays.App.Rendering
     public sealed class WpfRenderer
     {
         readonly Dictionary<uint, SolidColorBrush> brushes = new Dictionary<uint, SolidColorBrush>();
-        readonly Dictionary<(string, float, bool, uint, float, TextFit, Align), FormattedText> texts = new Dictionary<(string, float, bool, uint, float, TextFit, Align), FormattedText>();
-        Typeface regular, bold;
+        readonly Dictionary<(string, float, bool, uint, float, TextFit, Align), Placed> texts = new Dictionary<(string, float, bool, uint, float, TextFit, Align), Placed>();
+        readonly TabularText tabular;
         string fontFamily;
-        double pixelsPerDip = 1;
 
-        public WpfRenderer(string font) { SetFont(font); }
+        /// <summary>A text ready to draw: either a tabular-digit drawing or (for trimmed names) a plain FormattedText.</summary>
+        sealed class Placed
+        {
+            public Drawing Drawing;
+            public FormattedText Trimmed;
+            public double Width, Height;
+        }
+
+        public WpfRenderer(string font)
+        {
+            fontFamily = font;
+            tabular = new TabularText(font);
+        }
 
         public void SetFont(string font)
         {
             if (font == fontFamily) return;
             fontFamily = font;
-            var family = new FontFamily(string.IsNullOrWhiteSpace(font) ? "Segoe UI" : font);
-            regular = new Typeface(family, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
-            bold = new Typeface(family, FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
+            tabular.SetFont(font);
             texts.Clear();
         }
 
-        public void SetDpi(double ppd) { if (ppd != pixelsPerDip) { pixelsPerDip = ppd; texts.Clear(); } }
+        public void SetDpi(double ppd) { tabular.SetDpi(ppd); texts.Clear(); }
 
         SolidColorBrush Brush(uint c)
         {
@@ -39,41 +47,43 @@ namespace vibeRacingOverlays.App.Rendering
             return b;
         }
 
-        FormattedText Make(in DrawOp op, double size)
-        {
-            return new FormattedText(op.Text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, op.Bold ? bold : regular,
-                size, Brush(op.Color), pixelsPerDip) { MaxLineCount = 1, Trimming = TextTrimming.None };
-        }
-
         /// <summary>
         /// Lays out one text so it never leaves its box: shrink (numbers/badges, keeps the alignment)
-        /// or trim with an ellipsis (names). Alignment itself is applied in Render.
+        /// or trim with an ellipsis (names). Digits are tabular so columns line up. Alignment is applied in Render.
         /// </summary>
-        FormattedText Text(in DrawOp op)
+        Placed Text(in DrawOp op)
         {
             var key = (op.Text, op.FontSize, op.Bold, op.Color, op.W, op.Fit, op.Align);
-            FormattedText ft;
-            if (texts.TryGetValue(key, out ft)) return ft;
+            Placed p;
+            if (texts.TryGetValue(key, out p)) return p;
             if (texts.Count > 4000) texts.Clear();
 
-            ft = Make(op, op.FontSize);
-            if (op.W > 0 && ft.WidthIncludingTrailingWhitespace > op.W)
+            var brush = Brush(op.Color);
+            var l = tabular.Build(op.Text, op.FontSize, op.Bold, brush, op.Color);
+            if (op.W > 0 && l.Width > op.W)
             {
                 var fit = op.Fit == TextFit.Auto ? (op.Align == Align.Left ? TextFit.Ellipsis : TextFit.Shrink) : op.Fit;
                 if (fit == TextFit.Shrink)
                 {
-                    double size = Math.Max(op.FontSize * 0.6, op.FontSize * op.W / ft.WidthIncludingTrailingWhitespace * 0.98);
-                    ft = Make(op, size);
+                    double size = Math.Max(op.FontSize * 0.6, op.FontSize * op.W / l.Width * 0.98);
+                    l = tabular.Build(op.Text, size, op.Bold, brush, op.Color);
                 }
-                if (ft.WidthIncludingTrailingWhitespace > op.W)
+                if (l.Width > op.W)
                 {
+                    // still too wide (or a name): trim with an ellipsis
+                    var ft = tabular.Plain(op.Text, op.FontSize, op.Bold, brush);
                     ft.MaxTextWidth = op.W;
                     ft.Trimming = TextTrimming.CharacterEllipsis;
+                    p = new Placed { Trimmed = ft, Width = Math.Min(ft.WidthIncludingTrailingWhitespace, op.W), Height = ft.Height };
+                    texts[key] = p;
+                    return p;
                 }
             }
-            texts[key] = ft;
-            return ft;
+            p = new Placed { Drawing = l.Drawing, Width = l.Width, Height = l.Height };
+            texts[key] = p;
+            return p;
         }
+
         public void Render(DrawingContext dc, DisplayList list)
         {
             foreach (var op in list.Ops)
@@ -86,11 +96,14 @@ namespace vibeRacingOverlays.App.Rendering
                 }
                 else
                 {
-                    var ft = Text(op);
-                    double w = Math.Min(ft.WidthIncludingTrailingWhitespace, op.W > 0 ? op.W : double.MaxValue);
+                    var t = Text(op);
+                    double w = op.W > 0 ? Math.Min(t.Width, op.W) : t.Width;
                     double x = op.Align == Align.Right ? op.X + op.W - w : op.Align == Align.Center ? op.X + (op.W - w) / 2 : op.X;
-                    double y = op.Y + (op.H - ft.Height) / 2;
-                    dc.DrawText(ft, new Point(x, y));
+                    double y = op.Y + (op.H - t.Height) / 2;
+                    if (t.Trimmed != null) { dc.DrawText(t.Trimmed, new Point(x, y)); continue; }
+                    dc.PushTransform(new TranslateTransform(x, y));
+                    dc.DrawDrawing(t.Drawing);
+                    dc.Pop();
                 }
             }
         }

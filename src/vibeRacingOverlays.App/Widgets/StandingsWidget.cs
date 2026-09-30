@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using vibeRacingOverlays.App.Core;
 using vibeRacingOverlays.App.Rendering;
 using vibeRacingOverlays.Data.Model;
@@ -6,15 +7,16 @@ namespace vibeRacingOverlays.App.Widgets
 {
     public enum NameStyle { Full, Short, LastName }
 
-    public sealed class StandingsSettings : WidgetSettings, ITableSettings
+    /// <summary>
+    /// What the standings show in one kind of session (P&amp;Q or race): rows, columns, header items and their formats.
+    /// Style (colors, font, scale) is shared and lives in <see cref="StandingsSettings"/>.
+    /// </summary>
+    public sealed class StandingsProfile : ITableSettings, IHeaderItems
     {
-        public override string TypeName { get { return "Standings"; } }
+        public SessionKind Kind { get; set; }
 
-        // Single class vs multiclass is detected from the session; both layouts are configured here.
-        [Setting("Name style", Group = "Content", Order = 4)] public NameStyle NameStyle { get; set; } = NameStyle.Full;
-        [Setting("Header bar", Group = "Content", Order = 5)] public bool ShowHeader { get; set; } = true;
-        [Setting("Column titles row", Group = "Content", Order = 6)] public bool ShowColumnTitles { get; set; } = false;
-        [Setting("Lap time decimals", Group = "Content", Min = 0, Max = 3, Order = 7)] public int LapDecimals { get; set; } = 1;
+        [Setting("Header bar", Group = "Content", Order = 1)] public bool ShowHeader { get; set; } = true;
+        [Setting("Column titles row", Group = "Content", Order = 2)] public bool ShowColumnTitles { get; set; } = false;
 
         [Setting("Total rows", Group = "Single class", Min = 3, Max = 40, Order = 1)] public int Rows { get; set; } = 16;
         [Setting("Leader rows (top block)", Group = "Single class", Min = 0, Max = 20, Order = 2)] public int TopRows { get; set; } = 5;
@@ -28,6 +30,96 @@ namespace vibeRacingOverlays.App.Widgets
         [Setting("Class headers", Group = "Multiclass", Order = 4)] public bool ShowClassHeaders { get; set; } = true;
         [Setting("My class first", Group = "Multiclass", Order = 5, Tooltip = "Otherwise classes are ordered fastest first.")]
         public bool PlayerClassFirst { get; set; } = false;
+
+        /// <summary>Driver row columns (on/off, width, order, format).</summary>
+        public List<ColumnConfig> Columns { get; set; }
+        /// <summary>Header bar items (on/off, order, format).</summary>
+        public List<ColumnConfig> Header { get; set; }
+
+        public StandingsProfile() : this(SessionKind.PracticeQualify) { }
+
+        public StandingsProfile(SessionKind kind)
+        {
+            Kind = kind;
+            MergeColumns();
+        }
+
+        [JsonIgnore] public IReadOnlyList<ColumnDef> AvailableColumns { get { return StandingsDefs.Columns(Kind); } }
+        [JsonIgnore] public IReadOnlyList<ColumnDef> AvailableHeader { get { return StandingsDefs.Header(Kind); } }
+
+        public void MergeColumns()
+        {
+            Columns = TableColumns.Merge(Columns, StandingsDefs.Columns(Kind));
+            Header = TableColumns.Merge(Header, StandingsDefs.Header(Kind));
+        }
+
+        public ColumnConfig Column(string key) { return Columns.FirstOrDefault(c => c.Key == key); }
+        public ColumnConfig HeaderItem(string key) { return Header.FirstOrDefault(c => c.Key == key); }
+    }
+
+    /// <summary>The columns and header items of the standings, with their formats and per-session defaults.</summary>
+    public static class StandingsDefs
+    {
+        static readonly (string, string)[] Decimals = { ("3", "1.746"), ("2", "1.74"), ("1", "1.7") };
+        static readonly (string, string)[] LapDecimals = { ("3", "1:35.764"), ("2", "1:35.76"), ("1", "1:35.7") };
+        static readonly (string, string)[] RatingFormats = { ("full", "4567"), ("k1", "4.5k"), ("k0", "4k") };
+        static readonly (string, string)[] TempFormats = { ("C1", "32.4°C"), ("C0", "32°C"), ("F1", "90.3°F"), ("F0", "90°F"), ("CF", "32.4°C 90.3°F"), ("FC", "90.3°F 32.4°C") };
+
+        public static ColumnDef[] Columns(SessionKind kind)
+        {
+            bool race = kind == SessionKind.Race;
+            return new[]
+            {
+                new ColumnDef("classbar", "Class color bar (multiclass only)", "", 4, true, Align.Left),
+                new ColumnDef("pos", "Position", "P", 26, true, Align.Right),
+                new ColumnDef("gain", "Positions gained", "+/-", 38, race, Align.Left),
+                new ColumnDef("num", "Car number", "#", 34, true, Align.Center),
+                new ColumnDef("name", "Driver name", "DRIVER", 190, true, Align.Left)
+                    .WithFormats("full", ("full", "Full name"), ("short", "J. Groenewegen"), ("last", "Last name")),
+                new ColumnDef("brand", "Car brand", "CAR", 34, true, Align.Center),
+                new ColumnDef("lic", "License / SR", "LIC", 42, true, Align.Center)
+                    .WithFormats("L1", ("L2", "A3.48"), ("L1", "A3.4"), ("L0", "A3"), ("L", "A"), ("SR2", "3.48"), ("SR1", "3.4"), ("SR0", "3")),
+                new ColumnDef("ir", "iRating", "iR", 40, true, Align.Right).WithFormats("k1", RatingFormats),
+                new ColumnDef("irdelta", "iRating change (est.)", "iR+/-", 46, race, Align.Right),
+                new ColumnDef("gap", race ? "Gap to leader" : "Gap to fastest", "GAP", 50, true, Align.Right).WithFormats(race ? "1" : "3", Decimals),
+                new ColumnDef("int", race ? "Interval" : "Gap to car ahead", "INT", 50, race, Align.Right).WithFormats(race ? "1" : "3", Decimals),
+                new ColumnDef("laps", "Laps completed", "LAPS", 32, !race, Align.Right),
+                new ColumnDef("last", "Last lap", "LAST", 62, true, Align.Right).WithFormats(race ? "1" : "3", LapDecimals),
+                new ColumnDef("best", "Best lap", "BEST", 62, !race, Align.Right).WithFormats("3", LapDecimals),
+                new ColumnDef("tire", "Tire compound", "TIRE", 22, false, Align.Center)
+                    .WithFormats("differ", ("differ", "Only when mixed"), ("always", "Always")),
+                new ColumnDef("pit", "Pit status", "PIT", 42, true, Align.Center),
+                new ColumnDef("stint", "Laps in stint", "STINT", 32, race, Align.Right),
+            };
+        }
+
+        public static ColumnDef[] Header(SessionKind kind)
+        {
+            bool race = kind == SessionKind.Race;
+            return new[]
+            {
+                new ColumnDef("session", "Session", "", 0, true, Align.Left).WithFormats("letter", ("letter", "R"), ("name", "Race")),
+                new ColumnDef("class", "Class (single class)", "", 0, true, Align.Left),
+                new ColumnDef("laps", "Laps", "", 0, race, Align.Left).WithFormats("both", ("both", "5/12"), ("current", "Lap 5")),
+                new ColumnDef("time", "Time", "", 0, true, Align.Left)
+                    .WithFormats("remain_total", ("remain_total", "12:55/31m"), ("remain", "12:55"), ("elapsed_total", "18:05/31m")),
+                new ColumnDef("spacer", "Push what follows to the right", "", 0, true, Align.Left),
+                new ColumnDef("tracktemp", "Track temperature", "", 0, true, Align.Left).WithFormats("C1", TempFormats),
+                new ColumnDef("airtemp", "Air temperature", "", 0, false, Align.Left).WithFormats("C1", TempFormats),
+                new ColumnDef("humidity", "Humidity", "", 0, false, Align.Left).WithFormats("1", ("1", "55.2%"), ("0", "55%")),
+                new ColumnDef("sof", "Strength of field", "", 0, true, Align.Left).WithFormats("full", RatingFormats),
+                new ColumnDef("cars", "Cars", "", 0, true, Align.Left).WithFormats("running", ("running", "28/34"), ("total", "34")),
+            };
+        }
+    }
+
+    public sealed class StandingsSettings : WidgetSettings, ISessionProfiles, INormalizable
+    {
+        public override string TypeName { get { return "Standings"; } }
+
+        public StandingsProfile PracticeQualify { get; set; } = new StandingsProfile(SessionKind.PracticeQualify);
+        public StandingsProfile Race { get; set; } = new StandingsProfile(SessionKind.Race);
+
         [Setting("Font size", Group = "Style", Min = 8, Max = 30, Step = 0.5, Order = 20)] public double FontSize { get; set; } = 14;
         [Setting("Row height", Group = "Style", Min = 12, Max = 50, Order = 21)] public int RowHeight { get; set; } = 22;
         [Setting("Header background", Group = "Style", IsColor = true, Order = 22)] public string HeaderColor { get; set; } = "#FF1C1C1C";
@@ -36,61 +128,104 @@ namespace vibeRacingOverlays.App.Widgets
         [Setting("Player row", Group = "Style", IsColor = true, Order = 25)] public string PlayerColor { get; set; } = "#FF8E2A2A";
         [Setting("Text", Group = "Style", IsColor = true, Order = 26)] public string TextColor { get; set; } = "#FFFFFFFF";
 
-        public List<ColumnConfig> Columns { get; set; }
+        public StandingsSettings() { Title = "Standings"; }
 
-        public static readonly ColumnDef[] Defs =
+        public object Profile(SessionKind kind) { return kind == SessionKind.Race ? Race : PracticeQualify; }
+        public StandingsProfile For(bool isRace) { return isRace ? Race : PracticeQualify; }
+
+        // ---- settings from before the P&Q / Race split (read once, then moved into both profiles)
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public NameStyle? NameStyle { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? ShowHeader { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? ShowColumnTitles { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? LapDecimals { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? Rows { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? TopRows { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? MyClassRows { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? MyClassTopRows { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? OtherClassRows { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? ShowClassHeaders { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? PlayerClassFirst { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public List<ColumnConfig> Columns { get; set; }
+
+        public void Normalize()
         {
-            new ColumnDef("classbar", "Class color bar (multiclass only)", "", 4, true, Align.Left),
-            new ColumnDef("pos", "Position", "P", 26, true, Align.Right),
-            new ColumnDef("gain", "Positions gained", "+/-", 38, true, Align.Left),
-            new ColumnDef("num", "Car number", "#", 34, true, Align.Center),
-            new ColumnDef("name", "Driver name", "DRIVER", 190, true, Align.Left),
-            new ColumnDef("brand", "Car brand", "CAR", 34, true, Align.Center),
-            new ColumnDef("lic", "License / SR", "LIC", 42, true, Align.Center),
-            new ColumnDef("ir", "iRating", "iR", 40, true, Align.Right),
-            new ColumnDef("irdelta", "iRating change (est.)", "iR+/-", 46, true, Align.Right),
-            new ColumnDef("gap", "Gap to leader", "GAP", 50, true, Align.Right),
-            new ColumnDef("int", "Interval", "INT", 50, true, Align.Right),
-            new ColumnDef("last", "Last lap", "LAST", 62, true, Align.Right),
-            new ColumnDef("best", "Best lap", "BEST", 62, false, Align.Right),
-            new ColumnDef("pit", "Pit status", "PIT", 42, true, Align.Center),
-            new ColumnDef("stint", "Laps in stint", "STINT", 32, true, Align.Right),
-        };
+            if (PracticeQualify == null) PracticeQualify = new StandingsProfile(SessionKind.PracticeQualify);
+            if (Race == null) Race = new StandingsProfile(SessionKind.Race);
+            PracticeQualify.Kind = SessionKind.PracticeQualify;
+            Race.Kind = SessionKind.Race;
+            foreach (var p in new[] { PracticeQualify, Race }) ApplyLegacy(p);
+            NameStyle = null; ShowHeader = null; ShowColumnTitles = null; LapDecimals = null; Rows = null; TopRows = null;
+            MyClassRows = null; MyClassTopRows = null; OtherClassRows = null; ShowClassHeaders = null; PlayerClassFirst = null; Columns = null;
+            PracticeQualify.MergeColumns();
+            Race.MergeColumns();
+        }
 
-        public IReadOnlyList<ColumnDef> AvailableColumns { get { return Defs; } }
-        public void MergeColumns() { Columns = TableColumns.Merge(Columns, Defs); }
-
-        public StandingsSettings() { Title = "Standings"; MergeColumns(); }
+        void ApplyLegacy(StandingsProfile p)
+        {
+            if (ShowHeader.HasValue) p.ShowHeader = ShowHeader.Value;
+            if (ShowColumnTitles.HasValue) p.ShowColumnTitles = ShowColumnTitles.Value;
+            if (Rows.HasValue) p.Rows = Rows.Value;
+            if (TopRows.HasValue) p.TopRows = TopRows.Value;
+            if (MyClassRows.HasValue) p.MyClassRows = MyClassRows.Value;
+            if (MyClassTopRows.HasValue) p.MyClassTopRows = MyClassTopRows.Value;
+            if (OtherClassRows.HasValue) p.OtherClassRows = OtherClassRows.Value;
+            if (ShowClassHeaders.HasValue) p.ShowClassHeaders = ShowClassHeaders.Value;
+            if (PlayerClassFirst.HasValue) p.PlayerClassFirst = PlayerClassFirst.Value;
+            if (Columns != null)
+            {
+                // keep the user's order, visibility and widths; formats come from the old single settings
+                p.Columns = Columns.Select(c => new ColumnConfig { Key = c.Key, Enabled = c.Enabled, Width = c.Width }).ToList();
+                p.MergeColumns();
+            }
+            if (NameStyle.HasValue) p.Column("name").Format = NameStyle.Value == Widgets.NameStyle.Short ? "short" : NameStyle.Value == Widgets.NameStyle.LastName ? "last" : "full";
+            if (LapDecimals.HasValue)
+            {
+                string d = Math.Max(1, Math.Min(3, LapDecimals.Value)).ToString();
+                p.Column("last").Format = d;
+                p.Column("best").Format = d;
+            }
+        }
     }
 
     public sealed class StandingsWidget : Widget
     {
-        const float Pad = 6;
+        const float Pad = 6, HeaderGap = 16;
         const uint Dim = 0xFF9A9A9A, Green = 0xFF3CC850, Red = 0xFFE8433A, Purple = 0xFFA04BE0, Orange = 0xFFF08C1E;
 
         readonly StandingsSettings s;
+        StandingsProfile pr;          // profile of the session being drawn
+        bool compoundsDiffer;
+
         public StandingsWidget(StandingsSettings s) : base(s) { this.s = s; }
+
+        static int Dec(ColumnConfig c, int fallback)
+        {
+            int d;
+            return c != null && int.TryParse(c.Format, out d) ? d : fallback;
+        }
 
         public override void Draw(DisplayList dl, RaceSnapshot snap)
         {
+            pr = s.For(snap.IsRace);
             bool multi = snap.Classes.Count > 1;
-            var cols = s.Columns.Where(c => c.Enabled && (multi || c.Key != "classbar")).ToList();
+            compoundsDiffer = snap.Cars.Where(c => c.InWorld).Select(c => c.TireCompound).Distinct().Count() > 1;
+            var cols = pr.Columns.Where(c => c.Enabled && (multi || c.Key != "classbar")).ToList();
             float fs = (float)s.FontSize, rh = s.RowHeight;
             float width = Pad * 2 + cols.Sum(c => c.Width + 4);
             float y = 0;
 
-            if (s.ShowHeader)
+            if (pr.ShowHeader)
             {
                 dl.Rect(0, 0, width, rh + 2, Bg(Argb.Parse(s.HeaderColor)), 4);
                 DrawHeader(dl, snap, width, rh + 2, fs);
                 y += rh + 6;
             }
-            if (s.ShowColumnTitles)
+            if (pr.ShowColumnTitles)
             {
                 float x = Pad;
                 foreach (var c in cols)
                 {
-                    var def = StandingsSettings.Defs.First(d => d.Key == c.Key);
+                    var def = pr.AvailableColumns.First(d => d.Key == c.Key);
                     dl.Text(x, y, c.Width, rh, def.Header, fs * 0.75f, Dim, def.Align);
                     x += c.Width + 4;
                 }
@@ -100,26 +235,26 @@ namespace vibeRacingOverlays.App.Widgets
             if (multi)
             {
                 var classes = snap.Classes.ToList();
-                if (s.PlayerClassFirst && snap.PlayerClass != null && classes.Remove(snap.PlayerClass)) classes.Insert(0, snap.PlayerClass);
+                if (pr.PlayerClassFirst && snap.PlayerClass != null && classes.Remove(snap.PlayerClass)) classes.Insert(0, snap.PlayerClass);
                 bool first = true;
                 foreach (var cs in classes)
                 {
                     bool mine = cs == snap.PlayerClass;
-                    int rows = mine ? s.MyClassRows : s.OtherClassRows;
+                    int rows = mine ? pr.MyClassRows : pr.OtherClassRows;
                     if (rows <= 0 || cs.Cars.Count == 0) continue;
                     if (!first) y += 4;
                     first = false;
-                    if (s.ShowClassHeaders) { DrawClassHeader(dl, cs, y, width, rh, fs); y += rh; }
+                    if (pr.ShowClassHeaders) { DrawClassHeader(dl, cs, y, width, rh, fs); y += rh; }
                     // in my class: leaders + a window around my position
-                    int top = mine ? Math.Min(s.MyClassTopRows, rows - 1) : rows;
+                    int top = mine ? Math.Min(pr.MyClassTopRows, rows - 1) : rows;
                     y = DrawBlock(dl, snap, cs.Cars, rows, Math.Max(0, top), cols, y, width, rh, fs);
                 }
             }
             else
             {
                 var field = snap.PlayerClass != null ? snap.PlayerClass.Cars : snap.Cars;
-                int total = Math.Max(1, s.Rows);
-                y = DrawBlock(dl, snap, field, total, Math.Max(0, Math.Min(s.TopRows, total)), cols, y, width, rh, fs);
+                int total = Math.Max(1, pr.Rows);
+                y = DrawBlock(dl, snap, field, total, Math.Max(0, Math.Min(pr.TopRows, total)), cols, y, width, rh, fs);
             }
             dl.Width = width;
             dl.Height = y;
@@ -157,7 +292,7 @@ namespace vibeRacingOverlays.App.Widgets
                 float x = Pad;
                 foreach (var c in cols)
                 {
-                    DrawCell(dl, c.Key, car, snap, x, y, c.Width, rh, fs, text, car == field[0]);
+                    DrawCell(dl, c, car, snap, x, y, c.Width, rh, fs, text, car == field[0]);
                     x += c.Width + 4;
                 }
                 y += rh;
@@ -173,47 +308,87 @@ namespace vibeRacingOverlays.App.Widgets
             dl.Rect(0, y, width, rh, Bg(Argb.Parse(s.HeaderColor)));
             dl.Rect(0, y, 4, rh, color);
             dl.Text(Pad + 4, y, width * 0.5f, rh, cs.Name, fs * 0.9f, color);
-            string info = "SOF " + cs.Sof + "   " + cs.Cars.Count(c => c.InWorld) + "/" + cs.Cars.Count;
-            if (cs.BestLap > 0) info = "Best " + Fmt.Lap(cs.BestLap, s.LapDecimals) + "   " + info;
+            var sof = pr.HeaderItem("sof");
+            string info = "SOF " + Fmt.Rating(cs.Sof, sof != null ? sof.Format : "full") + "   " + cs.Cars.Count(c => c.InWorld) + "/" + cs.Cars.Count;
+            if (cs.BestLap > 0) info = "Best " + Fmt.Lap(cs.BestLap, Dec(pr.Column("best"), 3)) + "   " + info;
             dl.Text(width * 0.4f, y, width * 0.6f - Pad, rh, info, fs * 0.8f, Dim, Align.Right);
         }
 
+        /// <summary>The header items in the user's order; "spacer" pushes the items after it to the right edge.</summary>
         void DrawHeader(DisplayList dl, RaceSnapshot snap, float width, float h, float fs)
         {
-            string session = string.IsNullOrEmpty(snap.SessionType) ? "" : snap.SessionType.Substring(0, 1).ToUpperInvariant();
-            bool multi = snap.Classes.Count > 1;
-            // single class: show the class (or the car for single-make series); multiclass: the class headers do that
-            string cls = multi || snap.PlayerClass == null ? "" : snap.PlayerClass.Name;
-
-            string laps = "";
-            if (snap.TotalLaps > 0) laps = snap.LeaderLap + "/" + snap.TotalLaps;
-            else if (snap.EstTotalLaps > 0) laps = snap.LeaderLap + "/≈" + Fmt.Num(snap.EstTotalLaps, "0.0");
-            else if (snap.LeaderLap > 0) laps = "Lap " + snap.LeaderLap;
-
-            string time = snap.TimeRemain >= 0 ? Fmt.Clock(snap.TimeRemain) : "";
-            if (time.Length > 0 && snap.TimeTotal > 0) time += "/" + Fmt.Short(snap.TimeTotal);
-
-            string left = string.Join("   ", new[] { session, cls, laps, time }.Where(t => !string.IsNullOrEmpty(t)));
-            var cs = multi ? null : snap.PlayerClass;
-            int sof = cs != null ? cs.Sof : Data.Engine.RatingMath.StrengthOfField(snap.Cars.Select(c => c.IRating));
-            int count = cs != null ? cs.Cars.Count : snap.Cars.Count;
-            int running = cs != null ? cs.Cars.Count(c => c.InWorld) : snap.Cars.Count(c => c.InWorld);
-            string right = Fmt.Num(snap.TrackTemp, "0.0") + "°C   SOF " + sof + "   " + running + "/" + count;
-
-            dl.Text(Pad, 0, width * 0.62f, h, left, fs, 0xFFFFFFFF);
-            dl.Text(width * 0.5f, 0, width * 0.5f - Pad, h, right, fs, 0xFFFFFFFF, Align.Right);
+            var left = new List<string>();
+            var right = new List<string>();
+            var target = left;
+            foreach (var item in pr.Header.Where(i => i.Enabled))
+            {
+                if (item.Key == "spacer") { target = right; continue; }
+                string t = HeaderText(item, snap);
+                if (!string.IsNullOrEmpty(t)) target.Add(t);
+            }
+            float x = Pad;
+            foreach (var t in left)
+            {
+                float w = dl.Measure(t, fs);
+                dl.Text(x, 0, w + 2, h, t, fs, 0xFFFFFFFF);
+                x += w + HeaderGap;
+            }
+            float rx = width - Pad;
+            for (int i = right.Count - 1; i >= 0; i--)
+            {
+                float w = dl.Measure(right[i], fs);
+                if (rx - w < x) break;   // never draw over the left group
+                dl.Text(rx - w - 2, 0, w + 2, h, right[i], fs, 0xFFFFFFFF, Align.Right);
+                rx -= w + HeaderGap;
+            }
         }
 
-        void DrawCell(DisplayList dl, string key, CarInfo c, RaceSnapshot snap, float x, float y, float w, float h, float fs, uint text, bool leaderRow)
+        string HeaderText(ColumnConfig item, RaceSnapshot snap)
+        {
+            bool multi = snap.Classes.Count > 1;
+            var cs = multi ? null : snap.PlayerClass;
+            switch (item.Key)
+            {
+                case "session":
+                    if (string.IsNullOrEmpty(snap.SessionType)) return "";
+                    return item.Format == "name" ? snap.SessionType : snap.SessionType.Substring(0, 1).ToUpperInvariant();
+                case "class":
+                    // single class: the class (or the car for single-make series); multiclass: the class headers do that
+                    return multi || snap.PlayerClass == null ? "" : snap.PlayerClass.Name;
+                case "laps":
+                    if (item.Format == "current") return snap.LeaderLap > 0 ? "Lap " + snap.LeaderLap : "";
+                    if (snap.TotalLaps > 0) return snap.LeaderLap + "/" + snap.TotalLaps;
+                    if (snap.EstTotalLaps > 0) return snap.LeaderLap + "/≈" + Fmt.Num(snap.EstTotalLaps, "0.0");
+                    return snap.LeaderLap > 0 ? "Lap " + snap.LeaderLap : "";
+                case "time":
+                    if (snap.TimeRemain < 0) return "";
+                    if (item.Format == "remain") return Fmt.Clock(snap.TimeRemain);
+                    if (item.Format == "elapsed_total" && snap.TimeTotal > 0) return Fmt.Clock(Math.Max(0, snap.TimeTotal - snap.TimeRemain)) + "/" + Fmt.Short(snap.TimeTotal);
+                    return Fmt.Clock(snap.TimeRemain) + (snap.TimeTotal > 0 ? "/" + Fmt.Short(snap.TimeTotal) : "");
+                case "tracktemp": return Fmt.Temperature(snap.TrackTemp, item.Format);
+                case "airtemp": return "Air " + Fmt.Temperature(snap.AirTemp, item.Format);
+                case "humidity": return snap.Humidity > 0 ? Fmt.Humidity(snap.Humidity, item.Format) + " RH" : "";
+                case "sof":
+                    int sof = cs != null ? cs.Sof : Data.Engine.RatingMath.StrengthOfField(snap.Cars.Select(c => c.IRating));
+                    return sof > 0 ? "SOF " + Fmt.Rating(sof, item.Format) : "";
+                case "cars":
+                    int count = cs != null ? cs.Cars.Count : snap.Cars.Count;
+                    int running = cs != null ? cs.Cars.Count(c => c.InWorld) : snap.Cars.Count(c => c.InWorld);
+                    return item.Format == "total" ? count.ToString() : running + "/" + count;
+                default: return "";
+            }
+        }
+
+        void DrawCell(DisplayList dl, ColumnConfig col, CarInfo c, RaceSnapshot snap, float x, float y, float w, float h, float fs, uint text, bool leaderRow)
         {
             float small = fs * 0.85f;
-            switch (key)
+            switch (col.Key)
             {
                 case "classbar":
                     dl.Rect(x, y + 2, w, h - 4, Argb.FromRgb(c.ClassColor));
                     break;
                 case "pos":
-                    dl.Text(x, y, w, h, c.ClassPos.ToString(), fs, text, Align.Right);
+                    if (c.ClassPos > 0) dl.Text(x, y, w, h, c.ClassPos.ToString(), fs, text, Align.Right);
                     break;
                 case "gain":
                     if (c.PositionsGained.HasValue)
@@ -227,19 +402,19 @@ namespace vibeRacingOverlays.App.Widgets
                     dl.Text(x, y, w, h, c.Number, fs, text, Align.Center);
                     break;
                 case "name":
-                    string name = s.NameStyle == NameStyle.Short ? c.ShortName
-                        : s.NameStyle == NameStyle.LastName ? (c.Name.Contains(' ') ? c.Name.Substring(c.Name.LastIndexOf(' ') + 1) : c.Name) : c.Name;
-                    dl.Text(x, y, w, h, name, fs, c.InWorld || c.LapCompleted > 0 ? text : Dim, Align.Left);
+                    string name = col.Format == "short" ? c.ShortName
+                        : col.Format == "last" ? (c.Name.Contains(' ') ? c.Name.Substring(c.Name.LastIndexOf(' ') + 1) : c.Name) : c.Name;
+                    dl.Text(x, y, w, h, name, fs, c.InWorld || c.LapsComplete > 0 ? text : Dim, Align.Left);
                     break;
                 case "brand":
                     dl.Text(x, y, w, h, c.Brand, small * 0.9f, 0xFFB0B0B0, Align.Center);
                     break;
                 case "lic":
                     uint lc = Fmt.LicenseColor(c.LicLetter);
-                    dl.Badge(x, y + 3, w, h - 6, Fmt.License(c.LicLetter, c.LicSR), small, lc, Argb.ContrastText(lc), 4);
+                    dl.Badge(x, y + 3, w, h - 6, Fmt.License(c.LicLetter, c.LicSR, col.Format), small, lc, Argb.ContrastText(lc), 4);
                     break;
                 case "ir":
-                    dl.Text(x, y, w, h, Fmt.IRating(c.IRating), fs, text, Align.Right);
+                    dl.Text(x, y, w, h, Fmt.Rating(c.IRating, col.Format), fs, text, Align.Right);
                     break;
                 case "irdelta":
                     if (c.IRatingDelta.HasValue)
@@ -251,23 +426,38 @@ namespace vibeRacingOverlays.App.Widgets
                 case "gap":
                     if (leaderRow) { if (snap.IsRace) dl.Text(x, y, w, h, "GAP", small, Dim, Align.Right); }
                     else if (snap.IsRace && c.LapsDown > 0) dl.Text(x, y, w, h, "+" + c.LapsDown + "L", fs, text, Align.Right);
-                    else if (c.GapToClassLeader.HasValue) dl.Text(x, y, w, h, snap.IsRace ? Fmt.Gap(c.GapToClassLeader.Value) : "+" + Fmt.Num(c.GapToClassLeader.Value, "0.000"), fs, text, Align.Right);
+                    else if (c.GapToClassLeader.HasValue) dl.Text(x, y, w, h, GapText(c.GapToClassLeader.Value, Dec(col, 1), snap.IsRace), fs, text, Align.Right);
                     break;
                 case "int":
                     if (leaderRow) { if (snap.IsRace) dl.Text(x, y, w, h, "INT", small, Dim, Align.Right); }
                     else if (snap.IsRace && c.IntervalLaps > 0) dl.Text(x, y, w, h, "+" + c.IntervalLaps + "L", fs, text, Align.Right);
-                    else if (c.Interval.HasValue) dl.Text(x, y, w, h, snap.IsRace ? Fmt.Gap(c.Interval.Value) : "+" + Fmt.Num(c.Interval.Value, "0.000"), fs, text, Align.Right);
+                    else if (c.Interval.HasValue) dl.Text(x, y, w, h, GapText(c.Interval.Value, Dec(col, 1), snap.IsRace), fs, text, Align.Right);
+                    break;
+                case "laps":
+                    if (c.LapsComplete > 0) dl.Text(x, y, w, h, c.LapsComplete.ToString(), fs, text, Align.Right);
                     break;
                 case "last":
                     if (c.LastLap > 0)
                     {
-                        dl.Text(x, y, w, h, Fmt.Lap(c.LastLap, s.LapDecimals), fs, text, Align.Right);
+                        dl.Text(x, y, w, h, Fmt.Lap(c.LastLap, Dec(col, 1)), fs, text, Align.Right);
                         if (c.LastIsClassBest) dl.Rect(x + 4, y + h - 3, w - 4, 2, Purple);
                         else if (c.LastIsPersonalBest) dl.Rect(x + 4, y + h - 3, w - 4, 2, Green);
                     }
                     break;
                 case "best":
-                    if (c.BestLap > 0) dl.Text(x, y, w, h, Fmt.Lap(c.BestLap, s.LapDecimals), fs, text, Align.Right);
+                    if (c.BestLap > 0) dl.Text(x, y, w, h, Fmt.Lap(c.BestLap, Dec(col, 3)), fs, text, Align.Right);
+                    break;
+                case "tire":
+                    // iRacing reports a compound index per car; the names ("Hard", "Wet") only come for the player's car,
+                    // so other car types in a multiclass field may show a best guess
+                    if (c.TireCompound >= 0 && c.InWorld && (col.Format == "always" || compoundsDiffer))
+                    {
+                        string tireName;
+                        if (!snap.TireNames.TryGetValue(c.TireCompound, out tireName) || string.IsNullOrEmpty(tireName)) tireName = c.TireCompound == 0 ? "Dry" : "Wet";
+                        bool wet = tireName.StartsWith("W", StringComparison.OrdinalIgnoreCase);
+                        float d = Math.Min(w, h - 6);
+                        dl.Badge(x + (w - d) / 2, y + (h - d) / 2, d, d, tireName.Substring(0, 1).ToUpperInvariant(), small * 0.8f, wet ? 0xFF2F8CFF : 0xFF5A5F66, 0xFFFFFFFF, d / 2);
+                    }
                     break;
                 case "pit":
                     if (c.Towing) dl.Badge(x, y + 3, w, h - 6, "TOW", small, Red, 0xFFFFFFFF);
@@ -279,6 +469,13 @@ namespace vibeRacingOverlays.App.Widgets
                     if (c.Lap > 0) dl.Text(x, y, w, h, c.StintLaps.ToString(), fs, text, Align.Right);
                     break;
             }
+        }
+
+        /// <summary>Race: 53.0 / 1:02.3 with the chosen decimals; P&amp;Q: +0.532 (difference in lap time).</summary>
+        static string GapText(double v, int decimals, bool race)
+        {
+            if (race) return Fmt.Gap(Math.Abs(v), decimals);
+            return "+" + Math.Abs(v).ToString(decimals <= 0 ? "0" : "0." + new string('0', decimals), System.Globalization.CultureInfo.InvariantCulture);
         }
     }
 }

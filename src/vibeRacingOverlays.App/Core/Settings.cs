@@ -23,6 +23,8 @@ namespace vibeRacingOverlays.App.Core
         public string Key { get; set; }
         public bool Enabled { get; set; } = true;
         public float Width { get; set; }
+        /// <summary>Display format of the column / header item (a key from its ColumnDef.Formats); null = default.</summary>
+        public string Format { get; set; }
     }
 
     public enum ShowWhen { Always, InCar, InRace }
@@ -219,6 +221,8 @@ namespace vibeRacingOverlays.App.Core
                     if (!ids.Add(w.Id)) { w.Id = Guid.NewGuid().ToString("N").Substring(0, 8); ids.Add(w.Id); }
                     var table = w as Widgets.ITableSettings;
                     if (table != null) table.MergeColumns();
+                    var norm = w as Widgets.INormalizable;
+                    if (norm != null) norm.Normalize();
                     if (string.IsNullOrEmpty(w.Title)) w.Title = w.TypeName;
                 }
             }
@@ -228,6 +232,8 @@ namespace vibeRacingOverlays.App.Core
             {
                 var table = p.Settings as Widgets.ITableSettings;
                 if (table != null) table.MergeColumns();
+                var norm = p.Settings as Widgets.INormalizable;
+                if (norm != null) norm.Normalize();
             }
         }
 
@@ -236,6 +242,15 @@ namespace vibeRacingOverlays.App.Core
         {
             return JsonSerializer.Deserialize<WidgetSettings>(JsonSerializer.Serialize(w, Json), Json);
         }
+
+        /// <summary>Deep copy of any settings value (for complex values like a session profile).</summary>
+        public static object CloneValue(object v, Type type)
+        {
+            return v == null ? null : JsonSerializer.Deserialize(JsonSerializer.Serialize(v, type, Json), type, Json);
+        }
+
+        /// <summary>JSON text of a settings value, to compare complex values.</summary>
+        public static string ToJson(object v, Type type) { return JsonSerializer.Serialize(v, type, Json); }
 
         /// <summary>Deep copy of a layout with fresh widget ids.</summary>
         public LayoutConfig CloneLayout(LayoutConfig source, string name)

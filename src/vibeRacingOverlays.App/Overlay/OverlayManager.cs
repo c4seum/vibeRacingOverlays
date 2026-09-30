@@ -95,6 +95,7 @@ namespace vibeRacingOverlays.App.Overlay
         public void SetFont(string font)
         {
             settings.Font = font;
+            Rendering.TextMeasure.SetFont(font);
             foreach (var w in windows.Values) w.SetFont(font);
             ScheduleSave();
         }

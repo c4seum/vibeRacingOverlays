@@ -25,6 +25,8 @@ namespace vibeRacingOverlays.Data.Engine
         public bool LivePositions = true;
         /// <summary>Demo race layout: GT3 + GT4 (true) or GT3 only (false).</summary>
         public bool DemoMultiClass = true;
+        /// <summary>Demo session type: practice (ranked by fastest lap) instead of a race.</summary>
+        public bool DemoPractice;
 
         public RaceSnapshot Latest { get { return latest; } }
         public string ActiveSource { get { var a = active; return a != null ? a.Name : "-"; } }
@@ -110,7 +112,7 @@ namespace vibeRacingOverlays.Data.Engine
 
         DemoSource Demo()
         {
-            if (demo == null) demo = new DemoSource(DemoMultiClass);
+            if (demo == null) demo = new DemoSource(DemoMultiClass, DemoPractice);
             return demo;
         }
     }

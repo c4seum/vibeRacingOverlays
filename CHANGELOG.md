@@ -6,6 +6,15 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ## [Unreleased]
 
+### Added
+- Standings settings per session type: "Practice & qualifying" and "Race" each have their own rows, columns, header items and formats (switch at the top of the settings; "Copy to ..." copies one to the other). Colors, font size and row height stay shared. The preview's demo session follows the switch. Existing standings keep their settings for both.
+- Formats per column, like Kapps: driver name (full / short / last name), license (A3.48 / A3.4 / A3 / A / SR only), iRating (4567 / 4.5k / 4k), gap and interval (3, 2 or 1 decimals), last and best lap (1:35.764 / 1:35.76 / 1:35.7). Defaults: 3 decimals in practice and qualifying, 1 in the race.
+- New columns: laps completed (on by default in practice and qualifying) and tire compound (the compound letter, only when cars run different compounds, or always).
+- Header bar items you can turn on and off, reorder and format: session, class, laps, time (remaining / total, remaining, elapsed / total), track and air temperature (°C, °F or both, with or without a decimal), humidity, strength of field (4567 / 4.5k / 4k) and cars. "Push what follows to the right" splits the bar into a left and a right group.
+
+### Changed
+- Numbers in all widgets use equal-width digits, so lap times, gaps and ratings line up exactly in their columns ("1:11.1" is as wide as "1:08.8"), whatever the font.
+
 ### Fixed
 - Standings in practice and qualifying: drivers with a lap time were missing or in the wrong place, and lap times of most drivers were empty. The standings now follow iRacing's own results list: ranked by fastest lap, with the fastest and last lap iRacing shows, and drivers without a lap time after them in car-number order (as iRacing lists them). In races, iRacing's results fill in positions and lap times the live telemetry doesn't have.
 

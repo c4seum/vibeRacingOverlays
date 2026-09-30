@@ -21,10 +21,12 @@ The user (c4seum) speaks **Dutch**: answer in Dutch. Setup: triple screens (3× 
 - In the UI they are called **widgets** (not overlays). The "Toggle overlay" button shows/hides all widgets.
 - Single class vs multiclass is **detected automatically**. Class names/colors come from iRacing (`ClassNaming` recognizes GTP/LMP2/GT3... when iRacing leaves the name empty). No manual class editing.
 - Renaming a widget only changes its display name; its type stays the same.
+- Standings settings are split per session type (user's wish, 2026-10-01): **content** (rows, columns, header items, formats) per "Practice & qualifying" and "Race" (`StandingsProfile`, `ISessionProfiles`), **style** (colors, font, size, position, refresh) shared. Format options follow Kapps (the user sent screenshots): lap/gap decimals, license A3.48/A3.4/A3/A/SR, iRating 4567/4.5k/4k, temperatures °C/°F. Built into the existing settings cards, not a drag-and-drop pill bar.
+- **Every column (also new ones) must be neatly aligned**: digits are equal-width (`TabularText`), numbers right-aligned, and a format must never make values in one column differ in width except by their number of digits.
 
 ## Build / test / release
 - Local test version: `.\publish-dev.ps1` produces a **DEV build** ("vibeRacingOverlays DEV", orange title, settings in `%APPDATA%\vibeRacingOverlays-dev`, Start menu "vibeRacingOverlays DEV"). Close the app first.
-- Design checks without iRacing: `vibeRacingOverlays.exe --snapshot <folder>` (PNG per widget, demo single and multi, plus the user's saved widgets and a narrow-columns test). `--snapshot <folder> --live` uses live iRacing data. `--dump <file>` writes raw iRacing values.
+- Design checks without iRacing: `vibeRacingOverlays.exe --snapshot <folder>` (PNG per widget, demo single and multi, race and practice (`_pq`), plus the user's saved widgets and a narrow-columns test). `--snapshot <folder> --live` uses live iRacing data. `--dump <file>` writes raw iRacing values.
 - Release: `.\build-release.ps1 -Version x.y.z` locally, or push a tag `vX.Y.Z` so GitHub Actions (`release.yml`) builds the installer and portable zip and creates a GitHub Release (notes = the version's CHANGELOG section). Before tagging: move Unreleased to the new version in CHANGELOG.md, add the version to the release history below, commit, push, then tag. **Never push a version tag without the user's explicit consent.**
 - `gh` for this repo: `--repo c4seum/vibeRacingOverlays` (on the work laptop both accounts are logged in; see memory).
 - Versions: last digit = fixes only, middle digit = new features.

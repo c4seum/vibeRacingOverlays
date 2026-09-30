@@ -4,7 +4,7 @@ using vibeRacingOverlays.Data.IRSdk;
 namespace vibeRacingOverlays.Data.Telemetry
 {
     /// <summary>
-    /// Synthetic multi-class race so overlays can be designed without iRacing running.
+    /// Synthetic multi-class race (or practice session) so overlays can be designed without iRacing running.
     /// Produces the same TelemetryState/SessionInfo shapes as the live source.
     /// </summary>
     public sealed class DemoSource : ITelemetrySource
@@ -22,6 +22,7 @@ namespace vibeRacingOverlays.Data.Telemetry
             public double PitUntil = -1;
             public bool Pitted;
             public double TowUntil = -1;
+            public bool Garage;          // practice: never leaves the garage (no lap time, like many drivers in iRacing)
         }
 
         const double StartTime = 600;     // race already 10 minutes in
@@ -49,11 +50,14 @@ namespace vibeRacingOverlays.Data.Telemetry
         TelemetryState lastState;
 
         readonly bool multiClass;
+        readonly bool practice;
 
         /// <param name="multiClass">true: GT3 + GT4 field, false: GT3 only.</param>
-        public DemoSource(bool multiClass = true)
+        /// <param name="practice">true: a practice session (ranked by fastest lap via the session results, some cars without a time).</param>
+        public DemoSource(bool multiClass = true, bool practice = false)
         {
             this.multiClass = multiClass;
+            this.practice = practice;
             BuildField();
         }
 
@@ -99,7 +103,9 @@ namespace vibeRacingOverlays.Data.Telemetry
                 TrackLengthKm = TrackKm, NumCarClasses = multiClass ? 2 : 1, FuelMaxLtr = MaxFuel, MaxFuelPct = 1, DriverCarEstLapTime = 137.5,
                 TrackSurfaceTemp = "32.40 C",
             };
-            session.Sessions.Add(new SessionEntry { Num = 0, Type = "Race", Name = "RACE", LapsLimit = -1, TimeLimit = RaceLength });
+            session.Sessions.Add(practice
+                ? new SessionEntry { Num = 0, Type = "Practice", Name = "PRACTICE", LapsLimit = -1, TimeLimit = 3600 }
+                : new SessionEntry { Num = 0, Type = "Race", Name = "RACE", LapsLimit = -1, TimeLimit = RaceLength });
 
             int idx = 0;
             var usedNames = new HashSet<string>();
@@ -116,12 +122,14 @@ namespace vibeRacingOverlays.Data.Telemetry
                 {
                     CarIdx = idx, UserId = 100000 + idx, UserName = name, AbbrevName = name, Initials = name.Substring(0, 1),
                     CarNumber = (rnd.Next(2, 999)).ToString(), CarScreenName = carName, CarScreenNameShort = carName,
+                    CarNumberRaw = 0,
                     CarPath = carName.ToLowerInvariant().Replace(" ", ""),
                     CarClassId = gt3 ? 2708 : 4088, CarClassShortName = gt3 ? "GT3" : "GT4",
                     CarClassColor = gt3 ? 0xffda59u : 0x33ceffu, CarClassEstLapTime = gt3 ? 137.5 : 150.0,
                     IRating = ir, LicString = Lics[lic] + " " + (1 + rnd.NextDouble() * 3.99).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture),
                     LicColor = LicColors[lic],
                 };
+                d.CarNumberRaw = int.Parse(d.CarNumber);
                 session.Drivers[idx] = d;
 
                 var car = new Car
@@ -130,6 +138,13 @@ namespace vibeRacingOverlays.Data.Telemetry
                     Pace = (gt3 ? 137.5 : 150.0) + (6500 - ir) / 1500.0 + rnd.NextDouble() * 0.8,
                     Progress = -(c * 0.004), PitLap = 7 + rnd.Next(0, 6),
                 };
+                if (practice)
+                {
+                    // spread around the lap, a few never go out; one stop late in the session
+                    car.Progress = -rnd.NextDouble();
+                    car.Garage = c % 7 == 3 && c != 12;
+                    car.PitLap = 3 + rnd.Next(0, 3);
+                }
                 car.LapTime = car.Pace;
                 cars.Add(car);
                 idx++;
@@ -147,7 +162,7 @@ namespace vibeRacingOverlays.Data.Telemetry
             }
 
             // one car gets towed back to the pits halfway through, to show the TOW state
-            cars[5].TowUntil = -2;
+            if (!practice) cars[5].TowUntil = -2;
         }
 
         void Step(double dt)
@@ -155,6 +170,7 @@ namespace vibeRacingOverlays.Data.Telemetry
             simTime += dt;
             foreach (var c in cars)
             {
+                if (c.Garage) continue;
                 if (c.TowUntil > 0)
                 {
                     if (simTime < c.TowUntil) continue;
@@ -192,6 +208,7 @@ namespace vibeRacingOverlays.Data.Telemetry
                     {
                         c.Last = t;
                         if (c.Best == 0 || t < c.Best) c.Best = t;
+                        if (practice) UpdateResults();
                     }
                     c.LapStart = simTime;
                     c.LapTime = c.Pace + (rnd.NextDouble() - 0.5) * 1.2;
@@ -200,6 +217,25 @@ namespace vibeRacingOverlays.Data.Telemetry
 
                 if (c.Idx == playerIdx && !inPit) fuel = Math.Max(0, fuel - (float)(speed * dt * (FuelPerLap + (rnd.NextDouble() - 0.5) * 0.1)));
             }
+        }
+
+        /// <summary>Practice: the session results iRacing keeps (ranked by fastest lap, only cars with a time).</summary>
+        void UpdateResults()
+        {
+            var ranked = cars.Where(c => c.Best > 0).OrderBy(c => c.Best).ToList();
+            var results = new List<ResultPosition>();
+            var classCount = new Dictionary<int, int>();
+            for (int i = 0; i < ranked.Count; i++)
+            {
+                var c = ranked[i];
+                int cp; classCount.TryGetValue(c.ClassId, out cp); classCount[c.ClassId] = ++cp;
+                results.Add(new ResultPosition
+                {
+                    Position = i + 1, ClassPosition = cp, CarIdx = c.Idx, FastestTime = c.Best, LastTime = c.Last,
+                    LapsComplete = (int)Math.Floor(Math.Max(0, c.Progress)),
+                });
+            }
+            session.Sessions[0].Results = results;
         }
 
         TelemetryState BuildState()
@@ -211,7 +247,7 @@ namespace vibeRacingOverlays.Data.Telemetry
                 SessionFlags = SessionFlags.Green,
                 SessionTimeRemain = Math.Max(0, RaceLength - simTime), SessionLapsRemain = 32767,
                 SessionTimeOfDay = 13 * 3600 + (float)simTime,
-                PlayerCarIdx = playerIdx, IsOnTrack = true, FuelLevel = fuel, TrackTemp = 32.4f, AirTemp = 21.3f,
+                PlayerCarIdx = playerIdx, IsOnTrack = true, FuelLevel = fuel, TrackTemp = 32.4f, AirTemp = 21.3f, Humidity = 0.55f,
             };
 
             var order = cars.OrderByDescending(c => c.Progress).ToList();
@@ -241,6 +277,13 @@ namespace vibeRacingOverlays.Data.Telemetry
                 s.CarIdxBestLapTime[ci] = c.Best;
                 s.CarIdxF2Time[ci] = (float)((leader.Progress - c.Progress) * leader.Pace);
                 s.CarIdxEstTime[ci] = (float)(s.CarIdxLapDistPct[ci] * session.Drivers[ci].CarClassEstLapTime);
+                if (c.Garage)
+                {
+                    // like iRacing: not in the world, no telemetry lap data
+                    s.CarIdxTrackSurface[ci] = (int)TrackSurface.NotInWorld; s.CarIdxLapDistPct[ci] = -1;
+                    s.CarIdxLap[ci] = -1; s.CarIdxLapCompleted[ci] = -1; s.CarIdxPosition[ci] = 0; s.CarIdxClassPosition[ci] = 0;
+                    s.CarIdxLastLapTime[ci] = -1; s.CarIdxBestLapTime[ci] = -1;
+                }
                 if (ci == playerIdx)
                 {
                     s.Lap = s.CarIdxLap[ci];

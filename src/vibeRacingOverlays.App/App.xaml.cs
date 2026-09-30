@@ -38,6 +38,7 @@ namespace vibeRacingOverlays.App
 
             var settings = AppSettings.Load();
             UI.ThemeManager.Apply(settings.Theme);
+            TextMeasure.SetFont(settings.Font);
             telemetry = new TelemetryService { Mode = settings.Source, LivePositions = settings.LivePositions };
             telemetry.Start();
             overlays = new OverlayManager(settings, telemetry);
@@ -126,13 +127,14 @@ namespace vibeRacingOverlays.App
             var widths = new Dictionary<string, float>
             {
                 { "gain", 30 }, { "num", 30 }, { "name", 120 }, { "brand", 40 }, { "lic", 40 }, { "ir", 40 }, { "irdelta", 40 },
-                { "gap", 40 }, { "int", 40 }, { "last", 60 }, { "best", 60 }, { "pit", 40 }, { "stint", 30 },
+                { "gap", 40 }, { "int", 40 }, { "laps", 20 }, { "last", 60 }, { "best", 60 }, { "tire", 16 }, { "pit", 40 }, { "stint", 30 },
             };
-            foreach (var c in s.Columns)
+            foreach (var c in s.PracticeQualify.Columns.Concat(s.Race.Columns))
             {
                 float w;
                 if (widths.TryGetValue(c.Key, out w)) c.Width = w;
                 c.Enabled = true;
+                if (c.Key == "tire") c.Format = "always";
             }
             return s;
         }
@@ -141,11 +143,13 @@ namespace vibeRacingOverlays.App
         {
             Directory.CreateDirectory(dir);
             var font = AppSettings.Load().Font;
-            var runs = live ? new[] { (Mode: SourceMode.IRacing, Multi: true, Suffix: "") }
-                            : new[] { (Mode: SourceMode.Demo, Multi: false, Suffix: "_single"), (Mode: SourceMode.Demo, Multi: true, Suffix: "_multi") };
+            TextMeasure.SetFont(font);
+            var runs = live ? new[] { (Mode: SourceMode.IRacing, Multi: true, Practice: false, Suffix: "") }
+                            : new[] { (Mode: SourceMode.Demo, Multi: false, Practice: false, Suffix: "_single"), (Mode: SourceMode.Demo, Multi: true, Practice: false, Suffix: "_multi"),
+                                      (Mode: SourceMode.Demo, Multi: false, Practice: true, Suffix: "_single_pq"), (Mode: SourceMode.Demo, Multi: true, Practice: true, Suffix: "_multi_pq") };
             foreach (var run in runs)
             {
-                using (var svc = new TelemetryService { Mode = run.Mode, DemoMultiClass = run.Multi })
+                using (var svc = new TelemetryService { Mode = run.Mode, DemoMultiClass = run.Multi, DemoPractice = run.Practice })
                 {
                     svc.Start();
                     var until = DateTime.UtcNow.AddSeconds(live ? 8 : 30);

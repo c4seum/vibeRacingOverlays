@@ -1,0 +1,122 @@
+using System.Globalization;
+using System.Windows;
+using System.Windows.Media;
+
+namespace vibeRacingOverlays.App.Rendering
+{
+    /// <summary>
+    /// Text layout with tabular digits: every digit gets the width of the widest digit, so lap times, gaps and
+    /// numbers line up in a column whatever the font ("1:11.1" is as wide as "1:08.8"). Runs of other characters
+    /// keep their normal shape and spacing. Used for drawing (WpfRenderer) and for measuring (widget layout).
+    /// </summary>
+    public sealed class TabularText
+    {
+        public sealed class Layout
+        {
+            public Drawing Drawing;
+            public double Width;
+            public double Height;
+        }
+
+        readonly Dictionary<(double, bool), double> digitWidths = new Dictionary<(double, bool), double>();
+        readonly Dictionary<(string, double, bool, uint), Layout> cache = new Dictionary<(string, double, bool, uint), Layout>();
+        Typeface regular, bold;
+        double pixelsPerDip = 1;
+        string font;
+
+        public TabularText(string font) { SetFont(font); }
+
+        public void SetFont(string f)
+        {
+            if (f == font && regular != null) return;
+            font = f;
+            var family = new FontFamily(string.IsNullOrWhiteSpace(f) ? "Segoe UI" : f);
+            regular = new Typeface(family, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+            bold = new Typeface(family, FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
+            digitWidths.Clear();
+            cache.Clear();
+        }
+
+        public void SetDpi(double ppd) { if (ppd != pixelsPerDip) { pixelsPerDip = ppd; cache.Clear(); } }
+
+        public Typeface Face(bool isBold) { return isBold ? bold : regular; }
+
+        public FormattedText Plain(string text, double size, bool isBold, Brush brush)
+        {
+            return new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Face(isBold), size, brush, pixelsPerDip)
+            { MaxLineCount = 1, Trimming = TextTrimming.None };
+        }
+
+        double DigitWidth(double size, bool isBold)
+        {
+            double w;
+            if (digitWidths.TryGetValue((size, isBold), out w)) return w;
+            for (char d = '0'; d <= '9'; d++) w = Math.Max(w, Plain(d.ToString(), size, isBold, Brushes.White).WidthIncludingTrailingWhitespace);
+            digitWidths[(size, isBold)] = w;
+            return w;
+        }
+
+        /// <summary>Width of a text at this size (tabular digits), without building a drawing.</summary>
+        public double Measure(string text, double size, bool isBold)
+        {
+            if (string.IsNullOrEmpty(text)) return 0;
+            double dw = DigitWidth(size, isBold), x = 0;
+            int i = 0;
+            while (i < text.Length)
+            {
+                if (char.IsDigit(text[i])) { x += dw; i++; continue; }
+                int start = i;
+                while (i < text.Length && !char.IsDigit(text[i])) i++;
+                x += Plain(text.Substring(start, i - start), size, isBold, Brushes.White).WidthIncludingTrailingWhitespace;
+            }
+            return x;
+        }
+
+        /// <summary>Builds (and caches) the drawing of a text at the origin.</summary>
+        public Layout Build(string text, double size, bool isBold, Brush brush, uint colorKey)
+        {
+            var key = (text, size, isBold, colorKey);
+            Layout l;
+            if (cache.TryGetValue(key, out l)) return l;
+            if (cache.Count > 6000) cache.Clear();
+
+            double dw = DigitWidth(size, isBold), x = 0, h = 0;
+            var group = new DrawingGroup();
+            using (var dc = group.Open())
+            {
+                int i = 0;
+                while (i < text.Length)
+                {
+                    if (char.IsDigit(text[i]))
+                    {
+                        var ft = Plain(text[i].ToString(), size, isBold, brush);
+                        dc.DrawText(ft, new Point(x + (dw - ft.WidthIncludingTrailingWhitespace) / 2, 0));   // centred in its cell
+                        h = Math.Max(h, ft.Height);
+                        x += dw; i++;
+                        continue;
+                    }
+                    int start = i;
+                    while (i < text.Length && !char.IsDigit(text[i])) i++;
+                    var run = Plain(text.Substring(start, i - start), size, isBold, brush);
+                    dc.DrawText(run, new Point(x, 0));
+                    h = Math.Max(h, run.Height);
+                    x += run.WidthIncludingTrailingWhitespace;
+                }
+            }
+            group.Freeze();
+            l = new Layout { Drawing = group, Width = x, Height = h > 0 ? h : Plain("0", size, isBold, brush).Height };
+            cache[key] = l;
+            return l;
+        }
+    }
+
+    /// <summary>Text measuring for widget layout (same font and digit rules as the renderer).</summary>
+    public static class TextMeasure
+    {
+        static TabularText text = new TabularText("Bahnschrift");
+
+        public static void SetFont(string font) { text.SetFont(font); }
+
+        public static float Measure(string s, float size, bool bold) { return (float)text.Measure(s, size, bold); }
+    }
+}
