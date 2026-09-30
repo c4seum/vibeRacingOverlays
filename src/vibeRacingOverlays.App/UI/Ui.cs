@@ -19,7 +19,7 @@ namespace vibeRacingOverlays.App.UI
         /// so blocks look even. Only editors marked tall (see <see cref="MarkTall"/>, e.g. the 3×3 anchor grid) may grow.
         /// Build settings rows with <see cref="Row"/> (or <see cref="ListRow"/>) and never give them their own height.
         /// </summary>
-        public const double RowHeight = 35;
+        public const double RowHeight = 32;
 
         /// <summary>Lets an editor that can't fit <see cref="RowHeight"/> make its row taller.</summary>
         public static T MarkTall<T>(T editor) where T : FrameworkElement { editor.Tag = "tall"; return editor; }
