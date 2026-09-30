@@ -22,6 +22,22 @@ namespace vibeRacingOverlays.App.Overlay
 
         public bool EditMode { get; private set; }
         public event Action StateChanged;
+        /// <summary>A widget was moved, resized or changed (the position panel re-reads its values).</summary>
+        public event Action<WidgetSettings> WidgetChanged;
+        /// <summary>The set of widgets changed (added, removed or another layout activated).</summary>
+        public event Action WidgetsChanged;
+        /// <summary>A widget was clicked on screen in edit mode.</summary>
+        public event Action<WidgetSettings> WidgetGrabbed;
+
+        /// <summary>Screen rectangles of the other visible widgets (what a dragged widget can snap to).</summary>
+        IEnumerable<Native.RECT> SnapTargets(OverlayWindow self)
+        {
+            foreach (var w in windows.Values)
+            {
+                Native.RECT r;
+                if (w != self && w.IsVisible && Native.GetWindowRect(new WindowInteropHelper(w).Handle, out r)) yield return r;
+            }
+        }
 
         public OverlayManager(AppSettings settings, TelemetryService telemetry)
         {
@@ -50,16 +66,29 @@ namespace vibeRacingOverlays.App.Overlay
             {
                 if (windows.ContainsKey(ws.Id)) continue;
                 var win = new OverlayWindow(Widget.Create(ws), settings.Font);
-                win.Moved += w => ScheduleSave();
+                win.Moved += w => { ScheduleSave(); if (WidgetChanged != null) WidgetChanged(w.Widget.Settings); };
+                win.Grabbed += w => { if (WidgetGrabbed != null) WidgetGrabbed(w.Widget.Settings); };
+                win.Snapping = settings;
+                win.SnapTargets = SnapTargets;
                 win.SetEditMode(EditMode);
                 windows[ws.Id] = win;
             }
+            if (WidgetsChanged != null) WidgetsChanged();
         }
 
         public void Invalidate(WidgetSettings ws)
         {
             OverlayWindow w;
             if (windows.TryGetValue(ws.Id, out w)) w.Invalidate();
+            ScheduleSave();
+            if (WidgetChanged != null) WidgetChanged(ws);
+        }
+
+        /// <summary>Moves a widget's window to its anchor, screen and offsets (after changing them in the position panel).</summary>
+        public void ApplyPosition(WidgetSettings ws)
+        {
+            OverlayWindow w;
+            if (windows.TryGetValue(ws.Id, out w)) w.ApplyPosition();
             ScheduleSave();
         }
 
@@ -123,7 +152,7 @@ namespace vibeRacingOverlays.App.Overlay
                 bool show = settings.OverlaysVisible && ws.Enabled && (EditMode || w.Widget.ShouldShow(snap));
                 if (show)
                 {
-                    if (!w.IsVisible) { w.Left = ws.X; w.Top = ws.Y; w.Show(); w.Invalidate(); }
+                    if (!w.IsVisible) { w.Show(); w.ApplyPosition(); w.Invalidate(); }
                     w.Tick(snap, now);
                     if (reassert) w.ReassertTopmost();
                 }

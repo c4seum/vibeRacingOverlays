@@ -37,12 +37,14 @@ The cars directly around you on track, with the time difference to each.
 - Colors show whether a car is a lap ahead of you or a lap down.
 - In multiclass sessions, class color bars and car numbers in the class color.
 - Pit and tow status per car.
+- Optional columns: last lap and laps in the current stint.
 
 ### Fuel calculator
 How much fuel you use and need.
 - Fuel level, laps left in the race and the time of day.
-- Consumption per lap based on your average, your last lap, or a value you set yourself.
-- For each: how many laps your fuel lasts, how much you need to refuel to finish (with an adjustable safety margin), and how much will be left at the finish.
+- Consumption per lap based on your average (last 10 laps), your last lap, the average of your last N laps (you choose N, 2 to 50), the average since your last pit stop, or a value you set yourself.
+- For each: how many laps your fuel lasts, how much you need to refuel to finish (with an adjustable safety margin), how many pit stops that takes with your tank size, and how much will be left at the finish.
+- *Laps in Race* follows the iRacing rules for lap races, timed races and races with both a lap and a time limit (whichever comes first). The race ends when the overall leader finishes, also in multiclass; you finish the next time you cross the line after that. Lap times are based on your recent clean laps and those of the leader (pit, out and caution laps don't count).
 - A PIT indicator that warns when you need to stop.
 - Laps with a pit stop, refuel or caution are left out of the average.
 
@@ -64,6 +66,11 @@ Windows SmartScreen may show "Windows protected your PC" the first time, because
 2. **Add widgets** with **+ Add** (Standings, Relative or Fuel calculator). Tick a widget in the list to show it, untick it to hide it.
 3. **Click a widget** in the list to open its settings. The preview shows the result right away. Use **Side by side** to put the preview next to the settings.
 4. **Place your widgets:** press **Edit layout** (or `Ctrl+Shift+E`), drag the widgets to where you want them and use the mouse wheel to resize them. Press it again when you're done. Outside edit mode, clicks go straight through the widgets to iRacing.
+   - The **Position** panel (next to the widget settings, or below the preview in *Side by side*) sets the position of the selected widget exactly. In edit layout mode, clicking a widget on screen selects it.
+   - **Anchoring & positioning:** pick the **screen** and one of the 9 **anchors** (corners, edges, centre). The widget moves into that corner or edge, and the **X/Y offsets** are measured from there towards the middle of the screen. Use the ‹ › buttons or the arrow keys (1 px, with Shift 10 px). An anchored widget stays put when it gets bigger: a widget in the bottom right corner grows up and to the left. Dragging a widget keeps its anchor and updates the offsets.
+   - **Lock** a widget so it can't be dragged or resized by accident. Its edit frame turns grey and shows *LOCKED*. **Lock all** / **Unlock all** do the whole layout at once.
+   - **Snapping:** a dragged widget snaps to the edges and corners of other widgets and of the screen. **Snap distance** is how close you have to get, **snap margin** the space kept between widgets and from the screen edge. Hold **Shift** while dragging to place a widget freely.
+   - Screens are remembered as *Left*, *Middle* and *Right*, so a layout lands on the same screen on another PC with the same setup. If that screen isn't there, the widget shows on the main screen.
 5. **Save layouts** with the buttons under *Layout*: **New**, **Save as**, **Rename** and **Delete**. Everything you change is saved automatically.
 
 ### Hotkeys
@@ -72,7 +79,7 @@ These also work while iRacing has focus.
 
 | Keys | Action |
 |---|---|
-| `Ctrl+Shift+E` | Edit layout on/off (move and resize widgets) |
+| `Ctrl+Shift+E` | Edit layout on/off (move, resize and lock widgets) |
 | `Ctrl+Shift+H` | Show/hide all widgets |
 | `Ctrl+Shift+L` | Switch to the next layout |
 

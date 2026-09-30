@@ -43,6 +43,8 @@ namespace vibeRacingOverlays.Data.Model
 
         public float LastLap;
         public float BestLap;
+        /// <summary>Typical race pace: median of the last clean laps (no pit visit, caution or start lap), 0 = none yet.</summary>
+        public double PaceLap;
         public bool LastIsClassBest;
         public bool LastIsPersonalBest;
 
@@ -77,8 +79,23 @@ namespace vibeRacingOverlays.Data.Model
         public double AvgPerLap;
         public double LastPerLap;
         public int ValidLaps;
+        /// <summary>Fuel used per valid lap, oldest first (shared, don't modify).</summary>
+        public double[] Laps = new double[0];
+        /// <summary>Average of the valid laps since the last pit stop, and how many there are.</summary>
+        public double StintAvgPerLap;
+        public int StintValidLaps;
         public double LapsToGo = -1;      // race laps still to drive (fractional), -1 unknown
         public bool Valid { get { return AvgPerLap > 0; } }
+
+        /// <summary>Average of the last n valid laps (fewer when there aren't n yet; 0 = no laps).</summary>
+        public double AverageOfLast(int n)
+        {
+            int k = Math.Min(Math.Max(1, n), Laps.Length);
+            if (k == 0) return 0;
+            double sum = 0;
+            for (int i = Laps.Length - k; i < Laps.Length; i++) sum += Laps[i];
+            return sum / k;
+        }
 
         public double LapsRemaining(double perLap) { return perLap > 0 ? Level / perLap : 0; }
         public double Need(double perLap) { return LapsToGo >= 0 ? LapsToGo * perLap : 0; }

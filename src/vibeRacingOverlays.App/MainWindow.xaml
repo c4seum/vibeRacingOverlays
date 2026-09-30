@@ -45,7 +45,8 @@
             </DockPanel>
         </Border>
 
-        <!-- preview + settings; stacked (preview on top) or side by side, see MainWindow.ApplyEditorLayout -->
+        <!-- preview + settings + position; stacked (preview on top, position right of the settings)
+             or side by side (settings left, preview and position right), see MainWindow.ApplyEditorLayout -->
         <Grid x:Name="EditorGrid">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -61,6 +62,9 @@
                           Background="{DynamicResource Border}" ResizeBehavior="PreviousAndNext"/>
             <ScrollViewer x:Name="SettingsScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="18,12">
                 <StackPanel x:Name="SettingsHost" MaxWidth="620" HorizontalAlignment="Left"/>
+            </ScrollViewer>
+            <ScrollViewer x:Name="PositionScroll" Grid.Row="1" Grid.Column="2" VerticalScrollBarVisibility="Auto" Padding="18,12">
+                <ContentControl x:Name="PositionHost" Width="500" HorizontalAlignment="Left"/>
             </ScrollViewer>
         </Grid>
     </DockPanel>

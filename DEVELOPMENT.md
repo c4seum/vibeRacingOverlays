@@ -63,8 +63,10 @@ src/vibeRacingOverlays.Data      no UI
 src/vibeRacingOverlays.App       WPF
   Widgets/                Standings, Relative, Fuel (settings class + Draw)
   Rendering/              DisplayList, WpfRenderer, preview renderer, formatting
-  Overlay/                OverlayWindow (transparent/topmost/click-through), OverlayManager (hotkeys, layouts, saving)
-  UI/                     settings panel generated from [Setting] attributes (reset buttons, presets), preview, themes
+  Overlay/                OverlayWindow (transparent/topmost/click-through), OverlayManager (hotkeys, layouts, saving),
+                          Placement (anchor + screen + offsets <-> pixel position, snapping via WM_MOVING; all in screen pixels)
+  UI/                     settings panel generated from [Setting] attributes (reset buttons, presets), preview, themes,
+                          PositionPanel (main window: anchor/screen/offsets and lock of the selected widget, snapping)
 src/vibeRacingOverlays.Setup     per-user installer (.NET Framework 4.8), app embedded as a resource
 ```
 

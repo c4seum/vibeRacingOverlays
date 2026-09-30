@@ -25,7 +25,22 @@ namespace vibeRacingOverlays.Data.Engine
             public bool Towing;
             public int LastKey = int.MinValue;
             public readonly Dictionary<int, double> Times = new Dictionary<int, double>();
+
+            // clean lap times for the pace estimate (laps with a pit visit or a caution don't count)
+            public int PrevLapCompleted = int.MinValue;
+            public bool DirtyThisLap, DirtyPrevLap;
+            public float PrevLastLapTime;
+            public readonly List<double> CleanLaps = new List<double>();
+
+            public double PaceLap()
+            {
+                if (CleanLaps.Count == 0) return 0;
+                var sorted = CleanLaps.OrderBy(x => x).ToList();
+                return sorted[sorted.Count / 2];
+            }
         }
+
+        const int PaceLaps = 5;   // clean laps in the pace median
 
         public bool LivePositions = true;
 
@@ -92,6 +107,27 @@ namespace vibeRacingOverlays.Data.Engine
                 }
                 tr.PrevOnPit = onPit;
                 tr.PrevSurface = surface;
+
+                // pace: iRacing updates the last lap time just after the line, so a new time belongs to the lap before
+                bool caution = (s.SessionFlags & (SessionFlags.Caution | SessionFlags.CautionWaving)) != 0;
+                if (onPit || caution) tr.DirtyThisLap = true;
+                int lc = s.CarIdxLapCompleted[i];
+                if (lc != tr.PrevLapCompleted)
+                {
+                    tr.DirtyPrevLap = tr.DirtyThisLap || tr.PrevLapCompleted == int.MinValue;
+                    tr.DirtyThisLap = onPit || caution;
+                    tr.PrevLapCompleted = lc;
+                }
+                float last = s.CarIdxLastLapTime[i];
+                if (last > 0 && last != tr.PrevLastLapTime)
+                {
+                    if (!tr.DirtyPrevLap && lc >= 2)   // lap 1 (standing / rolling start) isn't race pace
+                    {
+                        tr.CleanLaps.Add(last);
+                        if (tr.CleanLaps.Count > PaceLaps) tr.CleanLaps.RemoveAt(0);
+                    }
+                    tr.PrevLastLapTime = last;
+                }
 
                 if (pct < 0 || surface == (int)TrackSurface.NotInWorld) continue;
 
@@ -176,6 +212,7 @@ namespace vibeRacingOverlays.Data.Engine
                     OnPitRoad = s.CarIdxOnPitRoad[i],
                     TireCompound = s.CarIdxTireCompound[i],
                     PitCount = tr.PitCount, Towing = tr.Towing, PitLaneTime = tr.PitLaneTime,
+                    PaceLap = tr.PaceLap(),
                 };
                 c.InWorld = c.Surface != TrackSurface.NotInWorld && c.LapDistPct >= 0;
                 c.InPitStall = c.Surface == TrackSurface.InPitStall;
@@ -337,8 +374,10 @@ namespace vibeRacingOverlays.Data.Engine
             return session.TrackLengthKm > 0 ? session.TrackLengthKm * 25 : 90; // ~145 km/h average as a last resort
         }
 
+        /// <summary>Expected lap time of a car: its clean-lap pace, else its last / best lap, else the class reference.</summary>
         static double LapTimeEstimate(CarInfo c, ClassStandings cs)
         {
+            if (c.PaceLap > 0) return c.PaceLap;
             if (c.LastLap > 0) return c.LastLap;
             if (c.BestLap > 0) return c.BestLap;
             return cs != null ? cs.EstLapTime : 0;
@@ -390,34 +429,49 @@ namespace vibeRacingOverlays.Data.Engine
             f.AvgPerLap = fuel.Average;
             f.LastPerLap = fuel.Last;
             f.ValidLaps = fuel.Count;
+            f.Laps = fuel.Laps;
+            f.StintAvgPerLap = fuel.StintAverage;
+            f.StintValidLaps = fuel.StintCount;
 
             var p = snap.Player;
-            if (p == null) return;
-            double playerProgress = Math.Max(0, p.Progress);
+            if (p == null) { checkeredTarget = double.NaN; return; }
+            // before the start the distance to the line counts too (grid / pace lap: progress is just below 0)
+            double playerProgress = Math.Max(-1, p.Progress);
             double playerLap = LapTimeEstimate(p, snap.PlayerClass);
             if (playerLap <= 0) return;
 
+            // time limit from the session info; SessionTimeRemain can be 0 (time is up) or a huge "unlimited" value
+            var sess = session.Session(s.SessionNum);
+            bool timed = sess != null && sess.TimeLimit > 0 && s.SessionTimeRemain < 7 * 24 * 3600;
+            double timeRemain = s.SessionTimeRemain;
+
+            // checkered flag is out: everybody finishes at their next line crossing (remembered, so it's 0 once you're over the line)
+            if (s.SessionState >= SessionState.Checkered)
+            {
+                if (double.IsNaN(checkeredTarget)) checkeredTarget = Math.Ceiling(playerProgress);
+                f.LapsToGo = Math.Max(0, checkeredTarget - playerProgress);
+                return;
+            }
+            checkeredTarget = double.NaN;
+
             if (!snap.IsRace || overallLeader == null)
             {
-                if (snap.TotalLaps > 0) f.LapsToGo = Math.Max(0, snap.TotalLaps - playerProgress);
-                else if (snap.TimeRemain > 0) f.LapsToGo = Math.Ceiling(playerProgress + snap.TimeRemain / playerLap) - playerProgress;
+                // practice / qualifying: only the player's own laps and time matter
+                f.LapsToGo = RaceDistance.LeaderLapsToGo(snap.TotalLaps, timed, timeRemain, playerProgress, playerLap);
                 return;
             }
 
-            // the race ends when the overall leader finishes; the player finishes on the next line crossing
+            // the race ends when the overall leader (any class) finishes; the player finishes on the next line crossing
             var leaderClass = snap.Classes.FirstOrDefault(c => c.ClassId == overallLeader.ClassId);
             double leaderLap = LapTimeEstimate(overallLeader, leaderClass);
-            double leaderProgress = Math.Max(0, overallLeader.Progress);
-            double leaderToGo;
-            if (snap.TotalLaps > 0) leaderToGo = Math.Max(0, snap.TotalLaps - leaderProgress);
-            else if (snap.TimeRemain > 0 && leaderLap > 0) leaderToGo = Math.Ceiling(leaderProgress + snap.TimeRemain / leaderLap) - leaderProgress;
-            else if (s.SessionState >= SessionState.Checkered) leaderToGo = 0;
-            else return;
-
-            double timeLeft = leaderToGo * leaderLap;
-            f.LapsToGo = Math.Max(0, Math.Ceiling(playerProgress + timeLeft / playerLap - 1e-6) - playerProgress);
-            if (s.SessionState >= SessionState.Checkered) f.LapsToGo = Math.Max(0, Math.Ceiling(playerProgress) - playerProgress);
+            if (leaderLap <= 0) leaderLap = playerLap;   // no lap time for the leader yet: assume the player's pace
+            double leaderProgress = Math.Max(-1, overallLeader.Progress);
+            double leaderToGo = RaceDistance.LeaderLapsToGo(snap.TotalLaps, timed, timeRemain, leaderProgress, leaderLap);
+            if (leaderToGo < 0) return;
+            f.LapsToGo = RaceDistance.CarLapsToGo(leaderToGo, leaderLap, playerProgress, playerLap);
         }
+
+        double checkeredTarget = double.NaN;   // the player's finish line crossing once the checkered flag is out
 
         static void ParseLicense(string lic, CarInfo c)
         {

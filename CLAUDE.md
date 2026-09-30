@@ -9,7 +9,9 @@ The user (c4seum) speaks **Dutch**: answer in Dutch. Setup: triple screens (3× 
   - `Widgets/`: Standings, Relative, Fuel. Each is a `XxxSettings : WidgetSettings` with `[Setting]` attributes (the editor UI is generated from them) plus `XxxWidget.Draw(DisplayList, RaceSnapshot)`. Register new widgets in `Widget.Create`, `Widget.Catalog` and with `[JsonDerivedType]` on `WidgetSettings`.
   - `Rendering/`: widgets draw into a `DisplayList`. The window only redraws when the list changed (FPS!). `WpfRenderer` fits text inside its column (shrinks numbers, uses an ellipsis for names).
   - `Core/Settings.cs`: `AppSettings` holds Layouts (sets of widgets), Presets (per widget type), theme etc. Stored in `%APPDATA%\vibeRacingOverlays[-dev]\settings.json`.
-  - `UI/`: settings panel with reset buttons (per setting / group / widget), live preview (live or demo single class / multiclass), side-by-side layout.
+  - `UI/`: settings panel with reset buttons (per setting / group / widget), live preview (live or demo single class / multiclass), side-by-side layout, `PositionPanel` (anchor/screen/offsets/lock of the selected widget + snapping; right of the settings when stacked, below the preview side by side). Keep new UI consistent with the settings panel (accent group headers with ↺ Reset, label column, slider + value box, ↺ per setting).
+  - `Overlay/Placement.cs`: widget position = screen ("Left/Middle/Right", same meaning on every PC) + 9-point anchor + inward offsets, in screen pixels; widgets grow away from their anchor. Snapping while dragging via `WM_MOVING` (snap distance / margin, Shift = free).
+- `Data/Engine/RaceDistance.cs`: laps to go per iRacing rules (lap limit, time limit or both; overall leader ends the race, also multiclass; everyone finishes on the next line crossing). Pace = median of the last 5 clean laps per car.
 - `src/vibeRacingOverlays.Setup`: .NET Framework 4.8 per-user installer (no admin rights). The app exe is embedded as a resource, plus a small uninstaller.
 - `assets/logo.png`: the user's own "vRO" logo (transparent). `tools/make-icon.ps1` turns it into `src/vibeRacingOverlays.App/app.ico` (all sizes); rerun it after changing the logo.
 - Docs: `README.md` is a **user guide** (features, widgets, installation, usage, FAQ), with no implementation details. Technical notes (dev build, releasing, structure, adding widgets) go in `DEVELOPMENT.md`. Keep both up to date when features change.
@@ -29,9 +31,11 @@ The user (c4seum) speaks **Dutch**: answer in Dutch. Setup: triple screens (3× 
 ## Release history
 - **v1.0.0**: first release (Standings, Relative, Fuel; layouts, presets, reset buttons, preview, installer).
 - **v1.0.1**: the user's vRO logo as app icon, README rewritten as a user guide.
+- Unreleased (on main, 2026-09-30, work laptop): position panel (anchoring, offsets, lock, snapping), Relative "Laps in stint" column, Fuel: "Last N avg" and "Stint avg" rows, stops indicator (off / next to refuel / column), laps-to-go fixes (timed race last lap, lap+time limit, clean-lap pace, after checkered, grid). Not tested in iRacing yet: test at home (drag snapping, stint reset after a pit stop, last lap of a timed race). New features = next release is 1.1.0.
 
 ## Working rules
-- Before UI tests: back up `settings.json` and restore it afterwards. Close test instances (also leftover Debug instances).
+- Before UI tests: back up `settings.json` and restore it afterwards. Close test instances (also leftover Debug instances), but never the user's own running DEV app (`publish\vibeRacingOverlays.exe`): check with `Get-Process` first, and don't edit `settings.json` while it runs.
+- UI Automation: toggle buttons/checkboxes react to Checked/Unchecked (a UIA Toggle doesn't raise Click); find windows by the test process id.
 - Never send keystrokes blindly: the user's other windows are often in front. Use UI Automation, the `--silent` installer mode, or PrintWindow for screenshots.
 - `winget`-installed tools (dotnet, git, gh) may be missing from PATH in already-open terminals: refresh with
   `$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')`.

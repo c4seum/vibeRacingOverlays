@@ -10,9 +10,20 @@ namespace vibeRacingOverlays.App.Overlay
         public const int WS_EX_LAYERED = 0x80000;
         public const int WS_EX_NOACTIVATE = 0x08000000;
         public const int WM_HOTKEY = 0x0312;
+        public const int WM_MOVING = 0x0216;
 
         public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
-        public const uint SWP_NOSIZE = 0x1, SWP_NOMOVE = 0x2, SWP_NOACTIVATE = 0x10;
+        public const uint SWP_NOSIZE = 0x1, SWP_NOMOVE = 0x2, SWP_NOZORDER = 0x4, SWP_NOACTIVATE = 0x10;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT
+        {
+            public int Left, Top, Right, Bottom;
+            public int Width { get { return Right - Left; } }
+            public int Height { get { return Bottom - Top; } }
+        }
+
+        [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
 
         public const uint MOD_ALT = 0x1, MOD_CONTROL = 0x2, MOD_SHIFT = 0x4, MOD_WIN = 0x8, MOD_NOREPEAT = 0x4000;
 

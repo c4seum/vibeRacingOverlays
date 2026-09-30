@@ -19,6 +19,7 @@ namespace vibeRacingOverlays.App
         readonly DispatcherTimer statusTimer;
         readonly PreviewData previewData;
         readonly PreviewPanel preview;
+        readonly PositionPanel position;
         bool loading;
 
         public MainWindow(AppSettings settings, TelemetryService telemetry, OverlayManager overlays)
@@ -54,7 +55,9 @@ namespace vibeRacingOverlays.App
                 telemetry.Mode = settings.Source;
                 overlays.ScheduleSave();
             };
-            EditToggle.Click += (s, e) => overlays.SetEditMode(EditToggle.IsChecked == true);
+            // Checked/Unchecked instead of Click: also fires for UI Automation (the manager syncs IsChecked back)
+            EditToggle.Checked += (s, e) => { if (!overlays.EditMode) overlays.SetEditMode(true); };
+            EditToggle.Unchecked += (s, e) => { if (overlays.EditMode) overlays.SetEditMode(false); };
             OverlaysToggle.Click += (s, e) => overlays.ToggleOverlays();
             overlays.StateChanged += () =>
             {
@@ -62,6 +65,15 @@ namespace vibeRacingOverlays.App
                 OverlaysToggle.IsChecked = settings.OverlaysVisible;
                 // the layout may have been switched with the hotkey
                 if (shownLayoutId != settings.ActiveLayoutId) ShowActiveLayout();
+            };
+
+            // dragged, scaled or renamed: the position panel follows
+            overlays.WidgetChanged += ws => { if (ws == Selected) position.Refresh(); };
+            // clicking a widget on screen in edit layout mode selects it
+            overlays.WidgetGrabbed += ws =>
+            {
+                foreach (ListBoxItem item in WidgetList.Items)
+                    if (item.Tag == ws) WidgetList.SelectedItem = item;
             };
 
             LayoutBox.SelectionChanged += (s, e) =>
@@ -80,7 +92,7 @@ namespace vibeRacingOverlays.App
             RemoveButton.Click += (s, e) => Remove();
             WidgetList.SelectionChanged += (s, e) => ShowSelected();
 
-            FooterText.Text = "Edit layout (" + settings.HotkeyEditMode + "): drag widgets to move them, mouse wheel to resize.   "
+            FooterText.Text = "Edit layout (" + settings.HotkeyEditMode + "): drag widgets to move them (Shift: no snapping), mouse wheel to resize.   "
                 + "Show/hide all: " + settings.HotkeyToggleOverlays + ".   Next layout: " + settings.HotkeyNextLayout
                 + ".   Layouts are saved automatically in " + AppSettings.Folder;
 
@@ -88,6 +100,8 @@ namespace vibeRacingOverlays.App
             previewData = new PreviewData(telemetry);
             preview = new PreviewPanel(previewData, settings);
             PreviewHost.Content = preview;
+            position = new PositionPanel(settings, overlays);
+            PositionHost.Content = position;
             preview.LayoutToggleRequested += () =>
             {
                 settings.PreviewSideBySide = !settings.PreviewSideBySide;
@@ -110,7 +124,10 @@ namespace vibeRacingOverlays.App
             overlays.RegisterHotkeys(new WindowInteropHelper(this).Handle);
         }
 
-        /// <summary>Stacked: preview above the settings. Side by side: settings left, splitter, preview right.</summary>
+        /// <summary>
+        /// Stacked: preview on top, below it the settings with the position panel on their right.
+        /// Side by side: settings left, splitter, preview right with the position panel below it.
+        /// </summary>
         void ApplyEditorLayout()
         {
             bool side = settings.PreviewSideBySide;
@@ -122,41 +139,47 @@ namespace vibeRacingOverlays.App
                 cols[0].Width = new GridLength(680);
                 cols[1].Width = GridLength.Auto;
                 cols[2].Width = new GridLength(1, GridUnitType.Star);
-                cols[2].MinWidth = 320;
-                // make room for the preview when the window is narrow
-                double target = Math.Min(1600, SystemParameters.WorkArea.Width - 40);
-                if (WindowState == WindowState.Normal && Width < target)
-                {
-                    Width = target;
-                    Left = Math.Max(SystemParameters.WorkArea.Left, Math.Min(Left, SystemParameters.WorkArea.Right - Width));
-                }
+                cols[2].MinWidth = 520;
+                // the preview fills the space above the position panel
                 rows[0].Height = new GridLength(1, GridUnitType.Star);
-                rows[1].Height = new GridLength(0);
-                Place(SettingsScroll, 0, 0, 2);
-                Place(EditorSplitter, 0, 1, 2);
-                Place(PreviewHost, 0, 2, 2);
+                rows[0].MinHeight = 180;
+                rows[1].Height = GridLength.Auto;
+                Place(SettingsScroll, 0, 0, 2, 1);
+                Place(EditorSplitter, 0, 1, 2, 1);
+                Place(PreviewHost, 0, 2, 1, 1);
+                Place(PositionScroll, 1, 2, 1, 1);
                 EditorSplitter.Visibility = Visibility.Visible;
             }
             else
             {
                 cols[0].Width = new GridLength(1, GridUnitType.Star);
                 cols[1].Width = new GridLength(0);
-                cols[2].Width = new GridLength(0);
+                cols[2].Width = GridLength.Auto;
                 cols[2].MinWidth = 0;
                 rows[0].Height = GridLength.Auto;
+                rows[0].MinHeight = 0;
                 rows[1].Height = new GridLength(1, GridUnitType.Star);
-                Place(PreviewHost, 0, 0, 1);
-                Place(SettingsScroll, 1, 0, 1);
+                Place(PreviewHost, 0, 0, 1, 3);
+                Place(SettingsScroll, 1, 0, 1, 1);
+                Place(PositionScroll, 1, 2, 1, 1);
                 EditorSplitter.Visibility = Visibility.Collapsed;
+            }
+            // make room for settings + preview / position panel when the window is narrow
+            double target = Math.Min(side ? 1600 : 1440, SystemParameters.WorkArea.Width - 40);
+            if (WindowState == WindowState.Normal && Width < target)
+            {
+                Width = target;
+                Left = Math.Max(SystemParameters.WorkArea.Left, Math.Min(Left, SystemParameters.WorkArea.Right - Width));
             }
             preview.SetSideBySide(side);
         }
 
-        static void Place(UIElement e, int row, int col, int rowSpan)
+        static void Place(UIElement e, int row, int col, int rowSpan, int colSpan)
         {
             Grid.SetRow(e, row);
             Grid.SetColumn(e, col);
             Grid.SetRowSpan(e, rowSpan);
+            Grid.SetColumnSpan(e, colSpan);
         }
 
         void UpdateStatus()
@@ -227,7 +250,7 @@ namespace vibeRacingOverlays.App
             RefreshLayouts();
             RefreshList();
             if (WidgetList.Items.Count > 0) WidgetList.SelectedIndex = 0;
-            else { SettingsHost.Children.Clear(); preview.SetWidget(null); }
+            else { SettingsHost.Children.Clear(); preview.SetWidget(null); position.SetWidget(null); }
         }
 
         string UniqueLayoutName(string name)
@@ -304,6 +327,7 @@ namespace vibeRacingOverlays.App
         {
             var ws = Selected;
             if (preview != null) preview.SetWidget(ws);
+            if (position != null) position.SetWidget(ws);
             if (ws == null) { SettingsHost.Children.Clear(); return; }
             SettingsPanel.Build(SettingsHost, ws, () => overlays.Invalidate(ws), () =>
             {
@@ -350,6 +374,7 @@ namespace vibeRacingOverlays.App
             copy.Id = Guid.NewGuid().ToString("N").Substring(0, 8);
             copy.Title = ws.Title + " (copy)";
             copy.X += 30; copy.Y += 30;
+            copy.Screen = null;   // placed from X/Y, so it doesn't land exactly on top of the original
             Add(copy);
         }
 
@@ -362,7 +387,7 @@ namespace vibeRacingOverlays.App
             overlays.Sync();
             overlays.ScheduleSave();
             RefreshList();
-            if (WidgetList.Items.Count > 0) WidgetList.SelectedIndex = 0; else { SettingsHost.Children.Clear(); preview.SetWidget(null); }
+            if (WidgetList.Items.Count > 0) WidgetList.SelectedIndex = 0; else { SettingsHost.Children.Clear(); preview.SetWidget(null); position.SetWidget(null); }
         }
     }
 }

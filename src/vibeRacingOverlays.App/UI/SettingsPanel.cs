@@ -25,7 +25,7 @@ namespace vibeRacingOverlays.App.UI
         }
 
         /// <summary>Settings that describe the widget instance itself; a widget reset keeps them.</summary>
-        static readonly HashSet<string> InstanceProps = new HashSet<string> { "Id", "Title", "Enabled", "X", "Y" };
+        static readonly HashSet<string> InstanceProps = new HashSet<string> { "Id", "Title", "Enabled", "X", "Y", "Screen", "Anchor", "OffsetX", "OffsetY", "Locked" };
 
         static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 

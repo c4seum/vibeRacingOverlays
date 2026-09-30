@@ -34,6 +34,7 @@ namespace vibeRacingOverlays.App.Widgets
             new ColumnDef("ir", "iRating", "iR", 40, true, Align.Right),
             new ColumnDef("pit", "Pit status", "PIT", 38, true, Align.Center),
             new ColumnDef("last", "Last lap", "LAST", 62, false, Align.Right),
+            new ColumnDef("stint", "Laps in stint", "STINT", 32, false, Align.Right),
             new ColumnDef("rel", "Relative time", "REL", 50, true, Align.Right),
         };
 
@@ -128,6 +129,7 @@ namespace vibeRacingOverlays.App.Widgets
                     else if (c.OnPitRoad || c.InPitStall) dl.Badge(x, y + 3, w, h - 6, "PIT", small, Orange, 0xFF000000);
                     break;
                 case "last": if (c.LastLap > 0) dl.Text(x, y, w, h, Fmt.Lap(c.LastLap, 1), fs, text, Align.Right); break;
+                case "stint": if (c.Lap > 0) dl.Text(x, y, w, h, c.StintLaps.ToString(), fs, text, Align.Right); break;
                 case "rel": if (!c.IsPlayer) dl.Text(x, y, w, h, Fmt.Signed(c.RelativeTime, 1), fs, text, Align.Right); break;
             }
         }

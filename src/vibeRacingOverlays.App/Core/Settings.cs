@@ -27,6 +27,9 @@ namespace vibeRacingOverlays.App.Core
 
     public enum ShowWhen { Always, InCar, InRace }
 
+    /// <summary>Point of the screen (and of the widget) that the position offsets are measured from.</summary>
+    public enum Anchor { TopLeft, Top, TopRight, Left, Center, Right, BottomLeft, Bottom, BottomRight }
+
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
     [JsonDerivedType(typeof(Widgets.StandingsSettings), "standings")]
     [JsonDerivedType(typeof(Widgets.RelativeSettings), "relative")]
@@ -36,8 +39,17 @@ namespace vibeRacingOverlays.App.Core
         public string Id { get; set; } = Guid.NewGuid().ToString("N").Substring(0, 8);
         public string Title { get; set; } = "";
         public bool Enabled { get; set; } = true;
+        /// <summary>Last on-screen position (screen pixels). Only used to place widgets without a Screen yet.</summary>
         public double X { get; set; } = 100;
         public double Y { get; set; } = 100;
+        /// <summary>Monitor the widget is anchored to ("Left", "Middle", "Right"...); null = derive it (and the offsets) from X/Y.</summary>
+        public string Screen { get; set; }
+        public Anchor Anchor { get; set; } = Anchor.TopLeft;
+        /// <summary>Distance (px) from the anchor, measured inwards; signed for the centre anchors.</summary>
+        public double OffsetX { get; set; }
+        public double OffsetY { get; set; }
+        /// <summary>Locked widgets can't be dragged or resized in edit layout mode.</summary>
+        public bool Locked { get; set; }
         /// <summary>Preset last loaded into / saved from this widget (null = none).</summary>
         public string PresetId { get; set; }
 
@@ -86,6 +98,12 @@ namespace vibeRacingOverlays.App.Core
         public UI.AppTheme Theme { get; set; } = UI.AppTheme.Dark;
         /// <summary>Editor: preview next to the settings (true) or above them (false).</summary>
         public bool PreviewSideBySide { get; set; }
+        /// <summary>Dragged widgets snap to the edges of other widgets and of the screen.</summary>
+        public bool SnapEnabled { get; set; } = true;
+        /// <summary>How close (px) an edge must come before it snaps.</summary>
+        public int SnapDistance { get; set; } = 12;
+        /// <summary>Space (px) kept between snapped widgets and from the screen edge.</summary>
+        public int SnapMargin { get; set; } = 0;
         public bool OverlaysVisible { get; set; } = true;
         public string HotkeyEditMode { get; set; } = "Ctrl+Shift+E";
         public string HotkeyToggleOverlays { get; set; } = "Ctrl+Shift+H";
