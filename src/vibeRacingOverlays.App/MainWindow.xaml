@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="vibeRacingOverlays" Icon="app.ico" Height="900" Width="1480"
         Background="{DynamicResource Bg}" Foreground="{DynamicResource Fg}" WindowStartupLocation="CenterScreen"
-        FontFamily="{StaticResource UiFont}" FontSize="13" UseLayoutRounding="True">
+        FontFamily="{StaticResource UiFont}" FontSize="13" UseLayoutRounding="True" AllowDrop="True">
     <DockPanel>
         <!-- top bar: app name and data status on the left, the global actions on the right -->
         <Border DockPanel.Dock="Top" Background="{DynamicResource Panel}" Padding="16,8" BorderBrush="{DynamicResource Divider}" BorderThickness="0,0,0,1">
@@ -50,12 +50,10 @@
                 <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
                     <Button x:Name="RemoveButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE74D;" ToolTip="Remove the selected widget"/>
                     <Button x:Name="DuplicateButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE8C8;" ToolTip="Duplicate the selected widget" Margin="4,0"/>
-                    <Button x:Name="WidgetExportButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE74E;" ToolTip="Export the selected widget with all its options to a file"/>
-                    <Button x:Name="WidgetImportButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE8E5;" ToolTip="Import a widget from a file into this layout" Margin="0,0,4,0"/>
                     <Button x:Name="AddButton" ToolTip="Add a widget: Standings, Relative or Fuel calculator" Margin="0">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFont}" FontSize="11" VerticalAlignment="Center" Margin="0,1,8,0"/>
-                            <TextBlock Text="Add" VerticalAlignment="Center"/>
+                            <TextBlock Text="Add widget" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                 </DockPanel>

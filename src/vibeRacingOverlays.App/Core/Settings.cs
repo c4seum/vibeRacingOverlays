@@ -222,6 +222,7 @@ namespace vibeRacingOverlays.App.Core
         }
 
         static string FilePath { get { return Path.Combine(Folder, "settings.json"); } }
+        public static string SettingsFile { get { return FilePath; } }
         public static string BackupFolder { get { return Path.Combine(Folder, "backups"); } }
         public static string ErrorLog { get { return Path.Combine(Folder, "errors.log"); } }
 
@@ -465,11 +466,35 @@ namespace vibeRacingOverlays.App.Core
         {
             w.Id = Core.Defaults.NewId();
             NormalizeWidget(w);
-            if (!Presets.Any(p => p.Id == w.PresetId && p.Settings != null && p.Settings.GetType() == w.GetType()))
-            {
-                var d = DefaultPreset(w.GetType());
-                w.PresetId = d != null ? d.Id : null;
-            }
+            // the widget's own settings are what counts; it follows one of your presets only when that holds exactly
+            // these settings (no "*"), otherwise your Default preset (and shows "*": it really differs from it)
+            var same = Presets.Where(p => p.Settings != null && SameSettings(w, p.Settings)).OrderBy(p => p.IsDefault ? 0 : 1).FirstOrDefault();
+            var d = same ?? DefaultPreset(w.GetType());
+            w.PresetId = d != null ? d.Id : null;
+        }
+
+        /// <summary>
+        /// Adds a preset from a file: a unique name within its type (never "Default": your Default is never replaced),
+        /// its own id unless that is taken. Returns the new preset.
+        /// </summary>
+        public WidgetPreset AddImportedPreset(WidgetPreset p)
+        {
+            NormalizeWidget(p.Settings);
+            p.Settings.PresetId = null;
+            p.IsDefault = false;
+            if (string.IsNullOrEmpty(p.Id) || Presets.Any(x => x.Id == p.Id)) p.Id = Core.Defaults.NewId();
+            p.Name = UniquePresetName(p.Settings.GetType(), string.Equals(p.Name, "Default", StringComparison.OrdinalIgnoreCase) ? "Default (imported)" : p.Name, null);
+            Presets.Add(p);
+            return p;
+        }
+
+        public string UniquePresetName(Type type, string name, WidgetPreset except)
+        {
+            if (string.IsNullOrWhiteSpace(name)) name = "Preset";
+            string n = name;
+            for (int i = 2; Presets.Any(p => p != except && p.Settings != null && p.Settings.GetType() == type && string.Equals(p.Name, n, StringComparison.OrdinalIgnoreCase)); i++)
+                n = name + " (" + i + ")";
+            return n;
         }
 
         static void NormalizeWidget(WidgetSettings w)

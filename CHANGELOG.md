@@ -7,7 +7,10 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 ## [Unreleased]
 
 ### Added
-- Export and import: **Export** / **Import** under *Layout* save a whole layout (all widgets with their options) to a file and add it back as a new layout, for sharing or another PC; the two icon buttons next to **Add** do the same for a single widget. Widget types a version doesn't know are skipped with a message.
+- Export and import: **Export** / **Import** under *Layout* save a whole layout to a file and add it as a new layout, for sharing or another PC. The file holds every widget's own current settings (also changes not saved in a preset); on import a widget follows one of your presets only when that holds exactly its settings, otherwise your Default (with `*`). Your presets are never replaced.
+- Preset files: **Export...** / **Import...** in the widget's *Preset file* row (a preset is the settings without the position), and a preset library in `Documents\vRO\presets`: every preset is a file there, and preset files you put there (shared ones, or exported widgets) appear in the app, also while it runs. Delete presets in the app; a file deleted outside the app is written again.
+- Drag and drop: drop layout, preset or widget files on the app window to import them.
+- Widget types a version doesn't know are skipped with a message.
 - Layouts: **Save**, **Save as**, **Rename**, **Delete** and **New** (an empty layout without widgets). Changes are still kept automatically, but are stored in the layout with Save; a `*` after the name shows unsaved changes. There is always a **Default** layout (can't be renamed or deleted).
 - Widget presets: choosing a preset loads it, with **Save**, **Save as**, **Rename** and **Delete**, and a `*` when the widget differs from its preset. Every widget type has a **Default** preset: new widgets start from it and all reset buttons go back to it, so saving Default makes it your default set. The factory settings can be restored from the Default preset.
 - The app's built-in defaults (Default layout and Default presets) are the export files in the `defaults` folder of the source code, built into the app; saving a Default in the DEV build writes them there, so they ship with the next release.

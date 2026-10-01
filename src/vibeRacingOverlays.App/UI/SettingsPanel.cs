@@ -23,6 +23,23 @@ namespace vibeRacingOverlays.App.UI
         public static SessionKind Kind = SessionKind.Race;
         public static event Action KindChanged;
 
+        /// <summary>Copies all widget settings from another settings object; instance settings (name, position...) are kept.</summary>
+        static void ApplyTo(WidgetSettings ws, WidgetSettings source)
+        {
+            foreach (var p in Editor.SettingsOf(ws)) p.SetValue(ws, p.GetValue(source));
+            var t = ws as ITableSettings;
+            if (t != null) { t.Columns = ((ITableSettings)source).Columns; t.MergeColumns(); }
+            var norm = ws as INormalizable;
+            if (norm != null) norm.Normalize();
+        }
+
+        /// <summary>Loads a preset into a widget (its name and position stay).</summary>
+        public static void Load(WidgetSettings ws, WidgetPreset p)
+        {
+            ApplyTo(ws, AppSettings.CloneWidget(p.Settings));
+            ws.PresetId = p.Id;
+        }
+
         public static void Build(Panel host, WidgetSettings ws, Action changed, Action titleChanged)
         {
             new Editor(host, ws, changed, titleChanged).Render();
@@ -83,7 +100,11 @@ namespace vibeRacingOverlays.App.UI
                 var title = new TextBox { Text = ws.Title, FontWeight = FontWeights.SemiBold, ToolTip = "Only changes the name shown in the app; it stays a " + ws.TypeName + " widget." };
                 title.TextChanged += (s, e) => { ws.Title = string.IsNullOrWhiteSpace(title.Text) ? ws.TypeName : title.Text; titleChanged(); changed(); };
                 Ui.Row(widgetCard, "Display name", title, "Only changes the name shown in the app", null);
-                if (App != null) Ui.Row(widgetCard, "Preset", PresetRow(), "Saved settings of this widget type, available in every layout", null);
+                if (App != null)
+                {
+                    Ui.Row(widgetCard, "Preset", PresetRow(), "Saved settings of this widget type, available in every layout", null);
+                    Ui.Row(widgetCard, "Preset file", PresetFileRow(), "Share presets as files. The preset library is " + Core.PresetLibrary.Folder + ": preset files you put there appear in the list", null);
+                }
 
                 var profiles = ws as ISessionProfiles;
                 if (profiles != null)
@@ -291,6 +312,7 @@ namespace vibeRacingOverlays.App.UI
             {
                 // the Default preset is the app's default set: DEV builds write it into the built-in defaults
                 if (p != null && p.IsDefault) Core.Defaults.Export(App);
+                Mirror();
                 changed();
                 Rebuild();   // new defaults for the reset buttons
             }
@@ -331,6 +353,7 @@ namespace vibeRacingOverlays.App.UI
                 if (name == null || string.IsNullOrWhiteSpace(name) || name == p.Name) return;
                 name = name.Trim();
                 p.Name = string.Equals(name, "Default", StringComparison.OrdinalIgnoreCase) ? UniquePresetName("Default copy", p) : UniquePresetName(name, p);
+                Mirror();
                 changed();
                 Rebuild();
             }
@@ -345,6 +368,8 @@ namespace vibeRacingOverlays.App.UI
                 var def = App.DefaultPreset(ws.GetType());
                 foreach (var w in App.Layouts.SelectMany(l => l.Widgets.Concat(l.Saved ?? new List<WidgetSettings>())))
                     if (w.PresetId == p.Id) w.PresetId = def != null ? def.Id : null;
+                if (Core.PresetLibrary.Current != null) Core.PresetLibrary.Current.Removed(p);
+                Mirror();
                 changed();
                 Rebuild();
             }
@@ -362,14 +387,66 @@ namespace vibeRacingOverlays.App.UI
                 AfterPresetChange(p);
             }
 
-            /// <summary>Copies all widget settings from another settings object; instance settings (name, position...) are kept.</summary>
-            void ApplyFrom(WidgetSettings source)
+            void ApplyFrom(WidgetSettings source) { ApplyTo(ws, source); }
+
+            static void Mirror() { if (Core.PresetLibrary.Current != null) Core.PresetLibrary.Current.Mirror(); }
+
+            /// <summary>Export (this widget's current settings, under its preset's name), import, open the library folder.</summary>
+            FrameworkElement PresetFileRow()
             {
-                foreach (var p in AllProps(ws)) p.SetValue(ws, p.GetValue(source));
-                var t = ws as ITableSettings;
-                if (t != null) { t.Columns = ((ITableSettings)source).Columns; t.MergeColumns(); }
-                var norm = ws as INormalizable;
-                if (norm != null) norm.Normalize();
+                var row = new StackPanel { Orientation = Orientation.Horizontal };
+                var export = new Button { Content = "Export...", ToolTip = "Save this widget's current settings as a preset file (to share)" };
+                var import = new Button { Content = "Import...", Margin = new Thickness(6, 0, 0, 0), ToolTip = "Add a preset from a file and load it into this widget (you can also drop files on the window)" };
+                var open = new Button { Content = "Open folder", Style = Ui.Style("GhostButton"), Margin = new Thickness(6, 0, 0, 0), ToolTip = "Open the preset library: " + Core.PresetLibrary.Folder };
+                export.Click += (s, e) => ExportPreset();
+                import.Click += (s, e) => ImportPreset();
+                open.Click += (s, e) =>
+                {
+                    System.IO.Directory.CreateDirectory(Core.PresetLibrary.Folder);
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", "\"" + Core.PresetLibrary.Folder + "\"") { UseShellExecute = true });
+                };
+                row.Children.Add(export);
+                row.Children.Add(import);
+                row.Children.Add(open);
+                return row;
+            }
+
+            void ExportPreset()
+            {
+                var cur = Current();
+                string name = cur != null && !cur.IsDefault ? cur.Name : ws.Title;
+                var p = new WidgetPreset { Name = name, Settings = Snapshot() };
+                string folder = System.IO.Path.Combine(Core.Exchange.LibraryFolder, "exports");
+                System.IO.Directory.CreateDirectory(folder);
+                var dlg = new Microsoft.Win32.SaveFileDialog { Title = "Export preset", Filter = Core.Exchange.PresetFilter, InitialDirectory = folder,
+                    FileName = Core.Exchange.SafeName(ws.TypeName + " - " + name) + ".vropreset.json", AddExtension = true };
+                if (dlg.ShowDialog(Window.GetWindow(host)) != true) return;
+                try { Core.Exchange.ExportPreset(p, dlg.FileName); }
+                catch (Exception ex) { MessageBox.Show(Window.GetWindow(host), "The preset could not be exported:\n" + ex.Message, "vibeRacingOverlays", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            }
+
+            void ImportPreset()
+            {
+                var owner = Window.GetWindow(host);
+                var dlg = new Microsoft.Win32.OpenFileDialog { Title = "Import preset", Filter = Core.Exchange.PresetFilter, InitialDirectory = Core.Exchange.LibraryFolder };
+                if (dlg.ShowDialog(owner) != true) return;
+                try
+                {
+                    var p = Core.Exchange.ReadPreset(dlg.FileName);
+                    if (p == null) { MessageBox.Show(owner, "This preset is for a widget type this version doesn't know.", "vibeRacingOverlays"); return; }
+                    p = App.AddImportedPreset(p);
+                    Mirror();
+                    if (p.Settings.GetType() == ws.GetType())
+                    {
+                        if (Modified() && MessageBox.Show(owner, "Load the imported preset '" + p.Name + "' into this widget? Its changes since the last save are lost.",
+                            "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) { changed(); Rebuild(); return; }
+                        Load(ws, p);
+                    }
+                    else MessageBox.Show(owner, "'" + p.Name + "' is a " + p.TypeName + " preset: it was added to the " + p.TypeName + " presets.", "vibeRacingOverlays");
+                    changed();
+                    Rebuild();
+                }
+                catch (Exception ex) { MessageBox.Show(owner, "The preset could not be imported:\n" + ex.Message, "vibeRacingOverlays", MessageBoxButton.OK, MessageBoxImage.Warning); }
             }
 
             void ResetToDefaults()
@@ -382,6 +459,8 @@ namespace vibeRacingOverlays.App.UI
             // ------------------------------------------------------------ defaults / reset
 
             /// <summary>Settings of <paramref name="t"/> that a reset covers (the lists have their own reset; session profiles are compared deep).</summary>
+            public static IEnumerable<PropertyInfo> SettingsOf(object t) { return AllProps(t); }
+
             static IEnumerable<PropertyInfo> AllProps(object t)
             {
                 return t.GetType().GetProperties().Where(p => p.CanRead && p.CanWrite && !InstanceProps.Contains(p.Name)

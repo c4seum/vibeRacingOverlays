@@ -42,6 +42,9 @@ namespace vibeRacingOverlays.App
 
             var settings = AppSettings.Load();
             settings.StartupBackup();   // before anything can be saved
+            var settingsSaved = File.Exists(AppSettings.SettingsFile) ? File.GetLastWriteTimeUtc(AppSettings.SettingsFile) : DateTime.MinValue;
+            library = new PresetLibrary(settings, Dispatcher);
+            library.Start(settingsSaved);   // takes in preset files that were added or changed while the app was closed
             UI.ThemeManager.Apply(settings.Theme);
             TextMeasure.SetFont(settings.Font);
             telemetry = new TelemetryService { Mode = settings.Source, LivePositions = settings.LivePositions };
@@ -63,8 +66,11 @@ namespace vibeRacingOverlays.App
                     BuildInfo.AppName, MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
+        PresetLibrary library;
+
         protected override void OnExit(ExitEventArgs e)
         {
+            if (library != null) library.Dispose();
             if (overlays != null) overlays.Dispose();
             if (telemetry != null) telemetry.Dispose();
             base.OnExit(e);

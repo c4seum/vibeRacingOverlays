@@ -90,8 +90,11 @@ namespace vibeRacingOverlays.App
             LayoutDeleteButton.Click += (s, e) => DeleteLayout();
             LayoutExportButton.Click += (s, e) => ExportLayout();
             LayoutImportButton.Click += (s, e) => ImportLayout();
-            WidgetExportButton.Click += (s, e) => ExportWidget();
-            WidgetImportButton.Click += (s, e) => ImportWidget();
+            // drop layout, preset or widget files on the window to import them
+            DragOver += (s, e) => { e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None; e.Handled = true; };
+            Drop += (s, e) => { var files = e.Data.GetData(DataFormats.FileDrop) as string[]; if (files != null) ImportFiles(files); };
+            // preset files added or changed in the library folder (also while the app runs)
+            if (Core.PresetLibrary.Current != null) Core.PresetLibrary.Current.Changed += () => { overlays.ScheduleSave(); ShowSelected(); };
 
             AddButton.Click += (s, e) => ShowAddMenu();
             DuplicateButton.Click += (s, e) => Duplicate();
@@ -385,9 +388,11 @@ namespace vibeRacingOverlays.App
             overlays.ScheduleSave();
             ShowActiveLayout();
         }
+
         // ---------------------------------------------------------------- export / import
 
-        static readonly string ExportFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        // exported layouts go next to the preset library (Documents\vRO\layouts)
+        static string ExportFolder { get { var d = System.IO.Path.Combine(Core.Exchange.LibraryFolder, "layouts"); System.IO.Directory.CreateDirectory(d); return d; } }
 
         string AskSavePath(string title, string filter, string fileName)
         {
@@ -413,46 +418,59 @@ namespace vibeRacingOverlays.App
         void ImportLayout()
         {
             string path = AskOpenPath("Import layout", Core.Exchange.LayoutFilter);
-            if (path == null) return;
-            try
-            {
-                int skipped;
-                var l = Core.Exchange.ImportLayout(path, settings, out skipped);
-                l.Name = UniqueLayoutName(string.Equals(l.Name, "Default", StringComparison.OrdinalIgnoreCase) ? "Default (imported)" : l.Name);
-                AddLayout(l);
-                overlays.SaveNow();
-                if (skipped > 0) MessageBox.Show(this, skipped + " widget(s) in this file were made with another version and can't be used by this one; the rest was imported.",
-                    "vibeRacingOverlays", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex) { MessageBox.Show(this, "The layout could not be imported:\n" + ex.Message, "vibeRacingOverlays", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            if (path != null) ImportFiles(new[] { path });
         }
 
-        void ExportWidget()
+        /// <summary>
+        /// Imports layout files (each as a new layout) and preset / widget files (each as a new preset, loaded into the
+        /// selected widget when it's the same type). Used by Import and by dropping files on the window.
+        /// </summary>
+        public void ImportFiles(IEnumerable<string> paths)
         {
-            var ws = Selected;
-            if (ws == null) { MessageBox.Show(this, "Select the widget to export in the list first.", "vibeRacingOverlays"); return; }
-            string path = AskSavePath("Export widget", Core.Exchange.WidgetFilter, Core.Exchange.SafeName(ws.Title) + ".vrowidget.json");
-            if (path == null) return;
-            try { Core.Exchange.ExportWidget(ws, path); }
-            catch (Exception ex) { MessageBox.Show(this, "The widget could not be exported:\n" + ex.Message, "vibeRacingOverlays", MessageBoxButton.OK, MessageBoxImage.Warning); }
-        }
-
-        void ImportWidget()
-        {
-            string path = AskOpenPath("Import widget", Core.Exchange.WidgetFilter);
-            if (path == null) return;
-            try
+            var report = new List<string>();
+            LayoutConfig lastLayout = null;
+            WidgetPreset lastPreset = null;
+            foreach (var path in paths)
             {
-                int skipped;
-                var widgets = Core.Exchange.ImportWidgets(path, settings, out skipped);
-                foreach (var w in widgets) Add(w);
-                if (widgets.Count == 0 || skipped > 0)
-                    MessageBox.Show(this, (widgets.Count == 0 ? "Nothing was imported: " : skipped + " widget(s) were skipped: ")
-                        + "the file holds widgets made with another version that this one can't use.", "vibeRacingOverlays", MessageBoxButton.OK, MessageBoxImage.Information);
+                string name = System.IO.Path.GetFileName(path);
+                try
+                {
+                    string kind = Core.Exchange.Kind(path);
+                    if (kind == "layout")
+                    {
+                        int skipped;
+                        var l = Core.Exchange.ImportLayout(path, settings, out skipped);
+                        l.Name = UniqueLayoutName(string.Equals(l.Name, "Default", StringComparison.OrdinalIgnoreCase) ? "Default (imported)" : l.Name);
+                        settings.Layouts.Add(l);
+                        lastLayout = l;
+                        report.Add("Layout '" + l.Name + "' (" + l.Widgets.Count + " widgets" + (skipped > 0 ? ", " + skipped + " of an unknown type skipped" : "") + ")");
+                    }
+                    else if (kind == "preset")
+                    {
+                        var p = Core.Exchange.ReadPreset(path);
+                        if (p == null) { report.Add(name + ": a widget type this version doesn't know"); continue; }
+                        p = settings.AddImportedPreset(p);
+                        lastPreset = p;
+                        report.Add(p.TypeName + " preset '" + p.Name + "'");
+                    }
+                    else report.Add(name + ": not a vibeRacingOverlays layout, preset or widget file");
+                }
+                catch (Exception ex) { report.Add(name + ": " + ex.Message); }
             }
-            catch (Exception ex) { MessageBox.Show(this, "The widget could not be imported:\n" + ex.Message, "vibeRacingOverlays", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            if (lastPreset != null)
+            {
+                if (Core.PresetLibrary.Current != null) Core.PresetLibrary.Current.Mirror();
+                // load it into the selected widget when that's the same type
+                var ws = Selected;
+                if (ws != null && ws.GetType() == lastPreset.Settings.GetType() && lastLayout == null)
+                    SettingsPanel.Load(ws, lastPreset);
+            }
+            if (lastLayout != null) { overlays.SwitchLayout(lastLayout.Id); ShowActiveLayout(); }
+            else ShowSelected();
+            overlays.SaveNow();
+            if (report.Count > 0)
+                MessageBox.Show(this, "Imported:\n- " + string.Join("\n- ", report), "vibeRacingOverlays", MessageBoxButton.OK, MessageBoxImage.Information);
         }
-
         static void SetListName(TextBlock tb, WidgetSettings w)
         {
             tb.Inlines.Clear();

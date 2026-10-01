@@ -9,9 +9,68 @@ namespace vibeRacingOverlays.App.Core
     /// </summary>
     public static class Exchange
     {
-        public const string LayoutFormat = "vibeRacingOverlays.layout", WidgetFormat = "vibeRacingOverlays.widget";
+        public const string LayoutFormat = "vibeRacingOverlays.layout", WidgetFormat = "vibeRacingOverlays.widget", PresetFormat = "vibeRacingOverlays.preset";
         public const string LayoutFilter = "vibeRacingOverlays layout (*.vrolayout.json)|*.vrolayout.json|JSON files (*.json)|*.json";
         public const string WidgetFilter = "vibeRacingOverlays widget (*.vrowidget.json)|*.vrowidget.json|JSON files (*.json)|*.json";
+        public const string PresetFilter = "vibeRacingOverlays preset (*.vropreset.json)|*.vropreset.json|vibeRacingOverlays widget (*.vrowidget.json)|*.vrowidget.json|JSON files (*.json)|*.json";
+
+        /// <summary>Where exports go by default (and the preset library lives): Documents\vRO, or inside a test folder.</summary>
+        public static string LibraryFolder
+        {
+            get
+            {
+                return AppSettings.FolderOverride != null ? Path.Combine(AppSettings.FolderOverride, "library")
+                    : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "vRO");
+            }
+        }
+
+        sealed class PresetFile
+        {
+            public string Format { get; set; } = PresetFormat;
+            public string AppVersion { get; set; } = BuildInfo.Version;
+            public string Id { get; set; }
+            public string Name { get; set; }
+            public WidgetSettings Widget { get; set; }
+        }
+
+        /// <summary>A preset as a file: its name and settings (no position; that belongs to the widget in a layout).</summary>
+        public static string PresetJson(WidgetPreset p)
+        {
+            var w = AppSettings.CloneWidget(p.Settings);
+            w.PresetId = null;
+            return AppSettings.ToJson(new PresetFile { Id = p.Id, Name = p.Name, Widget = w }, typeof(PresetFile));
+        }
+
+        public static void ExportPreset(WidgetPreset p, string path) { File.WriteAllText(path, PresetJson(p)); }
+
+        /// <summary>What a file holds: "layout", "preset" (also an exported widget) or null.</summary>
+        public static string Kind(string path)
+        {
+            try
+            {
+                var root = JsonNode.Parse(File.ReadAllText(path)) as JsonObject;
+                string f = (string)root?["Format"];
+                return f == LayoutFormat ? "layout" : f == PresetFormat || f == WidgetFormat ? "preset" : null;
+            }
+            catch { return null; }
+        }
+
+        /// <summary>
+        /// Reads a preset file (or an exported widget, named after its file): id (may be null), name and settings.
+        /// Null when the widget type is unknown to this version; throws when it isn't a preset or widget file.
+        /// </summary>
+        public static WidgetPreset ReadPreset(string path)
+        {
+            var root = JsonNode.Parse(File.ReadAllText(path)) as JsonObject;
+            string format = (string)root?["Format"];
+            if (format != PresetFormat && format != WidgetFormat) throw new InvalidDataException("This is not a vibeRacingOverlays preset or widget file.");
+            WidgetSettings w = null;
+            try { w = AppSettings.ParseDefaults<WidgetSettings>(root["Widget"]?.ToJsonString() ?? "null"); } catch { }
+            if (w == null) return null;
+            string name = format == PresetFormat ? (string)root["Name"] : null;
+            if (string.IsNullOrWhiteSpace(name)) name = Path.GetFileName(path).Split('.')[0];
+            return new WidgetPreset { Id = format == PresetFormat ? (string)root["Id"] : null, Name = name.Trim(), Settings = w };
+        }
 
         sealed class LayoutFile
         {
