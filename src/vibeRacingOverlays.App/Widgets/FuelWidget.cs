@@ -73,6 +73,9 @@ namespace vibeRacingOverlays.App.Widgets
             dl.Text(x[3], y + lblH, colW, valH, clock, big, White);
             y += block;
 
+            // the per-lap rows use the values from the last line crossing (or pit exit): they change once a lap,
+            // not with every drop of fuel; level, laps in race and the pit indicator above stay live
+            f = f.AtLine ?? f;
             double custom = s.CustomPerLap > 0 ? s.CustomPerLap : Math.Round(f.AvgPerLap, 2);
             DrawRow(dl, f, "Average", f.AvgPerLap, Argb.Parse(s.AvgColor), x, y, colW, lblH, valH, label, big, true);
             y += block;

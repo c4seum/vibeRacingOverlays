@@ -62,6 +62,7 @@ namespace vibeRacingOverlays.Data.Engine
         void ResetTrackers()
         {
             for (int i = 0; i < trackers.Length; i++) trackers[i] = new Tracker();
+            fuelLine = null; fuelLineLap = int.MinValue; fuelLinePrevPit = false;
         }
 
         public void SetSession(SessionInfo s)
@@ -471,7 +472,32 @@ namespace vibeRacingOverlays.Data.Engine
             snap.Relative.Sort((a, b) => b.RelativeTime.CompareTo(a.RelativeTime));
         }
 
+        // fuel values taken at the player's last line crossing (or pit exit), see FuelInfo.AtLine
+        FuelInfo fuelLine;
+        int fuelLineLap = int.MinValue;
+        bool fuelLinePrevPit;
+
         void BuildFuel(RaceSnapshot snap, TelemetryState s, CarInfo overallLeader)
+        {
+            BuildFuelLive(snap, s, overallLeader);
+            var f = snap.Fuel;
+            var p = snap.Player;
+            if (p != null)
+            {
+                // a new line snapshot: at the line, when leaving the pit lane (after refuelling), at the start
+                // (nothing taken yet), and once the laps to go become known
+                bool pitExit = fuelLinePrevPit && !p.OnPitRoad;
+                fuelLinePrevPit = p.OnPitRoad;
+                if (fuelLine == null || p.LapCompleted != fuelLineLap || pitExit || (fuelLine.LapsToGo < 0 && f.LapsToGo >= 0))
+                {
+                    fuelLine = f.Copy();
+                    fuelLineLap = p.LapCompleted;
+                }
+            }
+            f.AtLine = fuelLine;
+        }
+
+        void BuildFuelLive(RaceSnapshot snap, TelemetryState s, CarInfo overallLeader)
         {
             var f = snap.Fuel;
             f.Level = s.FuelLevel;

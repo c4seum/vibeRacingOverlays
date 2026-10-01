@@ -91,6 +91,20 @@ namespace vibeRacingOverlays.Data.Model
         public double LapsToGo = -1;      // race laps still to drive (fractional), -1 unknown
         public bool Valid { get { return AvgPerLap > 0; } }
 
+        /// <summary>
+        /// The same values as taken at the player's last line crossing (or pit exit): the fuel widget's per-lap rows
+        /// use these, so laps remaining, refuel and fuel at end change once a lap instead of ticking all the time.
+        /// Null until the first snapshot.
+        /// </summary>
+        public FuelInfo AtLine;
+
+        public FuelInfo Copy()
+        {
+            var c = (FuelInfo)MemberwiseClone();
+            c.AtLine = null;
+            return c;
+        }
+
         /// <summary>Average of the last n valid laps (fewer when there aren't n yet; 0 = no laps).</summary>
         public double AverageOfLast(int n)
         {

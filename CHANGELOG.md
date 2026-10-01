@@ -6,6 +6,9 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ## [Unreleased]
 
+### Changed
+- Fuel calculator: the per-lap rows (Average, Last, Last N, Stint, Custom) with laps remaining, refuel, stops and fuel at end are updated once a lap, when you cross the line, and when you leave the pit lane (so a refuel shows right away). They no longer tick with every drop of fuel. Fuel level, laps in race and the PIT indicator stay live.
+
 ## [1.2.0] - 2026-10-01
 
 ### Added
