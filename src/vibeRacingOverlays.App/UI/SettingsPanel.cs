@@ -355,15 +355,8 @@ namespace vibeRacingOverlays.App.UI
                         + " preset '" + p.Name + "'.\nUpdate " + (others.Count == 1 ? "it" : "them") + " to these settings too?\n\nNo: they keep their own settings and show a * next to the preset.";
                     if (MessageBox.Show(Window.GetWindow(host), msg, "vibeRacingOverlays", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                     {
-                        var active = App.ActiveLayout;
-                        foreach (var l in App.Layouts)
-                            foreach (var w in l.Widgets.Where(others.Contains).ToList())
-                            {
-                                ApplyTo(w, AppSettings.CloneWidget(p.Settings));
-                                // other layouts: their saved version follows too, so they don't suddenly show a "*"
-                                var saved = l != active && l.Saved != null ? l.Saved.FirstOrDefault(x => x.Id == w.Id) : null;
-                                if (saved != null) ApplyTo(saved, AppSettings.CloneWidget(p.Settings));
-                            }
+                        // the layouts you work with follow; layout presets are snapshots and stay as they were saved
+                        foreach (var w in others) ApplyTo(w, AppSettings.CloneWidget(p.Settings));
                     }
                 }
                 AfterPresetChange(p);
@@ -410,7 +403,7 @@ namespace vibeRacingOverlays.App.UI
                     "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
                 App.Presets.RemoveAll(x => x == p);
                 var def = App.DefaultPreset(ws.GetType());
-                foreach (var w in App.Layouts.SelectMany(l => l.Widgets.Concat(l.Saved ?? new List<WidgetSettings>())))
+                foreach (var w in App.Layouts.SelectMany(l => l.Widgets).Concat(App.LayoutPresets.SelectMany(l => l.Widgets)))
                     if (w.PresetId == p.Id) w.PresetId = def != null ? def.Id : null;
                 if (Core.PresetLibrary.Current != null) Core.PresetLibrary.Current.Removed(p);
                 Mirror();

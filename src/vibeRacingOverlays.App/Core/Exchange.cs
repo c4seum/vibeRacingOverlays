@@ -114,7 +114,6 @@ namespace vibeRacingOverlays.App.Core
             else throw new InvalidDataException("This is not a vibeRacingOverlays layout or widget file.");
             var widgets = ReadWidgets(items, s, out skipped);
             var l = new LayoutConfig { Name = string.IsNullOrWhiteSpace(name) ? Path.GetFileNameWithoutExtension(path) : name, Widgets = widgets };
-            l.Saved = AppSettings.CloneList(l.Widgets);
             return l;
         }
 

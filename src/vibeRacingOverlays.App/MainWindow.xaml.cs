@@ -84,11 +84,14 @@ namespace vibeRacingOverlays.App
                 overlays.SwitchLayout(l.Id);
             };
             LayoutNewButton.Click += (s, e) => NewLayout();
-            LayoutSaveButton.Click += (s, e) => SaveLayout();
-            LayoutSaveAsButton.Click += (s, e) => SaveLayoutAs();
             LayoutRenameButton.Click += (s, e) => RenameLayout();
-            LayoutReloadButton.Click += (s, e) => ReloadLayout();
             LayoutDeleteButton.Click += (s, e) => DeleteLayout();
+            LayoutPresetBox.SelectionChanged += (s, e) => { if (!loading) UpdatePresetButtons(); };
+            PresetLoadButton.Click += (s, e) => LoadPreset();
+            PresetSaveButton.Click += (s, e) => SavePreset();
+            PresetSaveAsButton.Click += (s, e) => SavePresetAs();
+            PresetRenameButton.Click += (s, e) => RenamePreset();
+            PresetDeleteButton.Click += (s, e) => DeletePreset();
             LayoutExportButton.Click += (s, e) => ExportLayout();
             LayoutImportButton.Click += (s, e) => ImportLayout();
             // drop layout, preset or widget files on the window to import them
@@ -104,7 +107,7 @@ namespace vibeRacingOverlays.App
 
             FooterText.Text = "Edit layout (" + settings.HotkeyEditMode + "): drag widgets to move them (Shift: no snapping), mouse wheel to resize.   "
                 + "Show/hide all: " + settings.HotkeyToggleOverlays + ".   Next layout: " + settings.HotkeyNextLayout
-                + ".   Changes are kept automatically; Save stores them in the layout. Settings: " + AppSettings.Folder;
+                + ".   Every change is kept automatically; layout presets are saved versions you load. Settings: " + AppSettings.Folder;
 
             SettingsPanel.App = settings;
             previewData = new PreviewData(telemetry);
@@ -124,7 +127,7 @@ namespace vibeRacingOverlays.App
             ShowActiveLayout();
 
             statusTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
-            statusTimer.Tick += (s, e) => { UpdateStatus(); UpdateLayoutDirty(); };
+            statusTimer.Tick += (s, e) => { UpdateStatus(); UpdatePresetMark(); };
             statusTimer.Start();
         }
 
@@ -277,41 +280,20 @@ namespace vibeRacingOverlays.App
             }
         }
 
-        // ---------------------------------------------------------------- layouts
+        // ---------------------------------------------------------------- layouts (always the current version)
 
         string shownLayoutId;
 
         void RefreshLayouts()
         {
             loading = true;
-            foreach (var l in settings.Layouts) l.Dirty = AppSettings.IsDirty(l);
             LayoutBox.ItemsSource = null;
             LayoutBox.ItemsSource = settings.Layouts;
             LayoutBox.SelectedItem = settings.ActiveLayout;
-            UpdateLayoutButtons();
+            LayoutDeleteButton.IsEnabled = settings.Layouts.Count > 1;
+            LayoutDeleteButton.ToolTip = settings.Layouts.Count > 1 ? "Delete this layout" : "The last layout can't be deleted";
             loading = false;
-        }
-
-        void UpdateLayoutButtons()
-        {
-            var l = settings.ActiveLayout;
-            // "Get started" stays as the app made it: changes can only go to a new layout (Save as)
-            LayoutSaveButton.IsEnabled = l.Dirty && !l.IsBuiltIn;
-            LayoutSaveButton.ToolTip = l.IsBuiltIn ? "Get started can't be changed: use Save as to keep your changes as a new layout" : "Store the changes in this layout";
-            LayoutReloadButton.IsEnabled = l.Dirty;
-            LayoutRenameButton.IsEnabled = LayoutDeleteButton.IsEnabled = !l.IsBuiltIn;
-            LayoutRenameButton.ToolTip = l.IsBuiltIn ? "Get started keeps its name" : "Rename this layout";
-            LayoutDeleteButton.ToolTip = l.IsBuiltIn ? "Get started can't be deleted" : "Delete this layout";
-        }
-
-        /// <summary>Keeps the "*" of the active layout up to date (every change lands in the work version).</summary>
-        void UpdateLayoutDirty()
-        {
-            var l = settings.ActiveLayout;
-            bool dirty = AppSettings.IsDirty(l);
-            if (dirty == l.Dirty || LayoutBox.IsDropDownOpen) return;
-            l.Dirty = dirty;
-            RefreshLayouts();
+            RefreshPresets(null);
         }
 
         /// <summary>Shows the widgets of the active layout (after switching, creating or deleting layouts).</summary>
@@ -331,44 +313,19 @@ namespace vibeRacingOverlays.App
             return n;
         }
 
-        void AddLayout(LayoutConfig l)
+        void NewLayout()
         {
+            string name = InputDialog.Ask(this, "New layout", "Name of the new, empty layout (load a preset into it, or add widgets):", UniqueLayoutName("Layout " + (settings.Layouts.Count + 1)));
+            if (name == null) return;
+            var l = new LayoutConfig { Name = UniqueLayoutName(name) };
             settings.Layouts.Add(l);
             overlays.SwitchLayout(l.Id);
             ShowActiveLayout();
         }
 
-        void NewLayout()
-        {
-            string name = InputDialog.Ask(this, "New layout", "Name of the new, empty layout:", UniqueLayoutName("Layout " + settings.Layouts.Count));
-            if (name == null) return;
-            AddLayout(new LayoutConfig { Name = UniqueLayoutName(name), Saved = new List<WidgetSettings>() });   // empty: add the widgets you want
-        }
-
-        void SaveLayout()
-        {
-            var l = settings.ActiveLayout;
-            if (l.IsBuiltIn) return;
-            l.Saved = AppSettings.CloneList(l.Widgets);
-            overlays.SaveNow();
-            RefreshLayouts();
-        }
-
-        void SaveLayoutAs()
-        {
-            var l = settings.ActiveLayout;
-            string name = InputDialog.Ask(this, "Save layout as", "Store the current widgets (positions and settings) as a new layout:",
-                UniqueLayoutName(l.Name + " copy"));
-            if (name == null) return;
-            var copy = settings.CloneLayout(l, UniqueLayoutName(name));
-            AddLayout(copy);
-            overlays.SaveNow();
-        }
-
         void RenameLayout()
         {
             var l = settings.ActiveLayout;
-            if (l.IsBuiltIn) return;
             string name = InputDialog.Ask(this, "Rename layout", "New name for layout '" + l.Name + "':", l.Name);
             if (name == null || name == l.Name) return;
             l.Name = settings.Layouts.Any(x => x != l && string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)) ? UniqueLayoutName(name) : name;
@@ -376,23 +333,11 @@ namespace vibeRacingOverlays.App
             RefreshLayouts();
         }
 
-        /// <summary>Back to the saved version of this layout (the changes since the last Save are gone).</summary>
-        void ReloadLayout()
-        {
-            var l = settings.ActiveLayout;
-            if (l.Saved == null || !AppSettings.IsDirty(l)) return;
-            if (MessageBox.Show(this, "Reload layout '" + l.Name + "'? Your changes since it was last saved are lost.", "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
-            l.Widgets = AppSettings.CloneList(l.Saved);   // same widget ids, so the on-screen windows stay
-            overlays.Sync();
-            overlays.SaveNow();
-            ShowActiveLayout();
-        }
-
         void DeleteLayout()
         {
             var l = settings.ActiveLayout;
-            if (l.IsBuiltIn || settings.Layouts.Count < 2) return;
-            if (MessageBox.Show(this, "Delete layout '" + l.Name + "' and its " + l.Widgets.Count + " widgets?", "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+            if (settings.Layouts.Count < 2) return;
+            if (MessageBox.Show(this, "Delete layout '" + l.Name + "' and its " + l.Widgets.Count + " widgets?\n(Your layout presets stay.)", "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
             int i = settings.Layouts.IndexOf(l);
             var next = settings.Layouts[i == 0 ? 1 : i - 1];
             overlays.SwitchLayout(next.Id);
@@ -401,6 +346,109 @@ namespace vibeRacingOverlays.App
             ShowActiveLayout();
         }
 
+        // ---------------------------------------------------------------- layout presets (saved versions to load)
+
+        LayoutPreset SelectedPreset { get { return LayoutPresetBox.SelectedItem as LayoutPreset; } }
+
+        /// <summary>Fills the preset list; selects <paramref name="select"/>, else the one the active layout came from.</summary>
+        void RefreshPresets(LayoutPreset select)
+        {
+            loading = true;
+            var l = settings.ActiveLayout;
+            var from = settings.LayoutPresetOf(l);
+            bool differs = settings.DiffersFromPreset(l);
+            var list = settings.LayoutPresets.OrderBy(p => p.IsBuiltIn ? 0 : 1).ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ToList();
+            foreach (var p in list) p.Label = p.Name + (p == from && differs ? " *" : "");
+            LayoutPresetBox.ItemsSource = null;
+            LayoutPresetBox.ItemsSource = list;
+            LayoutPresetBox.SelectedItem = select ?? from ?? list.FirstOrDefault();
+            presetMark = differs;
+            loading = false;
+            UpdatePresetButtons();
+        }
+
+        bool presetMark;
+
+        /// <summary>Keeps the "*" up to date while you change the layout.</summary>
+        void UpdatePresetMark()
+        {
+            if (LayoutPresetBox.IsDropDownOpen) return;
+            if (settings.DiffersFromPreset(settings.ActiveLayout) != presetMark) RefreshPresets(SelectedPreset);
+        }
+
+        void UpdatePresetButtons()
+        {
+            var p = SelectedPreset;
+            var l = settings.ActiveLayout;
+            bool builtIn = p != null && p.IsBuiltIn;
+            PresetLoadButton.IsEnabled = p != null;
+            PresetLoadButton.ToolTip = p != null ? "Replace the widgets of layout '" + l.Name + "' with preset '" + p.Name + "'" : null;
+            // Save writes the layout into the preset it came from (when that's the selected one); Get started stays as it is
+            PresetSaveButton.IsEnabled = p != null && !builtIn;
+            PresetSaveButton.ToolTip = builtIn ? "Get started stays as the app made it: use Save as" : p != null ? "Store layout '" + l.Name + "' in preset '" + p.Name + "'" : null;
+            PresetRenameButton.IsEnabled = PresetDeleteButton.IsEnabled = p != null && !builtIn;
+            PresetRenameButton.ToolTip = builtIn ? "Get started keeps its name" : "Rename this preset";
+            PresetDeleteButton.ToolTip = builtIn ? "Get started can't be deleted" : "Delete this preset (your layouts stay)";
+        }
+
+        void LoadPreset()
+        {
+            var p = SelectedPreset;
+            var l = settings.ActiveLayout;
+            if (p == null) return;
+            if (l.Widgets.Count > 0 && !(l.PresetId == p.Id && !settings.DiffersFromPreset(l))
+                && MessageBox.Show(this, "Load preset '" + p.Name + "' into layout '" + l.Name + "'? Its current widgets are replaced.", "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+            settings.LoadLayoutPreset(l, p);
+            overlays.Sync();
+            overlays.SaveNow();
+            ShowActiveLayout();
+        }
+
+        void SavePreset()
+        {
+            var p = SelectedPreset;
+            var l = settings.ActiveLayout;
+            if (p == null || p.IsBuiltIn) return;
+            if (l.PresetId != p.Id && MessageBox.Show(this, "Store layout '" + l.Name + "' in preset '" + p.Name + "'? The preset's widgets are replaced.", "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+            p.Widgets = AppSettings.PresetWidgets(l);
+            l.PresetId = p.Id;
+            overlays.SaveNow();
+            RefreshPresets(p);
+        }
+
+        void SavePresetAs()
+        {
+            var l = settings.ActiveLayout;
+            string name = InputDialog.Ask(this, "Save layout preset as", "Store layout '" + l.Name + "' (all widgets, positions and settings) as a new preset:", settings.UniqueLayoutPresetName(l.Name, null));
+            if (name == null) return;
+            var p = new LayoutPreset { Name = settings.UniqueLayoutPresetName(name.Trim(), null), Widgets = AppSettings.PresetWidgets(l) };
+            settings.LayoutPresets.Add(p);
+            l.PresetId = p.Id;
+            overlays.SaveNow();
+            RefreshPresets(p);
+        }
+
+        void RenamePreset()
+        {
+            var p = SelectedPreset;
+            if (p == null || p.IsBuiltIn) return;
+            string name = InputDialog.Ask(this, "Rename layout preset", "New name for preset '" + p.Name + "':", p.Name);
+            if (name == null || name.Trim() == p.Name) return;
+            p.Name = settings.UniqueLayoutPresetName(name.Trim(), p);
+            overlays.ScheduleSave();
+            RefreshPresets(p);
+        }
+
+        void DeletePreset()
+        {
+            var p = SelectedPreset;
+            if (p == null || p.IsBuiltIn) return;
+            if (MessageBox.Show(this, "Delete layout preset '" + p.Name + "'? Your layouts stay as they are.", "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+            settings.LayoutPresets.Remove(p);
+            foreach (var l in settings.Layouts) if (l.PresetId == p.Id) l.PresetId = null;
+            overlays.ScheduleSave();
+            RefreshPresets(null);
+        }
         // ---------------------------------------------------------------- export / import
 
         // exported layouts go next to the preset library (Documents\vibeRacingOverlays\layouts)
@@ -440,7 +488,7 @@ namespace vibeRacingOverlays.App
         public void ImportFiles(IEnumerable<string> paths)
         {
             var report = new List<string>();
-            LayoutConfig lastLayout = null;
+            LayoutPreset lastLayout = null;
             WidgetPreset lastPreset = null;
             foreach (var path in paths)
             {
@@ -452,10 +500,10 @@ namespace vibeRacingOverlays.App
                     {
                         int skipped;
                         var l = Core.Exchange.ImportLayout(path, settings, out skipped);
-                        l.Name = UniqueLayoutName(l.Name);
-                        settings.Layouts.Add(l);
-                        lastLayout = l;
-                        report.Add("Layout '" + l.Name + "' (" + l.Widgets.Count + " widgets" + (skipped > 0 ? ", " + skipped + " of an unknown type skipped" : "") + ")");
+                        var lp = new LayoutPreset { Name = settings.UniqueLayoutPresetName(l.Name, null), Widgets = l.Widgets };
+                        settings.LayoutPresets.Add(lp);
+                        lastLayout = lp;
+                        report.Add("Layout preset '" + lp.Name + "' (" + lp.Widgets.Count + " widgets" + (skipped > 0 ? ", " + skipped + " of an unknown type skipped" : "") + "): select it and press Load");
                     }
                     else if (kind == "preset")
                     {
@@ -477,8 +525,8 @@ namespace vibeRacingOverlays.App
                 if (ws != null && ws.GetType() == lastPreset.Settings.GetType() && lastLayout == null)
                     SettingsPanel.Load(ws, lastPreset);
             }
-            if (lastLayout != null) { overlays.SwitchLayout(lastLayout.Id); ShowActiveLayout(); }
-            else ShowSelected();
+            if (lastLayout != null) RefreshPresets(lastLayout);
+            ShowSelected();
             overlays.SaveNow();
             if (report.Count > 0)
                 MessageBox.Show(this, "Imported:\n- " + string.Join("\n- ", report), "vibeRacingOverlays", MessageBoxButton.OK, MessageBoxImage.Information);

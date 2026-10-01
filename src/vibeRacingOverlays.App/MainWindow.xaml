@@ -36,18 +36,23 @@
         <Border DockPanel.Dock="Left" Width="250" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Divider}" BorderThickness="0,0,1,0">
             <DockPanel Margin="12,14,12,12">
                 <TextBlock DockPanel.Dock="Top" Text="LAYOUT" Foreground="{DynamicResource Muted}" FontSize="11" FontWeight="SemiBold" Margin="4,0,0,6"/>
-                <ComboBox x:Name="LayoutBox" DockPanel.Dock="Top" Margin="0,0,0,8" ToolTip="Active layout (next layout: Ctrl+Shift+L). * = changes that aren't saved in the layout yet"/>
-                <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,14">
+                <ComboBox x:Name="LayoutBox" DockPanel.Dock="Top" Margin="0,0,0,8" ToolTip="The layout you're using (next layout: Ctrl+Shift+L). Every change is kept automatically"/>
+                <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,12">
                     <Button x:Name="LayoutNewButton" Content="New" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="New, empty layout (no widgets yet)"/>
-                    <Button x:Name="LayoutSaveButton" Content="Save" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Store the changes in this layout"/>
-                    <Button x:Name="LayoutSaveAsButton" Content="Save as" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Store the current widgets as a new layout"/>
-                    <Button x:Name="LayoutReloadButton" Content="Reload" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Undo the changes: back to how this layout was last saved"/>
-                    <Button x:Name="LayoutRenameButton" Content="Rename" Padding="10,2" MinHeight="26" Margin="0,0,4,4"/>
+                    <Button x:Name="LayoutRenameButton" Content="Rename" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Rename this layout"/>
                     <Button x:Name="LayoutDeleteButton" Content="Delete" Style="{StaticResource GhostButton}" Padding="10,2" MinHeight="26" Margin="0,0,0,4"/>
-                    <Button x:Name="LayoutExportButton" Content="Export" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Save this layout with all its widgets and options to a file (to share or for another PC)"/>
-                    <Button x:Name="LayoutImportButton" Content="Import" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Add a layout from a file as a new layout"/>
                 </WrapPanel>
-                <TextBlock DockPanel.Dock="Top" Text="WIDGETS" Foreground="{DynamicResource Muted}" FontSize="11" FontWeight="SemiBold" Margin="4,0,0,6"/>
+                <TextBlock DockPanel.Dock="Top" Text="LAYOUT PRESET" Foreground="{DynamicResource Muted}" FontSize="11" FontWeight="SemiBold" Margin="4,0,0,6"/>
+                <ComboBox x:Name="LayoutPresetBox" DockPanel.Dock="Top" Margin="0,0,0,8" ToolTip="Saved layouts. Load puts one into the layout above. * = the layout differs from the preset it came from"/>
+                <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,14">
+                    <Button x:Name="PresetLoadButton" Content="Load" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Replace the widgets of the layout above with this preset"/>
+                    <Button x:Name="PresetSaveButton" Content="Save" Padding="10,2" MinHeight="26" Margin="0,0,4,4"/>
+                    <Button x:Name="PresetSaveAsButton" Content="Save as" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Store the layout above as a new preset"/>
+                    <Button x:Name="PresetRenameButton" Content="Rename" Padding="10,2" MinHeight="26" Margin="0,0,4,4"/>
+                    <Button x:Name="PresetDeleteButton" Content="Delete" Style="{StaticResource GhostButton}" Padding="10,2" MinHeight="26" Margin="0,0,4,4"/>
+                    <Button x:Name="LayoutExportButton" Content="Export" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Save the layout above with all its widgets and their settings to a file (to share or for another PC)"/>
+                    <Button x:Name="LayoutImportButton" Content="Import" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Add a layout file as a new preset (you can also drop files on the window)"/>
+                </WrapPanel>                <TextBlock DockPanel.Dock="Top" Text="WIDGETS" Foreground="{DynamicResource Muted}" FontSize="11" FontWeight="SemiBold" Margin="4,0,0,6"/>
                 <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
                     <Button x:Name="RemoveButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE74D;" ToolTip="Remove the selected widget"/>
                     <Button x:Name="DuplicateButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE8C8;" ToolTip="Duplicate the selected widget" Margin="4,0"/>
