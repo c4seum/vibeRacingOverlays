@@ -60,7 +60,7 @@ The user (c4seum) speaks **Dutch**: answer in Dutch. Setup: triple screens (3× 
 ## Working on several PCs
 - The user works on a home PC (with iRacing) and a work laptop (probably without iRacing: develop with the demo race, test in-game at home).
 - Start a session with `git pull`, end it with `git push`.
-- Layouts/presets/settings are not in git: copy `%APPDATA%\vibeRacingOverlays-dev\settings.json` between PCs if needed.
+- Layouts/presets/settings are not in git: use Export / Import (layout or widget files), or copy `%APPDATA%\vibeRacingOverlays-dev\settings.json` between PCs.
 - New PC setup: `winget install` Git.Git, GitHub.cli and Microsoft.DotNet.SDK.8, restart the Claude app, run `gh auth login` and `gh auth setup-git`, `git clone https://github.com/c4seum/vibeRacingOverlays.git`, then `.\publish-dev.ps1`.
 
 ## Ideas for next versions (as discussed)
