@@ -456,6 +456,21 @@ namespace vibeRacingOverlays.App.Core
             }
         }
 
+        /// <summary>
+        /// An imported widget joins these settings: a new id (ids are unique across layouts), current columns and
+        /// migrations, and its preset only when that exists here (otherwise the Default preset of its type).
+        /// </summary>
+        public void PrepareImported(WidgetSettings w)
+        {
+            w.Id = Core.Defaults.NewId();
+            NormalizeWidget(w);
+            if (!Presets.Any(p => p.Id == w.PresetId && p.Settings != null && p.Settings.GetType() == w.GetType()))
+            {
+                var d = DefaultPreset(w.GetType());
+                w.PresetId = d != null ? d.Id : null;
+            }
+        }
+
         static void NormalizeWidget(WidgetSettings w)
         {
             var table = w as Widgets.ITableSettings;

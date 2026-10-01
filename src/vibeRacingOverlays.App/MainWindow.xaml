@@ -44,15 +44,19 @@
                     <Button x:Name="LayoutRenameButton" Content="Rename" Padding="10,2" MinHeight="26" Margin="0,0,4,4"/>
                     <Button x:Name="LayoutRevertButton" Content="Revert" Style="{StaticResource GhostButton}" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Undo the changes since the last Save"/>
                     <Button x:Name="LayoutDeleteButton" Content="Delete" Style="{StaticResource GhostButton}" Padding="10,2" MinHeight="26" Margin="0,0,0,4"/>
+                    <Button x:Name="LayoutExportButton" Content="Export" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Save this layout with all its widgets and options to a file (to share or for another PC)"/>
+                    <Button x:Name="LayoutImportButton" Content="Import" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Add a layout from a file as a new layout"/>
                 </WrapPanel>
                 <TextBlock DockPanel.Dock="Top" Text="WIDGETS" Foreground="{DynamicResource Muted}" FontSize="11" FontWeight="SemiBold" Margin="4,0,0,6"/>
                 <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
                     <Button x:Name="RemoveButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE74D;" ToolTip="Remove the selected widget"/>
                     <Button x:Name="DuplicateButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE8C8;" ToolTip="Duplicate the selected widget" Margin="4,0"/>
+                    <Button x:Name="WidgetExportButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE74E;" ToolTip="Export the selected widget with all its options to a file"/>
+                    <Button x:Name="WidgetImportButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE8E5;" ToolTip="Import a widget from a file into this layout" Margin="0,0,4,0"/>
                     <Button x:Name="AddButton" ToolTip="Add a widget: Standings, Relative or Fuel calculator" Margin="0">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFont}" FontSize="11" VerticalAlignment="Center" Margin="0,1,8,0"/>
-                            <TextBlock Text="Add widget" VerticalAlignment="Center"/>
+                            <TextBlock Text="Add" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                 </DockPanel>

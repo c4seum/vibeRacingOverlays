@@ -78,6 +78,7 @@ What changed in each version is in the [changelog](CHANGELOG.md). Older versions
    - **Snapping:** a dragged widget snaps to the edges and corners of other widgets and of the screen. **Snap distance** is how close you have to get, **snap margin** the space kept between widgets and from the screen edge. Hold **Shift** while dragging to place a widget freely.
    - Screens are remembered as *Left*, *Middle* and *Right*, so a layout lands on the same screen on another PC with the same setup. If that screen isn't there, the widget shows on the main screen.
 5. **Layouts** (under *Layout*): **New** makes an empty layout, **Save** stores your changes in the layout, **Save as** stores them as a new layout (the current one goes back to its saved version), **Rename**, **Revert** (undo the changes since the last Save) and **Delete**. Your changes are always kept, also without Save; a `*` after the name shows changes that aren't saved in the layout yet. The **Default** layout is always there and can't be renamed or deleted.
+6. **Export / import:** **Export** saves the layout with all its widgets and options to a file, **Import** adds such a file as a new layout (to share a layout or take it to another PC). The icon buttons next to **Add** export the selected widget or import a widget into the current layout.
 
 ### Hotkeys
 

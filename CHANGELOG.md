@@ -7,6 +7,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 ## [Unreleased]
 
 ### Added
+- Export and import: **Export** / **Import** under *Layout* save a whole layout (all widgets with their options) to a file and add it back as a new layout, for sharing or another PC; the two icon buttons next to **Add** do the same for a single widget. Widget types a version doesn't know are skipped with a message.
 - Layouts: **Save**, **Save as**, **Rename**, **Revert**, **Delete** and **New** (an empty layout without widgets). Changes are still kept automatically, but are stored in the layout with Save; a `*` after the name shows unsaved changes and Revert goes back to the saved version. There is always a **Default** layout (can't be renamed or deleted).
 - Widget presets: choosing a preset loads it, with **Save**, **Save as**, **Rename** and **Delete**, and a `*` when the widget differs from its preset. Every widget type has a **Default** preset: new widgets start from it and all reset buttons go back to it, so saving Default makes it your default set. The factory settings can be restored from the Default preset.
 - The app's built-in defaults (Default layout and Default presets) come from `defaults.json`; saving a Default in the DEV build writes it there, so it ships with the next release.

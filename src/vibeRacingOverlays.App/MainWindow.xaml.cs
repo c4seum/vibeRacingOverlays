@@ -89,6 +89,10 @@ namespace vibeRacingOverlays.App
             LayoutRenameButton.Click += (s, e) => RenameLayout();
             LayoutRevertButton.Click += (s, e) => RevertLayout();
             LayoutDeleteButton.Click += (s, e) => DeleteLayout();
+            LayoutExportButton.Click += (s, e) => ExportLayout();
+            LayoutImportButton.Click += (s, e) => ImportLayout();
+            WidgetExportButton.Click += (s, e) => ExportWidget();
+            WidgetImportButton.Click += (s, e) => ImportWidget();
 
             AddButton.Click += (s, e) => ShowAddMenu();
             DuplicateButton.Click += (s, e) => Duplicate();
@@ -395,6 +399,74 @@ namespace vibeRacingOverlays.App
             overlays.ScheduleSave();
             ShowActiveLayout();
         }
+        // ---------------------------------------------------------------- export / import
+
+        static readonly string ExportFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+        string AskSavePath(string title, string filter, string fileName)
+        {
+            var dlg = new Microsoft.Win32.SaveFileDialog { Title = title, Filter = filter, FileName = fileName, InitialDirectory = ExportFolder, AddExtension = true };
+            return dlg.ShowDialog(this) == true ? dlg.FileName : null;
+        }
+
+        string AskOpenPath(string title, string filter)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog { Title = title, Filter = filter, InitialDirectory = ExportFolder };
+            return dlg.ShowDialog(this) == true ? dlg.FileName : null;
+        }
+
+        void ExportLayout()
+        {
+            var l = settings.ActiveLayout;
+            string path = AskSavePath("Export layout", Core.Exchange.LayoutFilter, Core.Exchange.SafeName(l.Name) + ".vrolayout.json");
+            if (path == null) return;
+            try { Core.Exchange.ExportLayout(l, path); }
+            catch (Exception ex) { MessageBox.Show(this, "The layout could not be exported:\n" + ex.Message, "vibeRacingOverlays", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        }
+
+        void ImportLayout()
+        {
+            string path = AskOpenPath("Import layout", Core.Exchange.LayoutFilter);
+            if (path == null) return;
+            try
+            {
+                int skipped;
+                var l = Core.Exchange.ImportLayout(path, settings, out skipped);
+                l.Name = UniqueLayoutName(string.Equals(l.Name, "Default", StringComparison.OrdinalIgnoreCase) ? "Default (imported)" : l.Name);
+                AddLayout(l);
+                overlays.SaveNow();
+                if (skipped > 0) MessageBox.Show(this, skipped + " widget(s) in this file were made with another version and can't be used by this one; the rest was imported.",
+                    "vibeRacingOverlays", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex) { MessageBox.Show(this, "The layout could not be imported:\n" + ex.Message, "vibeRacingOverlays", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        }
+
+        void ExportWidget()
+        {
+            var ws = Selected;
+            if (ws == null) { MessageBox.Show(this, "Select the widget to export in the list first.", "vibeRacingOverlays"); return; }
+            string path = AskSavePath("Export widget", Core.Exchange.WidgetFilter, Core.Exchange.SafeName(ws.Title) + ".vrowidget.json");
+            if (path == null) return;
+            try { Core.Exchange.ExportWidget(ws, path); }
+            catch (Exception ex) { MessageBox.Show(this, "The widget could not be exported:\n" + ex.Message, "vibeRacingOverlays", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        }
+
+        void ImportWidget()
+        {
+            string path = AskOpenPath("Import widget", Core.Exchange.WidgetFilter);
+            if (path == null) return;
+            try
+            {
+                int skipped;
+                var widgets = Core.Exchange.ImportWidgets(path, settings, out skipped);
+                foreach (var w in widgets) Add(w);
+                if (widgets.Count == 0 || skipped > 0)
+                    MessageBox.Show(this, (widgets.Count == 0 ? "Nothing was imported: " : skipped + " widget(s) were skipped: ")
+                        + "the file holds widgets made with another version that this one can't use.", "vibeRacingOverlays", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex) { MessageBox.Show(this, "The widget could not be imported:\n" + ex.Message, "vibeRacingOverlays", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        }
+
         static void SetListName(TextBlock tb, WidgetSettings w)
         {
             tb.Inlines.Clear();
