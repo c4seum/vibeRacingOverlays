@@ -19,5 +19,6 @@
     <SolidColorBrush x:Key="Selection" Color="#FFE7EFFC"/>
     <SolidColorBrush x:Key="Warning" Color="#FFC98A12"/>
     <SolidColorBrush x:Key="Success" Color="#FF1F9D64"/>
+    <SolidColorBrush x:Key="Danger" Color="#FFCF3A32"/>
     <DropShadowEffect x:Key="CardShadow" BlurRadius="6" ShadowDepth="1" Direction="270" Color="#FF101828" Opacity="0.07"/>
 </ResourceDictionary>

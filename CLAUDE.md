@@ -47,7 +47,8 @@ The user (c4seum) speaks **Dutch**: answer in Dutch. Setup: triple screens (3× 
 - Going back: every release is a tag plus a GitHub Release with the installer, so users can install an older version; developers can `git checkout vX.Y.Z` to look at old code.
 
 ## Working rules
-- Before UI tests: back up `settings.json` and restore it afterwards. Close test instances (also leftover Debug instances). Don't edit `settings.json` while the user's DEV app (`publish\vibeRacingOverlays.exe`) runs.
+- **Never write the user's `settings.json`** (not even "backup and restore": on 2026-10-01 that lost the user's presets). UI tests run the app with `--settings-dir <scratch folder>` on a copy of the settings; the real file is only read. Close test instances (also leftover Debug instances).
+- Settings safety net (2026-10-01): the app keeps `backups\` (one per day for 7 days, one before the first save of a new version, unreadable files), reads widgets/presets one by one (unknown ones are kept in `Unreadable` and put back later), logs save errors in `errors.log` and shows them red in the status bar. Keep it that way: settings changes must load old files, and nothing may silently fall back to defaults.
 - Building the DEV version while the user's DEV app is open: the user allows closing it (2026-10-01), **on condition that it is started again afterwards**: check with `Get-Process`, close it gracefully (`CloseMainWindow`, so it saves its layouts), run `publish-dev.ps1`, then start `publish\vibeRacingOverlays.exe` again. Only that DEV app; never other programs, and never the installed release version.
 - UI Automation: toggle buttons/checkboxes react to Checked/Unchecked (a UIA Toggle doesn't raise Click); find windows by the test process id.
 - Never send keystrokes blindly: the user's other windows are often in front. Use UI Automation, the `--silent` installer mode, or PrintWindow for screenshots.

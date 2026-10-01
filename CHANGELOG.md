@@ -7,6 +7,9 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 ## [Unreleased]
 
 ### Added
+- Your layouts and presets are better protected: the app keeps backups in `%APPDATA%\vibeRacingOverlays\backups` (one per day for the last 7 days, and one from before the first start of a new version). A settings file that can't be read is no longer silently replaced by the default layout: you get a message and the file is kept in the backups. A widget or preset that this version doesn't know (for example after going back to an older version) is kept and comes back with a version that knows it, instead of making the whole file unreadable.
+- If saving the settings fails, the status bar turns red and the reason is written to `errors.log` (before, this went unnoticed and changes were lost when the app closed).
+- `--settings-dir <folder>` start option: use another settings folder (for tests).
 - Relative: header bar items like in the standings (on/off, order, format): widget name, laps, time, track and air temperature, humidity, incidents and clock. The default looks like before: "RELATIVE" on the left, time remaining and incidents on the right.
 - Header item "Incidents and limits" (relative and standings): your incidents with the limits of the event, like "5x / 17x / 25x" (next penalty / DQ; after the first penalty the next one, e.g. 25x then 33x), or "5x / 25x", or only "5x". Without limits (practice, many hosted sessions) only your count shows.
 - Header item "Clock" (relative and standings): real time or sim time of day.

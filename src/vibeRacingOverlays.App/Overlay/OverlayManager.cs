@@ -137,7 +137,7 @@ namespace vibeRacingOverlays.App.Overlay
         public void SaveNow()
         {
             saveAt = DateTime.MaxValue;
-            try { settings.Save(); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine("Save failed: " + ex.Message); }
+            try { settings.Save(); } catch { }   // logged and shown in the status bar by Save itself
         }
 
         void Tick()

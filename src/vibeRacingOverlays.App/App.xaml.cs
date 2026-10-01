@@ -19,6 +19,10 @@ namespace vibeRacingOverlays.App
         {
             base.OnStartup(e);
 
+            // --settings-dir <folder>: a separate settings folder (tests run on a copy, never on the user's own file)
+            int dirIdx = Array.IndexOf(e.Args, "--settings-dir");
+            if (dirIdx >= 0 && dirIdx + 1 < e.Args.Length) AppSettings.FolderOverride = Path.GetFullPath(e.Args[dirIdx + 1]);
+
             int snapIdx = Array.IndexOf(e.Args, "--snapshot");
             if (snapIdx >= 0)
             {
@@ -37,6 +41,7 @@ namespace vibeRacingOverlays.App
             }
 
             var settings = AppSettings.Load();
+            settings.StartupBackup();   // before anything can be saved
             UI.ThemeManager.Apply(settings.Theme);
             TextMeasure.SetFont(settings.Font);
             telemetry = new TelemetryService { Mode = settings.Source, LivePositions = settings.LivePositions };
@@ -47,6 +52,15 @@ namespace vibeRacingOverlays.App
             MainWindow = main;
             main.Show();
             overlays.Start();
+
+            if (AppSettings.LoadProblem != null)
+                MessageBox.Show(main, "Your settings file could not be read, so the app started with the default layout.\n\n"
+                    + "Nothing is lost: the file was copied to\n" + AppSettings.BackupFolder + "\n(settings-unreadable-...json).\n\nReason: " + AppSettings.LoadProblem,
+                    BuildInfo.AppName, MessageBoxButton.OK, MessageBoxImage.Warning);
+            else if (settings.Unreadable != null)
+                MessageBox.Show(main, settings.Unreadable.Count + " widget(s) or preset(s) in your settings were made with another version and can't be used by this one.\n\n"
+                    + "They are kept in your settings file and come back with a version that knows them.",
+                    BuildInfo.AppName, MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         protected override void OnExit(ExitEventArgs e)

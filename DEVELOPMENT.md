@@ -20,6 +20,7 @@ Command-line options for design and debugging:
 
 - `vibeRacingOverlays.exe --snapshot <folder>`: renders every widget to PNG with the demo race and demo practice (single class and multiclass; practice files end in `_pq`), plus your saved widgets and a narrow-columns test.
 - `--snapshot <folder> --live`: the same, with live iRacing data.
+- `--settings-dir <folder>`: use another settings folder (with its own `backups` and `errors.log`). UI tests always run like this on a copy of the settings, so they never touch the real `settings.json`.
 - `--dump <file>`: writes raw iRacing values (per car) to a text file.
 
 ## Commits and the changelog

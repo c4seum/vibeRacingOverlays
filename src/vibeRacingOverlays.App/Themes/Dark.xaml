@@ -19,6 +19,7 @@
     <SolidColorBrush x:Key="Selection" Color="#FF253247"/>     <!-- selected list item -->
     <SolidColorBrush x:Key="Warning" Color="#FFE0A93A"/>
     <SolidColorBrush x:Key="Success" Color="#FF4CC38A"/>
+    <SolidColorBrush x:Key="Danger" Color="#FFE5534B"/>
     <!-- no visible shadow on dark surfaces -->
     <DropShadowEffect x:Key="CardShadow" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
 </ResourceDictionary>

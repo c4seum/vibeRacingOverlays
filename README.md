@@ -103,7 +103,10 @@ These also work while iRacing has focus.
 Set iRacing to windowed or borderless mode. Exclusive fullscreen doesn't allow windows on top.
 
 **Where are my layouts and settings stored?**
-In `%APPDATA%\vibeRacingOverlays`. Uninstalling asks whether you want to keep them.
+In `%APPDATA%\vibeRacingOverlays`. Updating to a new version keeps them; uninstalling asks whether you want to keep them.
+
+**Can I lose my layouts or presets with an update?**
+No. The app keeps copies in `%APPDATA%\vibeRacingOverlays\backups`: one per day (the last 7 days) and one from before the first start of every new version. If the settings can't be read, the app tells you and keeps the file there; a widget or preset that a version doesn't know (for example after going back to an older version) is kept and comes back with a version that knows it. If saving ever fails, the status bar turns red and the reason is in `errors.log`. To go back to a backup: close the app and copy the backup over `settings.json`.
 
 **Does it work in replays?**
 Yes. In a replay iRacing provides less data (for example no fuel data), so some values stay empty.

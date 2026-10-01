@@ -201,6 +201,15 @@ namespace vibeRacingOverlays.App
             var snap = telemetry.Latest;
             bool live = telemetry.IRacingConnected;
             string src = telemetry.ActiveSource;
+            // a failing save must never go unnoticed (layouts and presets would only live in memory)
+            if (AppSettings.SaveProblem != null)
+            {
+                StatusDot.SetResourceReference(Shape.FillProperty, "Danger");
+                StatusText.Text = "Settings can't be saved - see " + AppSettings.ErrorLog;
+                StatusText.ToolTip = AppSettings.SaveProblem;
+                return;
+            }
+            StatusText.ToolTip = null;
             if (src == "iRacing" && live)
             {
                 StatusDot.SetResourceReference(Shape.FillProperty, "Success");

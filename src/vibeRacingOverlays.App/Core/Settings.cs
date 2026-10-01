@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using vibeRacingOverlays.Data.Engine;
 
@@ -145,29 +146,50 @@ namespace vibeRacingOverlays.App.Core
             Converters = { new JsonStringEnumConverter() },
         };
 
+        /// <summary>Other settings folder (--settings-dir), so tests never touch the user's own settings.</summary>
+        public static string FolderOverride;
+
         public static string Folder
         {
-            get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), BuildInfo.SettingsFolderName); }
+            get { return FolderOverride ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), BuildInfo.SettingsFolderName); }
         }
 
         static string FilePath { get { return Path.Combine(Folder, "settings.json"); } }
+        public static string BackupFolder { get { return Path.Combine(Folder, "backups"); } }
+        public static string ErrorLog { get { return Path.Combine(Folder, "errors.log"); } }
+
+        /// <summary>App version that last saved this file (an update makes a backup first).</summary>
+        public string SavedByVersion { get; set; }
+
+        /// <summary>
+        /// Widgets and presets this version can't read (e.g. from a newer version, after going back to an older one).
+        /// They are kept as they are and put back when a version that knows them loads the file.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public JsonArray Unreadable { get; set; }
+
+        /// <summary>Why the settings file couldn't be read (null = fine); the file is kept in the backups folder.</summary>
+        [JsonIgnore] public static string LoadProblem { get; private set; }
+        /// <summary>Last save error (null = the last save worked); shown in the status bar.</summary>
+        [JsonIgnore] public static string SaveProblem { get; private set; }
 
         public static AppSettings Load()
         {
             MigrateFromOldName();
+            LoadProblem = null;
             try
             {
                 if (File.Exists(FilePath))
                 {
-                    var s = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath), Json);
+                    var s = Parse(File.ReadAllText(FilePath));
                     if (s != null) { s.Normalize(); return s; }
                 }
             }
             catch (Exception ex)
             {
-                // keep a copy of the broken file instead of silently losing the layout
-                try { File.Copy(FilePath, FilePath + ".broken", true); } catch { }
-                System.Diagnostics.Debug.WriteLine("Settings load failed: " + ex.Message);
+                // never silently start over: the file goes to the backups folder (StartupBackup) and the user is told
+                LoadProblem = ex.Message;
+                LogError("Settings could not be read: " + ex);
             }
             var d = new AppSettings();
             d.Layouts.Add(new LayoutConfig { Name = "Default" });
@@ -178,6 +200,100 @@ namespace vibeRacingOverlays.App.Core
             return d;
         }
 
+        /// <summary>
+        /// Reads the file item by item: a widget or preset this version can't read doesn't take the rest of the
+        /// layouts down with it; it is kept in <see cref="Unreadable"/> and saved again as it was.
+        /// </summary>
+        static AppSettings Parse(string text)
+        {
+            var root = JsonNode.Parse(text) as JsonObject;
+            if (root == null) return null;
+            var layouts = root["Layouts"] as JsonArray;
+            var presets = root["Presets"] as JsonArray;
+
+            // put back what an earlier start couldn't read; this version may know it
+            var earlier = root["Unreadable"] as JsonArray;
+            root.Remove("Unreadable");
+            var kept = new JsonArray();
+            if (earlier != null)
+                foreach (var k in earlier.ToList())
+                {
+                    string where = (string)k?["Where"];
+                    var item = k?["Item"]?.DeepClone();
+                    if (item == null) continue;
+                    JsonArray target = where == "preset" ? presets
+                        : layouts?.OfType<JsonObject>().FirstOrDefault(l => (string)l["Id"] == where)?["Widgets"] as JsonArray;
+                    if (target != null) target.Add(item); else kept.Add(k.DeepClone());   // its layout is gone: keep it as it is
+                }
+
+            if (layouts != null)
+                foreach (var l in layouts.OfType<JsonObject>())
+                    SetAside(l["Widgets"] as JsonArray, (string)l["Id"], n => n.Deserialize<WidgetSettings>(Json), kept);
+            SetAside(presets, "preset", n => n.Deserialize<WidgetPreset>(Json), kept);
+            SetAside(root["Widgets"] as JsonArray, "legacy", n => n.Deserialize<WidgetSettings>(Json), kept);
+
+            var s = root.Deserialize<AppSettings>(Json);
+            if (s != null && kept.Count > 0)
+            {
+                s.Unreadable = kept;
+                LogError(kept.Count + " widget(s) / preset(s) could not be read by this version and are kept in the settings file.");
+            }
+            return s;
+        }
+
+        static void SetAside(JsonArray items, string where, Func<JsonNode, object> read, JsonArray kept)
+        {
+            if (items == null) return;
+            for (int i = items.Count - 1; i >= 0; i--)
+            {
+                try { if (items[i] != null && read(items[i]) != null) continue; }
+                catch { }
+                kept.Add(new JsonObject { ["Where"] = where, ["Item"] = items[i]?.DeepClone() });
+                items.RemoveAt(i);
+            }
+        }
+
+        /// <summary>
+        /// At app start, before anything can be saved: a copy of the settings file in the backups folder,
+        /// once a day (the last 7 days are kept), before the first save by a new version (kept), and of a file
+        /// that couldn't be read (kept). So an update, a bug or a test never takes layouts and presets with it.
+        /// </summary>
+        public void StartupBackup()
+        {
+            try
+            {
+                if (!File.Exists(FilePath)) return;
+                Directory.CreateDirectory(BackupFolder);
+                string stamp = DateTime.Now.ToString("yyyy-MM-dd_HHmmss");
+                if (LoadProblem != null) CopyTo(Path.Combine(BackupFolder, "settings-unreadable-" + stamp + ".json"));
+                else if (SavedByVersion != BuildInfo.Version) CopyTo(Path.Combine(BackupFolder, "settings-before-" + BuildInfo.Version + "-" + stamp + ".json"));
+
+                string daily = Path.Combine(BackupFolder, "settings-" + DateTime.Now.ToString("yyyy-MM-dd") + ".json");
+                if (!File.Exists(daily)) CopyTo(daily);
+                foreach (var old in Directory.GetFiles(BackupFolder, "settings-????-??-??.json").OrderByDescending(p => p).Skip(7))
+                    File.Delete(old);
+            }
+            catch (Exception ex) { LogError("Backup failed: " + ex.Message); }
+        }
+
+        /// <summary>Copy of the settings file, never read-only (a read-only copy couldn't be cleaned up later).</summary>
+        static void CopyTo(string target)
+        {
+            File.Copy(FilePath, target, true);
+            File.SetAttributes(target, FileAttributes.Normal);
+        }
+
+        public static void LogError(string message)
+        {
+            try
+            {
+                Directory.CreateDirectory(Folder);
+                // keep the log small: start over when it gets big
+                if (File.Exists(ErrorLog) && new FileInfo(ErrorLog).Length > 256 * 1024) File.Delete(ErrorLog);
+                File.AppendAllText(ErrorLog, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "  " + BuildInfo.Version + "  " + message + Environment.NewLine);
+            }
+            catch { }
+        }
         /// <summary>
         /// First start: DEV builds start from a copy of the release settings; releases carry over the
         /// layout of the old "RaceOverlay" name.
@@ -195,12 +311,24 @@ namespace vibeRacingOverlays.App.Core
             catch { }
         }
 
+        /// <summary>Writes the file (via a temp file, so a crash never leaves half a file). Errors are logged and shown, then rethrown.</summary>
         public void Save()
         {
-            Directory.CreateDirectory(Folder);
-            string tmp = FilePath + ".tmp";
-            File.WriteAllText(tmp, JsonSerializer.Serialize(this, Json));
-            File.Move(tmp, FilePath, true);
+            try
+            {
+                Directory.CreateDirectory(Folder);
+                SavedByVersion = BuildInfo.Version;
+                string tmp = FilePath + ".tmp";
+                File.WriteAllText(tmp, JsonSerializer.Serialize(this, Json));
+                File.Move(tmp, FilePath, true);
+                SaveProblem = null;
+            }
+            catch (Exception ex)
+            {
+                SaveProblem = ex.Message;
+                LogError("Settings could not be saved: " + ex);
+                throw;
+            }
         }
 
         void Normalize()
