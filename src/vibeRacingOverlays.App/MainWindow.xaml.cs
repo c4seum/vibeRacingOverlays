@@ -391,7 +391,7 @@ namespace vibeRacingOverlays.App
 
         // ---------------------------------------------------------------- export / import
 
-        // exported layouts go next to the preset library (Documents\vRO\layouts)
+        // exported layouts go next to the preset library (Documents\vibeRacingOverlays\layouts)
         static string ExportFolder { get { var d = System.IO.Path.Combine(Core.Exchange.LibraryFolder, "layouts"); System.IO.Directory.CreateDirectory(d); return d; } }
 
         string AskSavePath(string title, string filter, string fileName)

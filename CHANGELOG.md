@@ -8,7 +8,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ### Added
 - Export and import: **Export** / **Import** under *Layout* save a whole layout to a file and add it as a new layout, for sharing or another PC. The file holds every widget's own current settings (also changes not saved in a preset); on import a widget follows one of your presets only when that holds exactly its settings, otherwise your Default (with `*`). Your presets are never replaced.
-- Preset files: **Export...** / **Import...** in the widget's *Preset file* row (a preset is the settings without the position), and a preset library in `Documents\vRO\presets`: every preset is a file there, and preset files you put there (shared ones, or exported widgets) appear in the app, also while it runs. Delete presets in the app; a file deleted outside the app is written again.
+- Preset files: **Export...** / **Import...** in the widget's *Preset file* row (a preset is the settings without the position), and a preset library in `Documents\vibeRacingOverlays\presets`: every preset is a file there, and preset files you put there (shared ones, or exported widgets) appear in the app, also while it runs. Delete presets in the app; a file deleted outside the app is written again.
 - Drag and drop: drop layout, preset or widget files on the app window to import them.
 - Widget types a version doesn't know are skipped with a message.
 - Layouts: **Save**, **Save as**, **Rename**, **Delete** and **New** (an empty layout without widgets). Changes are still kept automatically, but are stored in the layout with Save; a `*` after the name shows unsaved changes. There is always a **Default** layout (can't be renamed or deleted).

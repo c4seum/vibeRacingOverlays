@@ -14,13 +14,13 @@ namespace vibeRacingOverlays.App.Core
         public const string WidgetFilter = "vibeRacingOverlays widget (*.vrowidget.json)|*.vrowidget.json|JSON files (*.json)|*.json";
         public const string PresetFilter = "vibeRacingOverlays preset (*.vropreset.json)|*.vropreset.json|vibeRacingOverlays widget (*.vrowidget.json)|*.vrowidget.json|JSON files (*.json)|*.json";
 
-        /// <summary>Where exports go by default (and the preset library lives): Documents\vRO, or inside a test folder.</summary>
+        /// <summary>Where exports go by default (and the preset library lives): Documents\vibeRacingOverlays, or inside a test folder.</summary>
         public static string LibraryFolder
         {
             get
             {
                 return AppSettings.FolderOverride != null ? Path.Combine(AppSettings.FolderOverride, "library")
-                    : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "vRO");
+                    : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "vibeRacingOverlays");
             }
         }
 

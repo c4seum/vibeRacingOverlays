@@ -4,7 +4,7 @@ using System.Windows.Threading;
 namespace vibeRacingOverlays.App.Core
 {
     /// <summary>
-    /// The preset library: every preset (except the Default ones) is also a file in Documents\vRO\presets, and a
+    /// The preset library: every preset (except the Default ones) is also a file in Documents\vibeRacingOverlays\presets, and a
     /// preset file that appears there (copied in, shared by someone, changed by hand) shows up in the app, also while
     /// it runs. The app stays in charge of deleting: a preset file deleted outside the app is written again, so a
     /// preset is only ever lost by deleting it in the app.

@@ -78,7 +78,7 @@ What changed in each version is in the [changelog](CHANGELOG.md). Older versions
    - **Snapping:** a dragged widget snaps to the edges and corners of other widgets and of the screen. **Snap distance** is how close you have to get, **snap margin** the space kept between widgets and from the screen edge. Hold **Shift** while dragging to place a widget freely.
    - Screens are remembered as *Left*, *Middle* and *Right*, so a layout lands on the same screen on another PC with the same setup. If that screen isn't there, the widget shows on the main screen.
 5. **Layouts** (under *Layout*): **New** makes an empty layout, **Save** stores your changes in the layout, **Save as** stores them as a new layout, **Rename** and **Delete**. Your changes are always kept, also without Save; a `*` after the name shows changes that aren't saved in the layout yet. The **Default** layout is always there and can't be renamed or deleted.
-6. **Export / import:** **Export** saves the layout with all its widgets and their current settings to a file (in `Documents\vRO\layouts`), **Import** adds such a file as a new layout. You can also drop files on the app window. Imported widgets keep their own settings; they follow one of your presets only when it holds exactly the same settings.
+6. **Export / import:** **Export** saves the layout with all its widgets and their current settings to a file (in `Documents\vibeRacingOverlays\layouts`), **Import** adds such a file as a new layout. You can also drop files on the app window. Imported widgets keep their own settings; they follow one of your presets only when it holds exactly the same settings.
 
 ### Hotkeys
 
@@ -94,7 +94,7 @@ These also work while iRacing has focus.
 
 - **Display name:** give a widget its own name, for example "Standings endurance".
 - **Preset:** choosing a preset loads it. **Save** stores the widget's settings in its preset, **Save as** as a new preset, plus **Rename** and **Delete**. A `*` shows that the widget differs from its preset. Every widget type has a **Default** preset: new widgets start from it and the reset buttons go back to it, so saving Default sets your own defaults. Its last button restores the factory settings.
-- **Preset file:** **Export...** saves the widget's settings as a preset file to share, **Import...** adds a preset file (and loads it into the widget). All your presets are also files in `Documents\vRO\presets` (**Open folder**): put preset files there and they appear in the app. Delete presets in the app, not in the folder.
+- **Preset file:** **Export...** saves the widget's settings as a preset file to share, **Import...** adds a preset file (and loads it into the widget). All your presets are also files in `Documents\vibeRacingOverlays\presets` (**Open folder**): put preset files there and they appear in the app. Delete presets in the app, not in the folder.
 - **Show:** always, only when you're in the car, or only in races.
 - **Refresh rate:** how often the widget may update. Lower means even less FPS impact.
 - **Reset:** ↺ next to a setting, **Reset** next to a section, or **Reset widget** for everything. The widget's name and position are kept.
