@@ -78,6 +78,8 @@ namespace vibeRacingOverlays.App.Core
         public string Id { get; set; } = Guid.NewGuid().ToString("N").Substring(0, 8);
         public string Name { get; set; } = "";
         public WidgetSettings Settings { get; set; }
+        /// <summary>The "Default" preset of its widget type: new widgets start from it, the reset buttons go back to it.</summary>
+        public bool IsDefault { get; set; }
 
         [JsonIgnore] public string TypeName { get { return Settings != null ? Settings.TypeName : ""; } }
         public override string ToString() { return Name; }   // shown by the preset combo box
@@ -88,9 +90,16 @@ namespace vibeRacingOverlays.App.Core
     {
         public string Id { get; set; } = Guid.NewGuid().ToString("N").Substring(0, 8);
         public string Name { get; set; } = "Default";
+        /// <summary>The work version: everything you change lands here right away (and is saved to disk).</summary>
         public List<WidgetSettings> Widgets { get; set; } = new List<WidgetSettings>();
+        /// <summary>The version stored with Save; Revert goes back to it.</summary>
+        public List<WidgetSettings> Saved { get; set; }
+        /// <summary>The "Default" layout: always there, can't be renamed or deleted, and (DEV) the app's built-in default.</summary>
+        public bool IsDefault { get; set; }
+        /// <summary>The work version differs from the saved one (kept up to date by the main window).</summary>
+        [JsonIgnore] public bool Dirty { get; set; }
 
-        public override string ToString() { return Name; }   // shown by the layout combo box
+        public override string ToString() { return Name + (Dirty ? " *" : ""); }   // shown by the layout combo box
     }
 
     public sealed class AppSettings
@@ -119,6 +128,64 @@ namespace vibeRacingOverlays.App.Core
         /// <summary>Widgets of the active layout (everything that edits widgets works on this list).</summary>
         [JsonIgnore]
         public List<WidgetSettings> Widgets { get { return ActiveLayout.Widgets; } }
+
+        [JsonIgnore]
+        public LayoutConfig DefaultLayout { get { return Layouts.FirstOrDefault(l => l.IsDefault) ?? Layouts[0]; } }
+
+        /// <summary>The Default preset of a widget type (always there after loading).</summary>
+        public WidgetPreset DefaultPreset(Type type) { return Presets.FirstOrDefault(p => p.IsDefault && p.Settings != null && p.Settings.GetType() == type); }
+
+        /// <summary>A copy of the Default preset's settings: the defaults of new widgets and of the reset buttons.</summary>
+        public WidgetSettings DefaultsFor(Type type)
+        {
+            var p = DefaultPreset(type);
+            return p != null ? CloneWidget(p.Settings) : Core.Defaults.Preset(type);
+        }
+
+        /// <summary>A new widget of this type, made from its Default preset.</summary>
+        public WidgetSettings NewWidget(Type type)
+        {
+            var w = DefaultsFor(type);
+            w.Id = Core.Defaults.NewId();
+            w.Title = w.TypeName;
+            w.Screen = null;
+            var p = DefaultPreset(type);
+            w.PresetId = p != null ? p.Id : null;
+            return w;
+        }
+
+        // ---- comparing (layout work version vs saved, widget vs its preset)
+
+        static readonly string[] WhereOnScreen = { "X", "Y" };   // follow from screen/anchor/offsets, recomputed when shown
+        static readonly string[] Instance = { "Id", "Title", "Enabled", "X", "Y", "Screen", "Anchor", "OffsetX", "OffsetY", "Locked", "PresetId" };
+
+        static string CompareJson(IEnumerable<WidgetSettings> widgets, string[] skip)
+        {
+            var arr = new JsonArray();
+            foreach (var w in widgets)
+            {
+                var o = JsonSerializer.SerializeToNode(w, Json) as JsonObject;
+                foreach (var k in skip) o?.Remove(k);
+                arr.Add(o);
+            }
+            return arr.ToJsonString();
+        }
+
+        /// <summary>The work version of the layout differs from its saved version.</summary>
+        public static bool IsDirty(LayoutConfig l)
+        {
+            return l.Saved != null && CompareJson(l.Widgets, WhereOnScreen) != CompareJson(l.Saved, WhereOnScreen);
+        }
+
+        /// <summary>Same widget settings, ignoring name and position (what a preset holds).</summary>
+        public static bool SameSettings(WidgetSettings a, WidgetSettings b)
+        {
+            return a != null && b != null && a.GetType() == b.GetType() && CompareJson(new[] { a }, Instance) == CompareJson(new[] { b }, Instance);
+        }
+
+        public static List<WidgetSettings> CloneList(IEnumerable<WidgetSettings> widgets) { return widgets.Select(CloneWidget).ToList(); }
+
+        public static T ParseDefaults<T>(string text) { return JsonSerializer.Deserialize<T>(text, Json); }
 
         [JsonIgnore]
         public LayoutConfig ActiveLayout
@@ -191,11 +258,9 @@ namespace vibeRacingOverlays.App.Core
                 LoadProblem = ex.Message;
                 LogError("Settings could not be read: " + ex);
             }
+            // first start (or an unreadable file): the built-in Default layout and presets
             var d = new AppSettings();
-            d.Layouts.Add(new LayoutConfig { Name = "Default" });
-            d.Widgets.Add(new Widgets.StandingsSettings { X = 40, Y = 200 });
-            d.Widgets.Add(new Widgets.RelativeSettings { X = 1100, Y = 600 });
-            d.Widgets.Add(new Widgets.FuelSettings { X = 1500, Y = 820 });
+            d.Layouts.Add(new LayoutConfig { Name = "Default", IsDefault = true, Widgets = Core.Defaults.Layout() });
             d.Normalize();
             return d;
         }
@@ -221,14 +286,21 @@ namespace vibeRacingOverlays.App.Core
                     string where = (string)k?["Where"];
                     var item = k?["Item"]?.DeepClone();
                     if (item == null) continue;
-                    JsonArray target = where == "preset" ? presets
-                        : layouts?.OfType<JsonObject>().FirstOrDefault(l => (string)l["Id"] == where)?["Widgets"] as JsonArray;
+                    // "preset", "saved:<layout id>" (saved version of a layout) or "<layout id>" (its work version)
+                    bool saved = where != null && where.StartsWith("saved:");
+                    string id = saved ? where.Substring(6) : where;
+                    var layout = layouts?.OfType<JsonObject>().FirstOrDefault(l => (string)l["Id"] == id);
+                    if (saved && layout != null && layout["Saved"] == null) layout["Saved"] = new JsonArray();
+                    JsonArray target = where == "preset" ? presets : layout?[saved ? "Saved" : "Widgets"] as JsonArray;
                     if (target != null) target.Add(item); else kept.Add(k.DeepClone());   // its layout is gone: keep it as it is
                 }
 
             if (layouts != null)
                 foreach (var l in layouts.OfType<JsonObject>())
+                {
                     SetAside(l["Widgets"] as JsonArray, (string)l["Id"], n => n.Deserialize<WidgetSettings>(Json), kept);
+                    SetAside(l["Saved"] as JsonArray, "saved:" + (string)l["Id"], n => n.Deserialize<WidgetSettings>(Json), kept);
+                }
             SetAside(presets, "preset", n => n.Deserialize<WidgetPreset>(Json), kept);
             SetAside(root["Widgets"] as JsonArray, "legacy", n => n.Deserialize<WidgetSettings>(Json), kept);
 
@@ -338,7 +410,15 @@ namespace vibeRacingOverlays.App.Core
                 if (Layouts.Count == 0) Layouts.Add(new LayoutConfig { Name = "Default", Widgets = LegacyWidgets });
                 LegacyWidgets = null;
             }
-            if (Layouts.Count == 0) Layouts.Add(new LayoutConfig { Name = "Default" });
+            if (Layouts.Count == 0) Layouts.Add(new LayoutConfig { Name = "Default", IsDefault = true, Widgets = Core.Defaults.Layout() });
+
+            // exactly one Default layout: the one marked, else the one called "Default", else the built-in one
+            var def = Layouts.FirstOrDefault(l => l.IsDefault)
+                ?? Layouts.FirstOrDefault(l => string.Equals(l.Name, "Default", StringComparison.OrdinalIgnoreCase));
+            if (def == null) { def = new LayoutConfig { Name = "Default", Widgets = Core.Defaults.Layout() }; Layouts.Insert(0, def); }
+            foreach (var l in Layouts) l.IsDefault = l == def;
+            def.Name = "Default";
+
             var ids = new HashSet<string>();
             foreach (var l in Layouts)
             {
@@ -346,25 +426,44 @@ namespace vibeRacingOverlays.App.Core
                 foreach (var w in l.Widgets)
                 {
                     // widget ids must be unique across layouts (they identify the on-screen windows)
-                    if (!ids.Add(w.Id)) { w.Id = Guid.NewGuid().ToString("N").Substring(0, 8); ids.Add(w.Id); }
-                    var table = w as Widgets.ITableSettings;
-                    if (table != null) table.MergeColumns();
-                    var norm = w as Widgets.INormalizable;
-                    if (norm != null) norm.Normalize();
-                    if (string.IsNullOrEmpty(w.Title)) w.Title = w.TypeName;
+                    if (!ids.Add(w.Id)) { w.Id = Core.Defaults.NewId(); ids.Add(w.Id); }
+                    NormalizeWidget(w);
                 }
+                // layouts from before Save existed: what you had is the saved version
+                if (l.Saved == null) l.Saved = CloneList(l.Widgets);
+                foreach (var w in l.Saved) NormalizeWidget(w);
             }
             var active = ActiveLayout; // repairs an unknown ActiveLayoutId
+
             Presets.RemoveAll(p => p.Settings == null);
-            foreach (var p in Presets)
+            foreach (var p in Presets) NormalizeWidget(p.Settings);
+            // exactly one Default preset per widget type (the one marked, else one called "Default", else the built-in one)
+            foreach (var e in vibeRacingOverlays.App.Widgets.Widget.Catalog)
             {
-                var table = p.Settings as Widgets.ITableSettings;
-                if (table != null) table.MergeColumns();
-                var norm = p.Settings as Widgets.INormalizable;
-                if (norm != null) norm.Normalize();
+                var type = e.Make().GetType();
+                var ofType = Presets.Where(p => p.Settings.GetType() == type).ToList();
+                var dp = ofType.FirstOrDefault(p => p.IsDefault) ?? ofType.FirstOrDefault(p => string.Equals(p.Name, "Default", StringComparison.OrdinalIgnoreCase));
+                if (dp == null)
+                {
+                    var fresh = Core.Defaults.Preset(type);
+                    NormalizeWidget(fresh);
+                    dp = new WidgetPreset { Name = "Default", Settings = fresh };
+                    Presets.Add(dp);
+                    ofType.Add(dp);
+                }
+                foreach (var p in ofType) p.IsDefault = p == dp;
+                dp.Name = "Default";
             }
         }
 
+        static void NormalizeWidget(WidgetSettings w)
+        {
+            var table = w as Widgets.ITableSettings;
+            if (table != null) table.MergeColumns();
+            var norm = w as Widgets.INormalizable;
+            if (norm != null) norm.Normalize();
+            if (string.IsNullOrEmpty(w.Title)) w.Title = w.TypeName;
+        }
         /// <summary>Deep copy of widget settings (via JSON, so nothing is shared between widgets, presets or layouts).</summary>
         public static WidgetSettings CloneWidget(WidgetSettings w)
         {
@@ -380,24 +479,12 @@ namespace vibeRacingOverlays.App.Core
         /// <summary>JSON text of a settings value, to compare complex values.</summary>
         public static string ToJson(object v, Type type) { return JsonSerializer.Serialize(v, type, Json); }
 
-        /// <summary>Deep copy of a layout with fresh widget ids.</summary>
+        /// <summary>Deep copy of a layout's work version with fresh widget ids; that is also its saved version.</summary>
         public LayoutConfig CloneLayout(LayoutConfig source, string name)
         {
-            var copy = JsonSerializer.Deserialize<LayoutConfig>(JsonSerializer.Serialize(source, Json), Json);
-            copy.Id = Guid.NewGuid().ToString("N").Substring(0, 8);
-            copy.Name = name;
-            foreach (var w in copy.Widgets) w.Id = Guid.NewGuid().ToString("N").Substring(0, 8);
+            var copy = new LayoutConfig { Name = name, Widgets = CloneList(source.Widgets) };
+            foreach (var w in copy.Widgets) w.Id = Core.Defaults.NewId();
+            copy.Saved = CloneList(copy.Widgets);
             return copy;
-        }
-
-        /// <summary>A layout with one widget of each type at sensible default positions.</summary>
-        public static LayoutConfig DefaultLayout(string name)
-        {
-            var l = new LayoutConfig { Name = name };
-            l.Widgets.Add(new Widgets.StandingsSettings { X = 40, Y = 200 });
-            l.Widgets.Add(new Widgets.RelativeSettings { X = 1100, Y = 600 });
-            l.Widgets.Add(new Widgets.FuelSettings { X = 1500, Y = 820 });
-            return l;
-        }
-    }
+        }    }
 }

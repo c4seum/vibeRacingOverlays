@@ -36,11 +36,13 @@
         <Border DockPanel.Dock="Left" Width="250" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Divider}" BorderThickness="0,0,1,0">
             <DockPanel Margin="12,14,12,12">
                 <TextBlock DockPanel.Dock="Top" Text="LAYOUT" Foreground="{DynamicResource Muted}" FontSize="11" FontWeight="SemiBold" Margin="4,0,0,6"/>
-                <ComboBox x:Name="LayoutBox" DockPanel.Dock="Top" DisplayMemberPath="Name" Margin="0,0,0,8" ToolTip="Active layout (next layout: Ctrl+Shift+L)"/>
+                <ComboBox x:Name="LayoutBox" DockPanel.Dock="Top" Margin="0,0,0,8" ToolTip="Active layout (next layout: Ctrl+Shift+L). * = changes that aren't saved in the layout yet"/>
                 <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,14">
-                    <Button x:Name="LayoutNewButton" Content="New" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="New layout with one widget of each type"/>
-                    <Button x:Name="LayoutSaveAsButton" Content="Save as" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Save the current layout under a new name"/>
+                    <Button x:Name="LayoutNewButton" Content="New" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="New, empty layout (no widgets yet)"/>
+                    <Button x:Name="LayoutSaveButton" Content="Save" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Store the changes in this layout"/>
+                    <Button x:Name="LayoutSaveAsButton" Content="Save as" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Store the current widgets as a new layout (this layout goes back to its saved version)"/>
                     <Button x:Name="LayoutRenameButton" Content="Rename" Padding="10,2" MinHeight="26" Margin="0,0,4,4"/>
+                    <Button x:Name="LayoutRevertButton" Content="Revert" Style="{StaticResource GhostButton}" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Undo the changes since the last Save"/>
                     <Button x:Name="LayoutDeleteButton" Content="Delete" Style="{StaticResource GhostButton}" Padding="10,2" MinHeight="26" Margin="0,0,0,4"/>
                 </WrapPanel>
                 <TextBlock DockPanel.Dock="Top" Text="WIDGETS" Foreground="{DynamicResource Muted}" FontSize="11" FontWeight="SemiBold" Margin="4,0,0,6"/>

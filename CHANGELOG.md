@@ -7,6 +7,9 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 ## [Unreleased]
 
 ### Added
+- Layouts: **Save**, **Save as**, **Rename**, **Revert**, **Delete** and **New** (an empty layout without widgets). Changes are still kept automatically, but are stored in the layout with Save; a `*` after the name shows unsaved changes and Revert goes back to the saved version. There is always a **Default** layout (can't be renamed or deleted).
+- Widget presets: choosing a preset loads it, with **Save**, **Save as**, **Rename** and **Delete**, and a `*` when the widget differs from its preset. Every widget type has a **Default** preset: new widgets start from it and all reset buttons go back to it, so saving Default makes it your default set. The factory settings can be restored from the Default preset.
+- The app's built-in defaults (Default layout and Default presets) come from `defaults.json`; saving a Default in the DEV build writes it there, so it ships with the next release.
 - Your layouts and presets are better protected: the app keeps backups in `%APPDATA%\vibeRacingOverlays\backups` (one per day for the last 7 days, and one from before the first start of a new version). A settings file that can't be read is no longer silently replaced by the default layout: you get a message and the file is kept in the backups. A widget or preset that this version doesn't know (for example after going back to an older version) is kept and comes back with a version that knows it, instead of making the whole file unreadable.
 - If saving the settings fails, the status bar turns red and the reason is written to `errors.log` (before, this went unnoticed and changes were lost when the app closed).
 - `--settings-dir <folder>` start option: use another settings folder (for tests).

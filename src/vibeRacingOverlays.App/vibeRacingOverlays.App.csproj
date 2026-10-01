@@ -33,6 +33,17 @@
     <Resource Include="app.ico" />
   </ItemGroup>
 
+  <!-- built-in defaults (Default layout and presets); DEV builds write them back here when you save a Default -->
+  <ItemGroup>
+    <EmbeddedResource Include="defaults.json" Condition="Exists('defaults.json')" LogicalName="defaults.json" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(ReleaseBuild)' != 'true'">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>DefaultsSource</_Parameter1>
+      <_Parameter2>$(MSBuildProjectDirectory)\defaults.json</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
   <ItemGroup>
     <!-- WinForms is only used for the color picker; keep its types out of the global namespace -->
     <Using Remove="System.Windows.Forms" />

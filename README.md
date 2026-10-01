@@ -77,7 +77,7 @@ What changed in each version is in the [changelog](CHANGELOG.md). Older versions
    - **Lock** a widget so it can't be dragged or resized by accident. Its edit frame turns grey and shows *LOCKED*. **Lock all** / **Unlock all** do the whole layout at once.
    - **Snapping:** a dragged widget snaps to the edges and corners of other widgets and of the screen. **Snap distance** is how close you have to get, **snap margin** the space kept between widgets and from the screen edge. Hold **Shift** while dragging to place a widget freely.
    - Screens are remembered as *Left*, *Middle* and *Right*, so a layout lands on the same screen on another PC with the same setup. If that screen isn't there, the widget shows on the main screen.
-5. **Save layouts** with the buttons under *Layout*: **New**, **Save as**, **Rename** and **Delete**. Everything you change is saved automatically.
+5. **Layouts** (under *Layout*): **New** makes an empty layout, **Save** stores your changes in the layout, **Save as** stores them as a new layout (the current one goes back to its saved version), **Rename**, **Revert** (undo the changes since the last Save) and **Delete**. Your changes are always kept, also without Save; a `*` after the name shows changes that aren't saved in the layout yet. The **Default** layout is always there and can't be renamed or deleted.
 
 ### Hotkeys
 
@@ -92,7 +92,7 @@ These also work while iRacing has focus.
 ### Per widget
 
 - **Display name:** give a widget its own name, for example "Standings endurance".
-- **Preset:** **Save** stores the widget's settings under a name; **Load** applies a saved preset. Deleting the last preset of a widget type resets that widget to the defaults.
+- **Preset:** choosing a preset loads it. **Save** stores the widget's settings in its preset, **Save as** as a new preset, plus **Rename** and **Delete**. A `*` shows that the widget differs from its preset. Every widget type has a **Default** preset: new widgets start from it and the reset buttons go back to it, so saving Default sets your own defaults. Its last button restores the factory settings.
 - **Show:** always, only when you're in the car, or only in races.
 - **Refresh rate:** how often the widget may update. Lower means even less FPS impact.
 - **Reset:** ↺ next to a setting, **Reset** next to a section, or **Reset widget** for everything. The widget's name and position are kept.

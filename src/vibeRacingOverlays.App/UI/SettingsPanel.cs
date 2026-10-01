@@ -49,7 +49,8 @@ namespace vibeRacingOverlays.App.UI
                 this.ws = ws;
                 this.changed = changed;
                 this.titleChanged = titleChanged;
-                defaults = (WidgetSettings)Activator.CreateInstance(ws.GetType());
+                // the type's Default preset (falls back to the built-in defaults); the reset buttons go back to it
+                defaults = App != null ? App.DefaultsFor(ws.GetType()) : Core.Defaults.Preset(ws.GetType());
             }
 
             void Changed()
@@ -194,84 +195,171 @@ namespace vibeRacingOverlays.App.UI
 
             // ------------------------------------------------------------ presets
 
-            IEnumerable<WidgetPreset> PresetsOfType()
+            /// <summary>Presets of this widget type: Default first, then by name.</summary>
+            List<WidgetPreset> PresetsOfType()
             {
-                return App.Presets.Where(p => p.TypeName == ws.TypeName).OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase);
+                return App.Presets.Where(p => p.TypeName == ws.TypeName)
+                    .OrderBy(p => p.IsDefault ? 0 : 1).ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ToList();
             }
 
-            /// <summary>Preset combo with Load / Save / Delete (the editor part of the "Preset" row).</summary>
+            /// <summary>The preset this widget follows (its last loaded / saved one; Default when it has none).</summary>
+            WidgetPreset Current()
+            {
+                return App.Presets.FirstOrDefault(p => p.Id == ws.PresetId && p.TypeName == ws.TypeName) ?? App.DefaultPreset(ws.GetType());
+            }
+
+            bool Modified() { var c = Current(); return c != null && !AppSettings.SameSettings(ws, c.Settings); }
+
+            sealed class PresetItem
+            {
+                public WidgetPreset Preset;
+                public string Label;
+                public override string ToString() { return Label; }
+            }
+
+            /// <summary>
+            /// Preset combo (choosing one loads it) with Save / Save as / Rename / Delete. "*" = the widget differs
+            /// from its preset. Default can't be renamed or deleted; its delete button restores the factory settings.
+            /// </summary>
             FrameworkElement PresetRow()
             {
                 var row = new StackPanel { Orientation = Orientation.Horizontal };
-
-                var list = PresetsOfType().ToList();
-                var combo = new ComboBox
-                {
-                    Width = 170, ItemsSource = list, VerticalAlignment = VerticalAlignment.Center,
-                    ToolTip = list.Count == 0 ? "No " + ws.TypeName + " presets yet: use Save" : "Saved " + ws.TypeName + " presets (available in every layout)",
-                };
-                combo.SelectedItem = list.FirstOrDefault(p => p.Id == ws.PresetId);
-                row.Children.Add(combo);
-
-                var load = new Button { Content = "Load", Margin = new Thickness(8, 0, 0, 0), ToolTip = "Apply the selected preset to this widget (name and position are kept)" };
-                var save = new Button { Content = "Save", Margin = new Thickness(6, 0, 0, 0), ToolTip = "Save this widget's settings as a preset" };
-                var del = Ui.IconButton(Ui.IconDelete, "Delete the selected preset");
+                var combo = new ComboBox { Width = 132, VerticalAlignment = VerticalAlignment.Center, ToolTip = "Saved " + ws.TypeName + " presets (every layout). Choosing one loads it. * = changed since loaded or saved" };
+                var save = new Button { Content = "Save", Margin = new Thickness(6, 0, 0, 0) };
+                var saveAs = new Button { Content = "Save as", Margin = new Thickness(4, 0, 0, 0), ToolTip = "Save this widget's settings as a new preset" };
+                var rename = new Button { Content = "Rename", Margin = new Thickness(4, 0, 0, 0) };
+                var del = Ui.IconButton(Ui.IconDelete, "");
                 del.Margin = new Thickness(2, 0, 0, 0);
-                Action updateButtons = () => { load.IsEnabled = del.IsEnabled = combo.SelectedItem != null; };
-                combo.SelectionChanged += (s, e) => updateButtons();
-                updateButtons();
+                bool updating = false;
 
-                load.Click += (s, e) =>
+                Action refresh = () =>
                 {
-                    var p = combo.SelectedItem as WidgetPreset;
-                    if (p == null) return;
-                    ApplyFrom(AppSettings.CloneWidget(p.Settings));
-                    ws.PresetId = p.Id;
+                    updating = true;
+                    var cur = Current();
+                    bool mod = Modified();
+                    var items = PresetsOfType().Select(p => new PresetItem { Preset = p, Label = p.Name + (p == cur && mod ? " *" : "") }).ToList();
+                    combo.ItemsSource = items;
+                    combo.SelectedItem = items.FirstOrDefault(i => i.Preset == cur);
+                    bool isDefault = cur != null && cur.IsDefault;
+                    save.IsEnabled = mod;
+                    save.ToolTip = isDefault && Core.Defaults.SourceFile != null
+                        ? "Store this widget's settings in the Default preset. DEV build: they also become the app's built-in defaults (defaults.json)"
+                        : isDefault ? "Store this widget's settings in the Default preset: new " + ws.TypeName + " widgets and the reset buttons use them"
+                        : "Store this widget's settings in preset '" + (cur != null ? cur.Name : "") + "'";
+                    rename.IsEnabled = !isDefault;
+                    rename.ToolTip = isDefault ? "The Default preset keeps its name" : "Rename this preset";
+                    del.ToolTip = isDefault ? "Restore the factory settings of the Default preset" : "Delete this preset";
+                    del.Content = isDefault ? Ui.IconReset : Ui.IconDelete;
+                    updating = false;
+                };
+                refresh();
+                refreshers.Add(refresh);
+
+                combo.SelectionChanged += (s, e) =>
+                {
+                    var item = combo.SelectedItem as PresetItem;
+                    if (updating || item == null || item.Preset == Current() && !Modified()) return;
+                    var owner = Window.GetWindow(host);
+                    if (Modified() && MessageBox.Show(owner, "Load preset '" + item.Preset.Name + "'? The changes to this widget since its last save are lost.",
+                        "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) { refresh(); return; }
+                    ApplyFrom(AppSettings.CloneWidget(item.Preset.Settings));
+                    ws.PresetId = item.Preset.Id;
                     changed();
                     Rebuild();
                 };
-                save.Click += (s, e) => SavePreset(combo.SelectedItem as WidgetPreset);
-                del.Click += (s, e) => DeletePreset(combo.SelectedItem as WidgetPreset);
+                save.Click += (s, e) => SavePreset(Current());
+                saveAs.Click += (s, e) => SavePresetAs();
+                rename.Click += (s, e) => RenamePreset(Current());
+                del.Click += (s, e) => { var c = Current(); if (c != null && c.IsDefault) FactoryReset(c); else DeletePreset(c); };
 
-                row.Children.Add(load);
+                row.Children.Add(combo);
                 row.Children.Add(save);
+                row.Children.Add(saveAs);
+                row.Children.Add(rename);
                 row.Children.Add(del);
                 return row;
             }
 
-            void SavePreset(WidgetPreset selected)
+            WidgetSettings Snapshot()
+            {
+                var snap = AppSettings.CloneWidget(ws);
+                snap.PresetId = null;
+                return snap;
+            }
+
+            void AfterPresetChange(WidgetPreset p)
+            {
+                // the Default preset is the app's default set: DEV builds write it into the built-in defaults
+                if (p != null && p.IsDefault) Core.Defaults.Export(App);
+                changed();
+                Rebuild();   // new defaults for the reset buttons
+            }
+
+            void SavePreset(WidgetPreset p)
+            {
+                if (p == null) { SavePresetAs(); return; }
+                p.Settings = Snapshot();
+                ws.PresetId = p.Id;
+                AfterPresetChange(p);
+            }
+
+            string UniquePresetName(string name, WidgetPreset except)
+            {
+                string n = name;
+                for (int i = 2; PresetsOfType().Any(p => p != except && string.Equals(p.Name, n, StringComparison.OrdinalIgnoreCase)); i++) n = name + " (" + i + ")";
+                return n;
+            }
+
+            void SavePresetAs()
             {
                 var owner = Window.GetWindow(host);
-                string suggestion = selected != null ? selected.Name : ws.TypeName + " preset " + (PresetsOfType().Count() + 1);
-                string name = InputDialog.Ask(owner, "Save preset", "Save the settings of this " + ws.TypeName + " widget as preset:", suggestion);
-                if (name == null) return;
+                string name = InputDialog.Ask(owner, "Save preset as", "Save the settings of this " + ws.TypeName + " widget as a new preset:",
+                    UniquePresetName(ws.TypeName + " preset " + PresetsOfType().Count, null));
+                if (name == null || string.IsNullOrWhiteSpace(name)) return;
+                var p = new WidgetPreset { Name = UniquePresetName(name.Trim(), null), Settings = Snapshot() };
+                if (string.Equals(p.Name, "Default", StringComparison.OrdinalIgnoreCase)) p.Name = UniquePresetName("Default copy", null);
+                App.Presets.Add(p);
+                ws.PresetId = p.Id;
+                AfterPresetChange(p);
+            }
 
-                var existing = PresetsOfType().FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
-                if (existing != null && MessageBox.Show(owner, "Overwrite preset '" + existing.Name + "'?", "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
-
-                var snapshot = AppSettings.CloneWidget(ws);
-                snapshot.PresetId = null;
-                if (existing != null) existing.Settings = snapshot;
-                else { existing = new WidgetPreset { Name = name, Settings = snapshot }; App.Presets.Add(existing); }
-                ws.PresetId = existing.Id;
+            void RenamePreset(WidgetPreset p)
+            {
+                if (p == null || p.IsDefault) return;
+                var owner = Window.GetWindow(host);
+                string name = InputDialog.Ask(owner, "Rename preset", "New name for preset '" + p.Name + "':", p.Name);
+                if (name == null || string.IsNullOrWhiteSpace(name) || name == p.Name) return;
+                name = name.Trim();
+                p.Name = string.Equals(name, "Default", StringComparison.OrdinalIgnoreCase) ? UniquePresetName("Default copy", p) : UniquePresetName(name, p);
                 changed();
                 Rebuild();
             }
 
             void DeletePreset(WidgetPreset p)
             {
-                if (p == null) return;
+                if (p == null || p.IsDefault) return;
                 var owner = Window.GetWindow(host);
-                bool last = PresetsOfType().Count() == 1;
-                string msg = "Delete preset '" + p.Name + "'?" + (last ? "\nThis is the last " + ws.TypeName + " preset: the widget will be reset to the defaults." : "");
-                if (MessageBox.Show(owner, msg, "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
-
-                App.Presets.Remove(p);
-                // widgets in any layout that pointed at this preset no longer do
-                foreach (var w in App.Layouts.SelectMany(l => l.Widgets)) if (w.PresetId == p.Id) w.PresetId = null;
-                if (last) ResetToDefaults();
+                if (MessageBox.Show(owner, "Delete preset '" + p.Name + "'?\nWidgets that use it keep their settings and follow the Default preset from now on.",
+                    "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+                App.Presets.RemoveAll(x => x == p);
+                var def = App.DefaultPreset(ws.GetType());
+                foreach (var w in App.Layouts.SelectMany(l => l.Widgets.Concat(l.Saved ?? new List<WidgetSettings>())))
+                    if (w.PresetId == p.Id) w.PresetId = def != null ? def.Id : null;
                 changed();
                 Rebuild();
+            }
+
+            /// <summary>Default preset back to the factory settings (DEV: the code defaults; releases: the built-in defaults), also for this widget.</summary>
+            void FactoryReset(WidgetPreset p)
+            {
+                var owner = Window.GetWindow(host);
+                if (MessageBox.Show(owner, "Restore the factory settings of the " + ws.TypeName + " Default preset, and load them into this widget?",
+                    "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+                var factory = BuildInfo.IsDev ? (WidgetSettings)Activator.CreateInstance(ws.GetType()) : Core.Defaults.Preset(ws.GetType());
+                p.Settings = AppSettings.CloneWidget(factory);
+                ApplyFrom(AppSettings.CloneWidget(p.Settings));
+                ws.PresetId = p.Id;
+                AfterPresetChange(p);
             }
 
             /// <summary>Copies all widget settings from another settings object; instance settings (name, position...) are kept.</summary>
