@@ -89,4 +89,18 @@ src/vibeRacingOverlays.Setup     per-user installer (.NET Framework 4.8), app em
    - Column lists: implement `ITableSettings` with `ColumnDef`s; `ColumnDef.Fit(sample)` gives a column its fixed width (widest content per format; only the name uses `UserWidth()`), `ColumnDef.WithFormats(default, (key, example)...)` adds a format drop-down per column (the label is an example of the result, like "1:35.764"). Header item lists work the same via `IHeaderItems`.
    - Settings that differ per session type: put them in a profile object and implement `ISessionProfiles` (the editor shows the P&Q / Race switch and edits that profile; the rest of the widget's settings stay shared), plus `INormalizable` for migrations after loading. See `StandingsSettings`.
 2. Create `XxxWidget : Widget` and implement `Draw(DisplayList, RaceSnapshot)`. Text is drawn with equal-width digits (`TabularText`), so numbers in a column line up; measure texts for flowing layouts with `DisplayList.Measure`.
-3. Register both in `Widget.Create`, in `Widget.Catalog`, and with `[JsonDerivedType]` on `WidgetSettings`. A Default preset for the new type is created automatically (from `defaults.json` or the code defaults).
+3. Register both in `Widget.Create`, in `Widget.Catalog`, and with `[JsonDerivedType]` on `WidgetSettings`. A Default preset for the new type is created automatically (from its preset file in `app/defaults/presets`, else the code defaults). Add that preset file to give the type its recommended settings.
+
+## Changing a widget (new options, new look) without changing what users have
+
+Rule: an update never changes how existing widgets, widget presets, layout presets or exported files look or behave. Only fresh installs and the **Default** presets get the new recommended values, plus whatever you deliberately mark for everyone in that release. Users read about it in the release notes.
+
+This works with the existing loading code:
+
+- **A new setting**: a value missing from a saved widget gets the property's initializer. So give the property the value that **keeps the old behaviour** (`public bool ShowX { get; set; } = false;`, or the old fixed value when something becomes adjustable), and put the **recommended** value in the type's Default preset file in `app/defaults/presets/*.vropreset.json`. Fresh installs, "Get started" and new widgets start from the Default preset, and Default presets are refreshed from these files on every start.
+- **A new column or header item**: give its `ColumnDef` `DefaultOn = false` (existing lists get it switched off), and add it switched on to the Default preset file if it should be on for new users. New entries are added at the end of existing lists for now; inserting them next to a logical neighbour is still to be built.
+- **A renamed setting, or one whose meaning changes**: never let it fall back silently. Keep the old property readable (nullable, `[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]`) and convert it in `Normalize()` (`INormalizable`), like the legacy properties of `StandingsSettings`.
+- **Something every existing user should get anyway** (a real improvement or a fix): write it as a migration in `Normalize()`, with a comment saying why, and list it under *Changed* in the changelog.
+- **Drawing changes** (how something is rendered, not a setting) reach everyone automatically; list them under *Changed*.
+- **Release notes**: say per widget what's new and whether it's off for existing widgets ("new column X, off in your widgets, on in Default").
+- **Before a release**: load settings, presets and layout files from the previous release (keep copies) and check they still look the same. Automated test files for this are still to be built.
