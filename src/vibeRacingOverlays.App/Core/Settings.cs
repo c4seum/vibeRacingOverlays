@@ -372,6 +372,7 @@ namespace vibeRacingOverlays.App.Core
         /// </summary>
         static void MigrateFromOldName()
         {
+            if (FolderOverride != null) return;   // a separate (test) folder never takes other settings
             try
             {
                 string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);

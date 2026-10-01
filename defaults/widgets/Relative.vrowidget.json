@@ -1,0 +1,176 @@
+{
+  "Format": "vibeRacingOverlays.widget",
+  "AppVersion": "1.0.0",
+  "Widget": {
+    "type": "relative",
+    "TypeName": "Relative",
+    "CarsAhead": 4,
+    "CarsBehind": 4,
+    "ShowHeader": true,
+    "FontSize": 14,
+    "RowHeight": 25,
+    "ColumnSpacing": 15,
+    "RowColor": "#FF1E1E1E",
+    "RowAltColor": "#FF282828",
+    "PlayerColor": "#FF8E2A2A",
+    "NumberColor": "#FF4A4F57",
+    "AheadLapColor": "#FFFF8A5B",
+    "BehindLapColor": "#FF6FA8FF",
+    "Columns": [
+      {
+        "Key": "classbar",
+        "Enabled": true,
+        "Width": 4,
+        "Format": null
+      },
+      {
+        "Key": "pos",
+        "Enabled": true,
+        "Width": 26,
+        "Format": null
+      },
+      {
+        "Key": "num",
+        "Enabled": true,
+        "Width": 34,
+        "Format": null
+      },
+      {
+        "Key": "name",
+        "Enabled": true,
+        "Width": 180,
+        "Format": "full"
+      },
+      {
+        "Key": "last",
+        "Enabled": true,
+        "Width": 62,
+        "Format": "1"
+      },
+      {
+        "Key": "lic",
+        "Enabled": true,
+        "Width": 42,
+        "Format": "L1"
+      },
+      {
+        "Key": "ir",
+        "Enabled": true,
+        "Width": 40,
+        "Format": "k1"
+      },
+      {
+        "Key": "pit",
+        "Enabled": true,
+        "Width": 38,
+        "Format": null
+      },
+      {
+        "Key": "stint",
+        "Enabled": true,
+        "Width": 32,
+        "Format": null
+      },
+      {
+        "Key": "rel",
+        "Enabled": true,
+        "Width": 50,
+        "Format": null
+      }
+    ],
+    "Header": [
+      {
+        "Key": "title",
+        "Enabled": false,
+        "Width": 0,
+        "Format": null
+      },
+      {
+        "Key": "laps",
+        "Enabled": true,
+        "Width": 0,
+        "Format": "both"
+      },
+      {
+        "Key": "time",
+        "Enabled": true,
+        "Width": 0,
+        "Format": "remain"
+      },
+      {
+        "Key": "spacer",
+        "Enabled": true,
+        "Width": 0,
+        "Format": null
+      },
+      {
+        "Key": "tracktemp",
+        "Enabled": true,
+        "Width": 0,
+        "Format": "C1"
+      },
+      {
+        "Key": "airtemp",
+        "Enabled": true,
+        "Width": 0,
+        "Format": "C1"
+      },
+      {
+        "Key": "humidity",
+        "Enabled": true,
+        "Width": 0,
+        "Format": "1"
+      },
+      {
+        "Key": "incidents",
+        "Enabled": true,
+        "Width": 0,
+        "Format": "count"
+      },
+      {
+        "Key": "clock",
+        "Enabled": false,
+        "Width": 0,
+        "Format": "real"
+      }
+    ],
+    "AvailableColumns": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "AvailableHeader": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "Id": "7e8a8a74",
+    "Title": "Relative",
+    "Enabled": true,
+    "X": 1989,
+    "Y": 904,
+    "Screen": "Middle",
+    "Anchor": "BottomRight",
+    "OffsetX": 10,
+    "OffsetY": 280,
+    "Locked": false,
+    "PresetId": "1a0754ef",
+    "Scale": 1,
+    "BackgroundOpacity": 0.8,
+    "RefreshHz": 60,
+    "Show": "InCar"
+  }
+}

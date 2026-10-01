@@ -87,7 +87,6 @@ namespace vibeRacingOverlays.App
             LayoutSaveButton.Click += (s, e) => SaveLayout();
             LayoutSaveAsButton.Click += (s, e) => SaveLayoutAs();
             LayoutRenameButton.Click += (s, e) => RenameLayout();
-            LayoutRevertButton.Click += (s, e) => RevertLayout();
             LayoutDeleteButton.Click += (s, e) => DeleteLayout();
             LayoutExportButton.Click += (s, e) => ExportLayout();
             LayoutImportButton.Click += (s, e) => ImportLayout();
@@ -292,13 +291,13 @@ namespace vibeRacingOverlays.App
         void UpdateLayoutButtons()
         {
             var l = settings.ActiveLayout;
-            LayoutSaveButton.IsEnabled = LayoutRevertButton.IsEnabled = l.Dirty;
+            LayoutSaveButton.IsEnabled = l.Dirty;
             // the Default layout is always there and keeps its name
             LayoutRenameButton.IsEnabled = LayoutDeleteButton.IsEnabled = !l.IsDefault;
             LayoutRenameButton.ToolTip = l.IsDefault ? "The Default layout keeps its name" : "Rename this layout";
             LayoutDeleteButton.ToolTip = l.IsDefault ? "The Default layout can't be deleted" : "Delete this layout";
-            LayoutSaveButton.ToolTip = l.IsDefault && Core.Defaults.SourceFile != null
-                ? "Store the changes in the Default layout. DEV build: this also becomes the app's built-in Default layout (defaults.json)"
+            LayoutSaveButton.ToolTip = l.IsDefault && Core.Defaults.SourceFolder != null
+                ? "Store the changes in the Default layout. DEV build: this also becomes the app's built-in Default layout (app\\defaults)"
                 : "Store the changes in this layout";
         }
 
@@ -359,8 +358,6 @@ namespace vibeRacingOverlays.App
                 UniqueLayoutName(l.Name + " copy"));
             if (name == null) return;
             var copy = settings.CloneLayout(l, UniqueLayoutName(name));
-            // the changes went to the new layout; this one is back at its saved version
-            if (l.Saved != null) l.Widgets = AppSettings.CloneList(l.Saved);
             AddLayout(copy);
             overlays.SaveNow();
         }
@@ -374,17 +371,6 @@ namespace vibeRacingOverlays.App
             l.Name = settings.Layouts.Any(x => x != l && string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)) ? UniqueLayoutName(name) : name;
             overlays.ScheduleSave();
             RefreshLayouts();
-        }
-
-        void RevertLayout()
-        {
-            var l = settings.ActiveLayout;
-            if (l.Saved == null || !AppSettings.IsDirty(l)) return;
-            if (MessageBox.Show(this, "Undo all changes to layout '" + l.Name + "' since it was last saved?", "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
-            l.Widgets = AppSettings.CloneList(l.Saved);   // same widget ids, so the on-screen windows stay
-            overlays.Sync();
-            overlays.SaveNow();
-            ShowActiveLayout();
         }
 
         void DeleteLayout()

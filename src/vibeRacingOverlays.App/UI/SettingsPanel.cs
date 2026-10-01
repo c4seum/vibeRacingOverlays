@@ -242,8 +242,8 @@ namespace vibeRacingOverlays.App.UI
                     combo.SelectedItem = items.FirstOrDefault(i => i.Preset == cur);
                     bool isDefault = cur != null && cur.IsDefault;
                     save.IsEnabled = mod;
-                    save.ToolTip = isDefault && Core.Defaults.SourceFile != null
-                        ? "Store this widget's settings in the Default preset. DEV build: they also become the app's built-in defaults (defaults.json)"
+                    save.ToolTip = isDefault && Core.Defaults.SourceFolder != null
+                        ? "Store this widget's settings in the Default preset. DEV build: they also become the app's built-in defaults (app\\defaults)"
                         : isDefault ? "Store this widget's settings in the Default preset: new " + ws.TypeName + " widgets and the reset buttons use them"
                         : "Store this widget's settings in preset '" + (cur != null ? cur.Name : "") + "'";
                     rename.IsEnabled = !isDefault;

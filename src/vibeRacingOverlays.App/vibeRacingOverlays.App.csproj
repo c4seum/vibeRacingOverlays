@@ -33,14 +33,14 @@
     <Resource Include="app.ico" />
   </ItemGroup>
 
-  <!-- built-in defaults (Default layout and presets); DEV builds write them back here when you save a Default -->
+  <!-- built-in defaults: the export files in app\defaults (Default layout, Default presets); DEV builds write them back there when you save a Default -->
   <ItemGroup>
-    <EmbeddedResource Include="defaults.json" Condition="Exists('defaults.json')" LogicalName="defaults.json" />
+    <EmbeddedResource Include="..\..\defaults\**\*.json" LogicalName="defaults/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup Condition="'$(ReleaseBuild)' != 'true'">
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>DefaultsSource</_Parameter1>
-      <_Parameter2>$(MSBuildProjectDirectory)\defaults.json</_Parameter2>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..\..\defaults'))</_Parameter2>
     </AssemblyAttribute>
   </ItemGroup>
 
