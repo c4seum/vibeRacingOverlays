@@ -41,6 +41,7 @@
                     <Button x:Name="LayoutNewButton" Content="New" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="New, empty layout (no widgets yet)"/>
                     <Button x:Name="LayoutSaveButton" Content="Save" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Store the changes in this layout"/>
                     <Button x:Name="LayoutSaveAsButton" Content="Save as" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Store the current widgets as a new layout"/>
+                    <Button x:Name="LayoutReloadButton" Content="Reload" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Undo the changes: back to how this layout was last saved"/>
                     <Button x:Name="LayoutRenameButton" Content="Rename" Padding="10,2" MinHeight="26" Margin="0,0,4,4"/>
                     <Button x:Name="LayoutDeleteButton" Content="Delete" Style="{StaticResource GhostButton}" Padding="10,2" MinHeight="26" Margin="0,0,0,4"/>
                     <Button x:Name="LayoutExportButton" Content="Export" Padding="10,2" MinHeight="26" Margin="0,0,4,4" ToolTip="Save this layout with all its widgets and options to a file (to share or for another PC)"/>

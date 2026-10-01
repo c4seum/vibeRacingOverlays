@@ -87,6 +87,7 @@ namespace vibeRacingOverlays.App
             LayoutSaveButton.Click += (s, e) => SaveLayout();
             LayoutSaveAsButton.Click += (s, e) => SaveLayoutAs();
             LayoutRenameButton.Click += (s, e) => RenameLayout();
+            LayoutReloadButton.Click += (s, e) => ReloadLayout();
             LayoutDeleteButton.Click += (s, e) => DeleteLayout();
             LayoutExportButton.Click += (s, e) => ExportLayout();
             LayoutImportButton.Click += (s, e) => ImportLayout();
@@ -294,10 +295,13 @@ namespace vibeRacingOverlays.App
         void UpdateLayoutButtons()
         {
             var l = settings.ActiveLayout;
-            LayoutSaveButton.IsEnabled = l.Dirty;
-            // there is always at least one layout
-            LayoutDeleteButton.IsEnabled = settings.Layouts.Count > 1;
-            LayoutDeleteButton.ToolTip = settings.Layouts.Count > 1 ? "Delete this layout" : "The last layout can't be deleted";
+            // "Get started" stays as the app made it: changes can only go to a new layout (Save as)
+            LayoutSaveButton.IsEnabled = l.Dirty && !l.IsBuiltIn;
+            LayoutSaveButton.ToolTip = l.IsBuiltIn ? "Get started can't be changed: use Save as to keep your changes as a new layout" : "Store the changes in this layout";
+            LayoutReloadButton.IsEnabled = l.Dirty;
+            LayoutRenameButton.IsEnabled = LayoutDeleteButton.IsEnabled = !l.IsBuiltIn;
+            LayoutRenameButton.ToolTip = l.IsBuiltIn ? "Get started keeps its name" : "Rename this layout";
+            LayoutDeleteButton.ToolTip = l.IsBuiltIn ? "Get started can't be deleted" : "Delete this layout";
         }
 
         /// <summary>Keeps the "*" of the active layout up to date (every change lands in the work version).</summary>
@@ -344,6 +348,7 @@ namespace vibeRacingOverlays.App
         void SaveLayout()
         {
             var l = settings.ActiveLayout;
+            if (l.IsBuiltIn) return;
             l.Saved = AppSettings.CloneList(l.Widgets);
             overlays.SaveNow();
             RefreshLayouts();
@@ -363,6 +368,7 @@ namespace vibeRacingOverlays.App
         void RenameLayout()
         {
             var l = settings.ActiveLayout;
+            if (l.IsBuiltIn) return;
             string name = InputDialog.Ask(this, "Rename layout", "New name for layout '" + l.Name + "':", l.Name);
             if (name == null || name == l.Name) return;
             l.Name = settings.Layouts.Any(x => x != l && string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)) ? UniqueLayoutName(name) : name;
@@ -370,10 +376,22 @@ namespace vibeRacingOverlays.App
             RefreshLayouts();
         }
 
+        /// <summary>Back to the saved version of this layout (the changes since the last Save are gone).</summary>
+        void ReloadLayout()
+        {
+            var l = settings.ActiveLayout;
+            if (l.Saved == null || !AppSettings.IsDirty(l)) return;
+            if (MessageBox.Show(this, "Reload layout '" + l.Name + "'? Your changes since it was last saved are lost.", "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+            l.Widgets = AppSettings.CloneList(l.Saved);   // same widget ids, so the on-screen windows stay
+            overlays.Sync();
+            overlays.SaveNow();
+            ShowActiveLayout();
+        }
+
         void DeleteLayout()
         {
             var l = settings.ActiveLayout;
-            if (settings.Layouts.Count < 2) return;
+            if (l.IsBuiltIn || settings.Layouts.Count < 2) return;
             if (MessageBox.Show(this, "Delete layout '" + l.Name + "' and its " + l.Widgets.Count + " widgets?", "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
             int i = settings.Layouts.IndexOf(l);
             var next = settings.Layouts[i == 0 ? 1 : i - 1];

@@ -103,7 +103,7 @@ namespace vibeRacingOverlays.App.UI
                 if (App != null)
                 {
                     Ui.Row(widgetCard, "Preset", PresetRow(), "Saved settings of this widget type, available in every layout", null);
-                    Ui.Row(widgetCard, "Preset file", PresetFileRow(), "Share presets as files. The preset library is " + Core.PresetLibrary.Folder + ": preset files you put there appear in the list", null);
+                    Ui.Row(widgetCard, "Manage preset", PresetManageRow(), "Share presets as files. The preset library is " + Core.PresetLibrary.Folder + ": preset files you put there appear in the list", null);
                 }
 
                 var profiles = ws as ISessionProfiles;
@@ -239,18 +239,16 @@ namespace vibeRacingOverlays.App.UI
             }
 
             /// <summary>
-            /// Preset combo (choosing one loads it) with Save / Save as / Rename / Delete. "*" = the widget differs
-            /// from its preset. Default can't be renamed or deleted; its delete button restores the factory settings.
+            /// Preset combo (choosing one loads it) with Save / Save as / Reload. "*" = the widget differs from its preset.
+            /// Default is the app's built-in preset: it can't be saved over (use Save as), renamed or deleted.
             /// </summary>
             FrameworkElement PresetRow()
             {
                 var row = new StackPanel { Orientation = Orientation.Horizontal };
-                var combo = new ComboBox { Width = 132, VerticalAlignment = VerticalAlignment.Center, ToolTip = "Saved " + ws.TypeName + " presets (every layout). Choosing one loads it. * = changed since loaded or saved" };
+                var combo = new ComboBox { Width = 150, VerticalAlignment = VerticalAlignment.Center, ToolTip = "Saved " + ws.TypeName + " presets (every layout). Choosing one loads it. * = changed since loaded or saved" };
                 var save = new Button { Content = "Save", Margin = new Thickness(6, 0, 0, 0) };
                 var saveAs = new Button { Content = "Save as", Margin = new Thickness(4, 0, 0, 0), ToolTip = "Save this widget's settings as a new preset" };
-                var rename = new Button { Content = "Rename", Margin = new Thickness(4, 0, 0, 0) };
-                var del = Ui.IconButton(Ui.IconDelete, "");
-                del.Margin = new Thickness(2, 0, 0, 0);
+                var reload = new Button { Content = "Reload", Margin = new Thickness(4, 0, 0, 0), ToolTip = "Undo the changes: load the preset again" };
                 bool updating = false;
 
                 Action refresh = () =>
@@ -262,13 +260,10 @@ namespace vibeRacingOverlays.App.UI
                     combo.ItemsSource = items;
                     combo.SelectedItem = items.FirstOrDefault(i => i.Preset == cur);
                     bool isDefault = cur != null && cur.IsDefault;
-                    save.IsEnabled = mod;
-                    save.ToolTip = isDefault ? "Store this widget's settings in the Default preset: new " + ws.TypeName + " widgets and the reset buttons use them"
+                    save.IsEnabled = mod && !isDefault;
+                    save.ToolTip = isDefault ? "Default stays as the app made it: use Save as to keep your changes as a new preset"
                         : "Store this widget's settings in preset '" + (cur != null ? cur.Name : "") + "'";
-                    rename.IsEnabled = !isDefault;
-                    rename.ToolTip = isDefault ? "The Default preset keeps its name" : "Rename this preset";
-                    del.ToolTip = isDefault ? "Restore the factory settings of the Default preset" : "Delete this preset";
-                    del.Content = isDefault ? Ui.IconReset : Ui.IconDelete;
+                    reload.IsEnabled = mod;
                     updating = false;
                 };
                 refresh();
@@ -281,21 +276,51 @@ namespace vibeRacingOverlays.App.UI
                     var owner = Window.GetWindow(host);
                     if (Modified() && MessageBox.Show(owner, "Load preset '" + item.Preset.Name + "'? The changes to this widget since its last save are lost.",
                         "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) { refresh(); return; }
-                    ApplyFrom(AppSettings.CloneWidget(item.Preset.Settings));
-                    ws.PresetId = item.Preset.Id;
+                    Load(ws, item.Preset);
                     changed();
                     Rebuild();
                 };
                 save.Click += (s, e) => SavePreset(Current());
                 saveAs.Click += (s, e) => SavePresetAs();
-                rename.Click += (s, e) => RenamePreset(Current());
-                del.Click += (s, e) => { var c = Current(); if (c != null && c.IsDefault) FactoryReset(c); else DeletePreset(c); };
+                reload.Click += (s, e) =>
+                {
+                    var cur = Current();
+                    if (cur == null || !Modified()) return;
+                    if (MessageBox.Show(Window.GetWindow(host), "Reload preset '" + cur.Name + "'? The changes to this widget since its last save are lost.",
+                        "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+                    Load(ws, cur);
+                    changed();
+                    Rebuild();
+                };
 
                 row.Children.Add(combo);
                 row.Children.Add(save);
                 row.Children.Add(saveAs);
+                row.Children.Add(reload);
+                return row;
+            }
+
+            /// <summary>Rename / Delete the current preset (not Default), export it as a file, import a preset file.</summary>
+            FrameworkElement PresetManageRow()
+            {
+                var row = new StackPanel { Orientation = Orientation.Horizontal };
+                var rename = new Button { Content = "Rename" };
+                var del = new Button { Content = "Delete", Margin = new Thickness(4, 0, 0, 0) };
+                var export = new Button { Content = "Export...", Margin = new Thickness(12, 0, 0, 0), ToolTip = "Save this widget's current settings as a preset file (to share)" };
+                var import = new Button { Content = "Import...", Margin = new Thickness(4, 0, 0, 0), ToolTip = "Add a preset from a file and load it into this widget (you can also drop files on the window)" };
+                var cur = Current();
+                bool isDefault = cur != null && cur.IsDefault;
+                rename.IsEnabled = del.IsEnabled = !isDefault;
+                rename.ToolTip = isDefault ? "Default keeps its name" : "Rename this preset";
+                del.ToolTip = isDefault ? "Default can't be deleted" : "Delete this preset";
+                rename.Click += (s, e) => RenamePreset(Current());
+                del.Click += (s, e) => DeletePreset(Current());
+                export.Click += (s, e) => ExportPreset();
+                import.Click += (s, e) => ImportPreset();
                 row.Children.Add(rename);
                 row.Children.Add(del);
+                row.Children.Add(export);
+                row.Children.Add(import);
                 return row;
             }
 
@@ -310,14 +335,37 @@ namespace vibeRacingOverlays.App.UI
             {
                 Mirror();
                 changed();
-                Rebuild();   // new defaults for the reset buttons
+                Rebuild();
             }
 
+            /// <summary>
+            /// Stores this widget's settings in its preset. Other widgets (also in other layouts) that use the preset keep
+            /// their own settings unless you choose to update them too.
+            /// </summary>
             void SavePreset(WidgetPreset p)
             {
-                if (p == null) { SavePresetAs(); return; }
+                if (p == null || p.IsDefault) { SavePresetAs(); return; }
                 p.Settings = Snapshot();
                 ws.PresetId = p.Id;
+                var others = App.OthersUsing(p, ws);
+                if (others.Count > 0)
+                {
+                    var where = App.Layouts.Where(l => l.Widgets.Any(others.Contains)).Select(l => "'" + l.Name + "'").ToList();
+                    string msg = others.Count + " other widget" + (others.Count == 1 ? "" : "s") + " (in layout " + string.Join(", ", where) + ") use" + (others.Count == 1 ? "s" : "")
+                        + " preset '" + p.Name + "'.\nUpdate " + (others.Count == 1 ? "it" : "them") + " to these settings too?\n\nNo: they keep their own settings and show a * next to the preset.";
+                    if (MessageBox.Show(Window.GetWindow(host), msg, "vibeRacingOverlays", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                    {
+                        var active = App.ActiveLayout;
+                        foreach (var l in App.Layouts)
+                            foreach (var w in l.Widgets.Where(others.Contains).ToList())
+                            {
+                                ApplyTo(w, AppSettings.CloneWidget(p.Settings));
+                                // other layouts: their saved version follows too, so they don't suddenly show a "*"
+                                var saved = l != active && l.Saved != null ? l.Saved.FirstOrDefault(x => x.Id == w.Id) : null;
+                                if (saved != null) ApplyTo(saved, AppSettings.CloneWidget(p.Settings));
+                            }
+                    }
+                }
                 AfterPresetChange(p);
             }
 
@@ -370,35 +418,9 @@ namespace vibeRacingOverlays.App.UI
                 Rebuild();
             }
 
-            /// <summary>Default preset back to the factory settings (the app's built-in defaults), also for this widget.</summary>
-            void FactoryReset(WidgetPreset p)
-            {
-                var owner = Window.GetWindow(host);
-                if (MessageBox.Show(owner, "Restore the factory settings of the " + ws.TypeName + " Default preset, and load them into this widget?",
-                    "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
-                var factory = Core.Defaults.Preset(ws.GetType());
-                p.Settings = AppSettings.CloneWidget(factory);
-                ApplyFrom(AppSettings.CloneWidget(p.Settings));
-                ws.PresetId = p.Id;
-                AfterPresetChange(p);
-            }
-
             void ApplyFrom(WidgetSettings source) { ApplyTo(ws, source); }
 
             static void Mirror() { if (Core.PresetLibrary.Current != null) Core.PresetLibrary.Current.Mirror(); }
-
-            /// <summary>Export (this widget's current settings, under its preset's name) and import.</summary>
-            FrameworkElement PresetFileRow()
-            {
-                var row = new StackPanel { Orientation = Orientation.Horizontal };
-                var export = new Button { Content = "Export...", ToolTip = "Save this widget's current settings as a preset file (to share)" };
-                var import = new Button { Content = "Import...", Margin = new Thickness(6, 0, 0, 0), ToolTip = "Add a preset from a file and load it into this widget (you can also drop files on the window)" };
-                export.Click += (s, e) => ExportPreset();
-                import.Click += (s, e) => ImportPreset();
-                row.Children.Add(export);
-                row.Children.Add(import);
-                return row;
-            }
 
             void ExportPreset()
             {

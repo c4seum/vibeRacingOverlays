@@ -78,7 +78,10 @@ namespace vibeRacingOverlays.App.Core
         public string Id { get; set; } = Guid.NewGuid().ToString("N").Substring(0, 8);
         public string Name { get; set; } = "";
         public WidgetSettings Settings { get; set; }
-        /// <summary>The "Default" preset of its widget type: new widgets start from it, the reset buttons go back to it.</summary>
+        /// <summary>
+        /// The "Default" preset of its widget type: the app's built-in settings, always intact (it can't be saved over,
+        /// renamed or deleted; use Save as). New widgets start from it, the reset buttons go back to it.
+        /// </summary>
         public bool IsDefault { get; set; }
 
         [JsonIgnore] public string TypeName { get { return Settings != null ? Settings.TypeName : ""; } }
@@ -92,8 +95,11 @@ namespace vibeRacingOverlays.App.Core
         public string Name { get; set; } = "Layout";
         /// <summary>The work version: everything you change lands here right away (and is saved to disk).</summary>
         public List<WidgetSettings> Widgets { get; set; } = new List<WidgetSettings>();
-        /// <summary>The version stored with Save (the "*" shows the work version differs from it).</summary>
+        /// <summary>The version stored with Save (the "*" shows the work version differs from it; Reload goes back to it).</summary>
         public List<WidgetSettings> Saved { get; set; }
+        /// <summary>"Get started": the app's own layout. Its saved version can't be changed, renamed or deleted (use Save as).</summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool IsBuiltIn { get; set; }
         /// <summary>The work version differs from the saved one (kept up to date by the main window).</summary>
         [JsonIgnore] public bool Dirty { get; set; }
 
@@ -408,7 +414,11 @@ namespace vibeRacingOverlays.App.Core
                 if (Layouts.Count == 0) Layouts.Add(new LayoutConfig { Name = "Default", Widgets = LegacyWidgets });
                 LegacyWidgets = null;
             }
-            if (Layouts.Count == 0) Layouts.Add(StartLayout());
+            // "Get started" is always there (the one marked, else the one with that name, else the built-in one)
+            var start = Layouts.FirstOrDefault(l => l.IsBuiltIn) ?? Layouts.FirstOrDefault(l => l.Name == Core.Defaults.StartLayoutName);
+            if (start == null) { start = StartLayout(); Layouts.Insert(0, start); }
+            foreach (var l in Layouts) l.IsBuiltIn = l == start;
+            start.Name = Core.Defaults.StartLayoutName;
 
             var ids = new HashSet<string>();
             foreach (var l in Layouts)
@@ -444,6 +454,10 @@ namespace vibeRacingOverlays.App.Core
                 }
                 foreach (var p in ofType) p.IsDefault = p == dp;
                 dp.Name = "Default";
+                // always the app's built-in settings (also after an update that changed them)
+                var builtIn = Core.Defaults.Preset(type);
+                NormalizeWidget(builtIn);
+                dp.Settings = builtIn;
             }
         }
 
@@ -466,6 +480,15 @@ namespace vibeRacingOverlays.App.Core
         /// Adds a preset from a file: a unique name within its type (never "Default": your Default is never replaced),
         /// its own id unless that is taken. Returns the new preset.
         /// </summary>
+        /// <summary>
+        /// Other widgets (all layouts, work versions) that follow this preset and would change if they got its settings,
+        /// for the "also update them?" question when a preset is saved.
+        /// </summary>
+        public List<WidgetSettings> OthersUsing(WidgetPreset p, WidgetSettings except)
+        {
+            return Layouts.SelectMany(l => l.Widgets).Where(w => w != except && w.PresetId == p.Id && !SameSettings(w, p.Settings)).ToList();
+        }
+
         public WidgetPreset AddImportedPreset(WidgetPreset p)
         {
             NormalizeWidget(p.Settings);
@@ -489,7 +512,7 @@ namespace vibeRacingOverlays.App.Core
         /// <summary>A fresh install's layout "Get started" (saved as it is, so it starts without "*").</summary>
         static LayoutConfig StartLayout()
         {
-            var l = new LayoutConfig { Name = Core.Defaults.StartLayoutName, Widgets = Core.Defaults.StartLayout() };
+            var l = new LayoutConfig { Name = Core.Defaults.StartLayoutName, IsBuiltIn = true, Widgets = Core.Defaults.StartLayout() };
             l.Saved = CloneList(l.Widgets);
             return l;
         }
