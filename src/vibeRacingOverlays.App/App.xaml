@@ -499,24 +499,67 @@
                     </Setter.Value>
                 </Setter>
             </Style>
+            <!-- menu items: in context menus, in the menu bar (top level, opens downwards) and as submenus (opens to the right) -->
             <Style TargetType="MenuItem">
                 <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="MenuItem">
-                            <Border x:Name="b" Background="Transparent" CornerRadius="5" Padding="12,6" MinWidth="140">
-                                <ContentPresenter ContentSource="Header"/>
-                            </Border>
+                            <Grid>
+                                <Border x:Name="b" Background="Transparent" CornerRadius="5" Padding="12,6" MinWidth="170">
+                                    <DockPanel>
+                                        <TextBlock x:Name="arrow" DockPanel.Dock="Right" Text="&#xE76C;" FontFamily="{StaticResource IconFont}" FontSize="9"
+                                                   Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="18,0,0,0" Visibility="Collapsed"/>
+                                        <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center"/>
+                                    </DockPanel>
+                                </Border>
+                                <Popup x:Name="PART_Popup" Placement="Right" HorizontalOffset="4" VerticalOffset="-5" AllowsTransparency="True" Focusable="False" PopupAnimation="None"
+                                       IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <Border Background="{DynamicResource Card}" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="4">
+                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                                    </Border>
+                                </Popup>
+                            </Grid>
                             <ControlTemplate.Triggers>
+                                <Trigger Property="Role" Value="SubmenuHeader">
+                                    <Setter TargetName="arrow" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                                <Trigger Property="Role" Value="TopLevelHeader">
+                                    <Setter TargetName="b" Property="MinWidth" Value="0"/>
+                                    <Setter TargetName="b" Property="Padding" Value="10,4"/>
+                                    <Setter TargetName="PART_Popup" Property="Placement" Value="Bottom"/>
+                                    <Setter TargetName="PART_Popup" Property="HorizontalOffset" Value="0"/>
+                                    <Setter TargetName="PART_Popup" Property="VerticalOffset" Value="4"/>
+                                </Trigger>
                                 <Trigger Property="IsHighlighted" Value="True">
                                     <Setter TargetName="b" Property="Background" Value="{DynamicResource FieldHover}"/>
+                                </Trigger>
+                                <Trigger Property="IsSubmenuOpen" Value="True">
+                                    <Setter TargetName="b" Property="Background" Value="{DynamicResource FieldHover}"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="b" Property="Opacity" Value="0.45"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
             </Style>
-
+            <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="Separator">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Separator">
+                            <Border Height="1" Margin="8,4" Background="{DynamicResource Divider}"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style TargetType="Menu">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
+                <Setter Property="FontSize" Value="13"/>
+            </Style>
             <Style TargetType="ToolTip">
                 <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                 <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
