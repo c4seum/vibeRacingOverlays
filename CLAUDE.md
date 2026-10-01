@@ -47,7 +47,8 @@ The user (c4seum) speaks **Dutch**: answer in Dutch. Setup: triple screens (3× 
 - Going back: every release is a tag plus a GitHub Release with the installer, so users can install an older version; developers can `git checkout vX.Y.Z` to look at old code.
 
 ## Working rules
-- Before UI tests: back up `settings.json` and restore it afterwards. Close test instances (also leftover Debug instances), but never the user's own running DEV app (`publish\vibeRacingOverlays.exe`): check with `Get-Process` first, and don't edit `settings.json` while it runs.
+- Before UI tests: back up `settings.json` and restore it afterwards. Close test instances (also leftover Debug instances). Don't edit `settings.json` while the user's DEV app (`publish\vibeRacingOverlays.exe`) runs.
+- Building the DEV version while the user's DEV app is open: the user allows closing it (2026-10-01), **on condition that it is started again afterwards**: check with `Get-Process`, close it gracefully (`CloseMainWindow`, so it saves its layouts), run `publish-dev.ps1`, then start `publish\vibeRacingOverlays.exe` again. Only that DEV app; never other programs, and never the installed release version.
 - UI Automation: toggle buttons/checkboxes react to Checked/Unchecked (a UIA Toggle doesn't raise Click); find windows by the test process id.
 - Never send keystrokes blindly: the user's other windows are often in front. Use UI Automation, the `--silent` installer mode, or PrintWindow for screenshots.
 - `winget`-installed tools (dotnet, git, gh) may be missing from PATH in already-open terminals: refresh with
