@@ -156,6 +156,20 @@ namespace vibeRacingOverlays.Data.Model
         public int TotalLaps = -1;
         public double EstTotalLaps = -1;
         public int Incidents;
+        /// <summary>Incident limits of the event (-1 = unlimited): DQ, first penalty, then a penalty every N more.</summary>
+        public int IncidentLimit = -1, IncidentWarningInitial = -1, IncidentWarningSubsequent = -1;
+
+        /// <summary>The next incident count that brings a penalty (17, then 25, 33... with 17 / +8); -1 = none.</summary>
+        public int NextIncidentPenalty
+        {
+            get
+            {
+                if (IncidentWarningInitial <= 0) return -1;
+                if (Incidents < IncidentWarningInitial) return IncidentWarningInitial;
+                if (IncidentWarningSubsequent <= 0) return -1;
+                return IncidentWarningInitial + ((Incidents - IncidentWarningInitial) / IncidentWarningSubsequent + 1) * IncidentWarningSubsequent;
+            }
+        }
 
         public List<CarInfo> Cars = new List<CarInfo>();
         public List<ClassStandings> Classes = new List<ClassStandings>();

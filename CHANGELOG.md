@@ -6,6 +6,11 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ## [Unreleased]
 
+### Added
+- Relative: header bar items like in the standings (on/off, order, format): widget name, laps, time, track and air temperature, humidity, incidents and clock. The default looks like before: "RELATIVE" on the left, time remaining and incidents on the right.
+- Header item "Incidents and limits" (relative and standings): your incidents with the limits of the event, like "5x / 17x / 25x" (next penalty / DQ; after the first penalty the next one, e.g. 25x then 33x), or "5x / 25x", or only "5x". Without limits (practice, many hosted sessions) only your count shows.
+- Header item "Clock" (relative and standings): real time or sim time of day.
+
 ### Changed
 - Fuel calculator: the per-lap rows (Average, Last, Last N, Stint, Custom) with laps remaining, refuel, stops and fuel at end are updated once a lap, when you cross the line, and when you leave the pit lane (so a refuel shows right away). They no longer tick with every drop of fuel. Fuel level, laps in race and the PIT indicator stay live.
 

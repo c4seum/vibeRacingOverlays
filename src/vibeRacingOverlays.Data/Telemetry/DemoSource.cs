@@ -102,6 +102,8 @@ namespace vibeRacingOverlays.Data.Telemetry
                 TrackName = "spa up", TrackDisplayName = "Circuit de Spa-Francorchamps (Demo)", TrackConfig = "Grand Prix",
                 TrackLengthKm = TrackKm, NumCarClasses = multiClass ? 2 : 1, FuelMaxLtr = MaxFuel, MaxFuelPct = 1, DriverCarEstLapTime = 137.5,
                 TrackSurfaceTemp = "32.40 C",
+                // like most official races: penalty at 17x and every 8x after that, DQ at 25x (practice: unlimited)
+                IncidentLimit = practice ? -1 : 25, IncidentWarningInitial = practice ? -1 : 17, IncidentWarningSubsequent = practice ? -1 : 8,
             };
             session.Sessions.Add(practice
                 ? new SessionEntry { Num = 0, Type = "Practice", Name = "PRACTICE", LapsLimit = -1, TimeLimit = 3600 }
@@ -248,6 +250,7 @@ namespace vibeRacingOverlays.Data.Telemetry
                 SessionTimeRemain = Math.Max(0, RaceLength - simTime), SessionLapsRemain = 32767,
                 SessionTimeOfDay = 13 * 3600 + (float)simTime,
                 PlayerCarIdx = playerIdx, IsOnTrack = true, FuelLevel = fuel, TrackTemp = 32.4f, AirTemp = 21.3f, Humidity = 0.55f,
+                Incidents = (int)(simTime / 300),   // an incident now and then, for the header
             };
 
             var order = cars.OrderByDescending(c => c.Progress).ToList();

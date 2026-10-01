@@ -60,6 +60,8 @@ namespace vibeRacingOverlays.Data.IRSdk
         public string TrackSurfaceTemp = "";
         public int SeriesId;
         public int SubSessionId;
+        /// <summary>Incident limits of the event: DQ, first penalty (drive-through), then a penalty every N more; -1 = unlimited.</summary>
+        public int IncidentLimit = -1, IncidentWarningInitial = -1, IncidentWarningSubsequent = -1;
         public bool TeamRacing;
         public int NumCarClasses = 1;
         public int DriverCarIdx = -1;
@@ -98,6 +100,10 @@ namespace vibeRacingOverlays.Data.IRSdk
             s.TrackSurfaceTemp = YamlLite.Str(root, "WeekendInfo.TrackSurfaceTemp");
             s.SeriesId = YamlLite.Int(root, "WeekendInfo.SeriesID");
             s.SubSessionId = YamlLite.Int(root, "WeekendInfo.SubSessionID");
+            // "unlimited" (practice, many hosted sessions) parses as -1
+            s.IncidentLimit = YamlLite.Int(root, "WeekendInfo.WeekendOptions.IncidentLimit", -1);
+            s.IncidentWarningInitial = YamlLite.Int(root, "WeekendInfo.WeekendOptions.IncidentWarningInitialLimit", -1);
+            s.IncidentWarningSubsequent = YamlLite.Int(root, "WeekendInfo.WeekendOptions.IncidentWarningSubsequentLimit", -1);
             s.TeamRacing = YamlLite.Int(root, "WeekendInfo.TeamRacing") != 0;
             s.NumCarClasses = Math.Max(1, YamlLite.Int(root, "WeekendInfo.NumCarClasses", 1));
 

@@ -37,6 +37,7 @@ The classification of your session.
 The cars directly around you on track, with the time difference to each.
 - You choose the number of cars ahead and behind.
 - Columns that are also in the standings (driver name, license, iRating, last lap) have the same formats there.
+- Header bar with the items you choose: laps, time, track and air temperature, humidity, the clock (real or sim time) and your incidents with the limits of the event (for example 5x / 17x / 25x: next penalty and disqualification).
 - Colors show whether a car is a lap ahead of you or a lap down.
 - In multiclass sessions, class color bars and car numbers in the class color.
 - Pit and tow status per car.

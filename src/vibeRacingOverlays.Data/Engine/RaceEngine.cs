@@ -205,6 +205,9 @@ namespace vibeRacingOverlays.Data.Engine
             snap.TireNames = session.TireNames;
             snap.TimeOfDay = s.SessionTimeOfDay;
             snap.Incidents = s.Incidents;
+            snap.IncidentLimit = session.IncidentLimit;
+            snap.IncidentWarningInitial = session.IncidentWarningInitial;
+            snap.IncidentWarningSubsequent = session.IncidentWarningSubsequent;
             snap.TimeRemain = s.SessionTimeRemain > 0 && s.SessionTimeRemain < 7 * 24 * 3600 ? s.SessionTimeRemain : -1;
             snap.TimeTotal = sess != null ? sess.TimeLimit : -1;
             snap.TotalLaps = sess != null ? sess.LapsLimit : -1;

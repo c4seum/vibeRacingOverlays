@@ -63,7 +63,6 @@ namespace vibeRacingOverlays.App.Widgets
         static readonly (string, string)[] Decimals = { ("3", "1.746"), ("2", "1.74"), ("1", "1.7") };
         static readonly (string, string)[] LapDecimals = { ("3", "1:35.764"), ("2", "1:35.76"), ("1", "1:35.7") };
         static readonly (string, string)[] RatingFormats = { ("full", "4567"), ("k1", "4.5k"), ("k0", "4k") };
-        static readonly (string, string)[] TempFormats = { ("C1", "32.4°C"), ("C0", "32°C"), ("F1", "90.3°F"), ("F0", "90°F"), ("CF", "32.4°C 90.3°F"), ("FC", "90.3°F 32.4°C") };
 
         static string Digits(string format) { int d; return new string('8', int.TryParse(format, out d) ? d : 1); }
 
@@ -145,21 +144,13 @@ namespace vibeRacingOverlays.App.Widgets
             bool race = kind == SessionKind.Race;
             return new[]
             {
-                new ColumnDef("session", "Session", "", 0, true, Align.Left).WithFormats("letter", ("letter", "R"), ("name", "Race")),
-                new ColumnDef("class", "Class (single class)", "", 0, true, Align.Left),
-                new ColumnDef("laps", "Laps", "", 0, race, Align.Left).WithFormats("both", ("both", "5/12"), ("current", "Lap 5")),
-                new ColumnDef("time", "Time", "", 0, true, Align.Left)
-                    .WithFormats("remain_total", ("remain_total", "12:55/31m"), ("remain", "12:55"), ("elapsed_total", "18:05/31m")),
-                new ColumnDef("spacer", "Push what follows to the right", "", 0, true, Align.Left),
-                new ColumnDef("tracktemp", "Track temperature", "", 0, true, Align.Left).WithFormats("C1", TempFormats),
-                new ColumnDef("airtemp", "Air temperature", "", 0, false, Align.Left).WithFormats("C1", TempFormats),
-                new ColumnDef("humidity", "Humidity", "", 0, false, Align.Left).WithFormats("1", ("1", "55.2%"), ("0", "55%")),
-                new ColumnDef("sof", "Strength of field", "", 0, true, Align.Left).WithFormats("full", RatingFormats),
-                new ColumnDef("cars", "Cars", "", 0, true, Align.Left).WithFormats("running", ("running", "28/34"), ("total", "34")),
+                HeaderBar.Item("session", true), HeaderBar.Item("class", true), HeaderBar.Item("laps", race), HeaderBar.Item("time", true),
+                HeaderBar.Item("spacer", true),
+                HeaderBar.Item("tracktemp", true), HeaderBar.Item("airtemp", false), HeaderBar.Item("humidity", false),
+                HeaderBar.Item("sof", true), HeaderBar.Item("cars", true), HeaderBar.Item("incidents", false), HeaderBar.Item("clock", false),
             };
         }
     }
-
     public sealed class StandingsSettings : WidgetSettings, ISessionProfiles, INormalizable
     {
         public override string TypeName { get { return "Standings"; } }
@@ -266,7 +257,7 @@ namespace vibeRacingOverlays.App.Widgets
             if (pr.ShowHeader)
             {
                 dl.Rect(0, 0, width, rh + 2, Bg(Argb.Parse(s.HeaderColor)), 4);
-                DrawHeader(dl, snap, width, rh + 2, fs);
+                HeaderBar.Draw(dl, snap, pr.Header, "STANDINGS", width, rh + 2, fs, Pad, HeaderGap);
                 y += rh + 6;
             }
             if (pr.ShowColumnTitles)
@@ -361,71 +352,6 @@ namespace vibeRacingOverlays.App.Widgets
             string info = "SOF " + Fmt.Rating(cs.Sof, sof != null ? sof.Format : "full") + "   " + cs.Cars.Count(c => c.InWorld) + "/" + cs.Cars.Count;
             if (cs.BestLap > 0) info = "Best " + Fmt.Lap(cs.BestLap, Dec(pr.Column("best"), 3)) + "   " + info;
             dl.Text(width * 0.4f, y, width * 0.6f - Pad, rh, info, fs * 0.8f, Dim, Align.Right);
-        }
-
-        /// <summary>The header items in the user's order; "spacer" pushes the items after it to the right edge.</summary>
-        void DrawHeader(DisplayList dl, RaceSnapshot snap, float width, float h, float fs)
-        {
-            var left = new List<string>();
-            var right = new List<string>();
-            var target = left;
-            foreach (var item in pr.Header.Where(i => i.Enabled))
-            {
-                if (item.Key == "spacer") { target = right; continue; }
-                string t = HeaderText(item, snap);
-                if (!string.IsNullOrEmpty(t)) target.Add(t);
-            }
-            float x = Pad;
-            foreach (var t in left)
-            {
-                float w = dl.Measure(t, fs);
-                dl.Text(x, 0, w + 2, h, t, fs, 0xFFFFFFFF);
-                x += w + HeaderGap;
-            }
-            float rx = width - Pad;
-            for (int i = right.Count - 1; i >= 0; i--)
-            {
-                float w = dl.Measure(right[i], fs);
-                if (rx - w < x) break;   // never draw over the left group
-                dl.Text(rx - w - 2, 0, w + 2, h, right[i], fs, 0xFFFFFFFF, Align.Right);
-                rx -= w + HeaderGap;
-            }
-        }
-
-        string HeaderText(ColumnConfig item, RaceSnapshot snap)
-        {
-            bool multi = snap.Classes.Count > 1;
-            var cs = multi ? null : snap.PlayerClass;
-            switch (item.Key)
-            {
-                case "session":
-                    if (string.IsNullOrEmpty(snap.SessionType)) return "";
-                    return item.Format == "name" ? snap.SessionType : snap.SessionType.Substring(0, 1).ToUpperInvariant();
-                case "class":
-                    // single class: the class (or the car for single-make series); multiclass: the class headers do that
-                    return multi || snap.PlayerClass == null ? "" : snap.PlayerClass.Name;
-                case "laps":
-                    if (item.Format == "current") return snap.LeaderLap > 0 ? "Lap " + snap.LeaderLap : "";
-                    if (snap.TotalLaps > 0) return snap.LeaderLap + "/" + snap.TotalLaps;
-                    if (snap.EstTotalLaps > 0) return snap.LeaderLap + "/≈" + Fmt.Num(snap.EstTotalLaps, "0.0");
-                    return snap.LeaderLap > 0 ? "Lap " + snap.LeaderLap : "";
-                case "time":
-                    if (snap.TimeRemain < 0) return "";
-                    if (item.Format == "remain") return Fmt.Clock(snap.TimeRemain);
-                    if (item.Format == "elapsed_total" && snap.TimeTotal > 0) return Fmt.Clock(Math.Max(0, snap.TimeTotal - snap.TimeRemain)) + "/" + Fmt.Short(snap.TimeTotal);
-                    return Fmt.Clock(snap.TimeRemain) + (snap.TimeTotal > 0 ? "/" + Fmt.Short(snap.TimeTotal) : "");
-                case "tracktemp": return Fmt.Temperature(snap.TrackTemp, item.Format);
-                case "airtemp": return "Air " + Fmt.Temperature(snap.AirTemp, item.Format);
-                case "humidity": return snap.Humidity > 0 ? Fmt.Humidity(snap.Humidity, item.Format) + " RH" : "";
-                case "sof":
-                    int sof = cs != null ? cs.Sof : Data.Engine.RatingMath.StrengthOfField(snap.Cars.Select(c => c.IRating));
-                    return sof > 0 ? "SOF " + Fmt.Rating(sof, item.Format) : "";
-                case "cars":
-                    int count = cs != null ? cs.Cars.Count : snap.Cars.Count;
-                    int running = cs != null ? cs.Cars.Count(c => c.InWorld) : snap.Cars.Count(c => c.InWorld);
-                    return item.Format == "total" ? count.ToString() : running + "/" + count;
-                default: return "";
-            }
         }
 
         void DrawCell(DisplayList dl, ColumnConfig col, CarInfo c, RaceSnapshot snap, float x, float y, float w, float h, float fs, uint text, bool leaderRow)

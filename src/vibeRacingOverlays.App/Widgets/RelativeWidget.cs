@@ -4,7 +4,7 @@ using vibeRacingOverlays.Data.Model;
 
 namespace vibeRacingOverlays.App.Widgets
 {
-    public sealed class RelativeSettings : WidgetSettings, ITableSettings, INormalizable
+    public sealed class RelativeSettings : WidgetSettings, ITableSettings, IHeaderItems, INormalizable
     {
         public override string TypeName { get { return "Relative"; } }
 
@@ -24,6 +24,8 @@ namespace vibeRacingOverlays.App.Widgets
         [Setting("Lapped by you (behind)", Group = "Style", IsColor = true, Order = 26)] public string BehindLapColor { get; set; } = "#FF6FA8FF";
 
         public List<ColumnConfig> Columns { get; set; }
+        /// <summary>Header bar items (on/off, order, format).</summary>
+        public List<ColumnConfig> Header { get; set; }
 
         public static readonly ColumnDef[] Defs =
         {
@@ -40,7 +42,17 @@ namespace vibeRacingOverlays.App.Widgets
         };
 
         public IReadOnlyList<ColumnDef> AvailableColumns { get { return Defs; } }
-        public void MergeColumns() { Columns = TableColumns.Merge(Columns, Defs); }
+        public IReadOnlyList<ColumnDef> AvailableHeader { get { return HeaderDefs; } }
+        public void MergeColumns() { Columns = TableColumns.Merge(Columns, Defs); Header = TableColumns.Merge(Header, HeaderDefs); }
+
+        // same layout as before the header items: "RELATIVE" left, time remaining and incidents right
+        public static readonly ColumnDef[] HeaderDefs =
+        {
+            HeaderBar.Item("title", true), HeaderBar.Item("laps", false),
+            HeaderBar.Item("spacer", true),
+            HeaderBar.Item("time", true, "remain"), HeaderBar.Item("tracktemp", false), HeaderBar.Item("airtemp", false), HeaderBar.Item("humidity", false),
+            HeaderBar.Item("incidents", true), HeaderBar.Item("clock", false),
+        };
 
         public RelativeSettings() { Title = "Relative"; Show = ShowWhen.InCar; MergeColumns(); }
 
@@ -81,10 +93,7 @@ namespace vibeRacingOverlays.App.Widgets
             if (s.ShowHeader)
             {
                 dl.Rect(0, 0, width, rh + 2, Bg(0xFF1C1C1C), 4);
-                string left = "RELATIVE";
-                string right = (snap.TimeRemain >= 0 ? Fmt.Clock(snap.TimeRemain) + "   " : "") + snap.Incidents + "x";
-                dl.Text(Pad, 0, width / 2, rh + 2, left, fs, 0xFFFFFFFF);
-                dl.Text(width / 2, 0, width / 2 - Pad, rh + 2, right, fs, 0xFFFFFFFF, Align.Right);
+                HeaderBar.Draw(dl, snap, s.Header, "RELATIVE", width, rh + 2, fs, Pad, 16);
                 y += rh + 6;
             }
 
