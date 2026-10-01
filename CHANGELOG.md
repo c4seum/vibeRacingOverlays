@@ -6,9 +6,11 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-02
+
 ### Added
-- Export and import: **Export** / **Import** under *Layout* save a whole layout to a file and add it as a new layout, for sharing or another PC. The file holds every widget's own current settings (also changes not saved in a preset); on import a widget follows one of your presets only when that holds exactly its settings, otherwise your Default (with `*`). Your presets are never replaced.
-- Preset files: **Export...** / **Import...** in the widget's *Preset file* row (a preset is the settings without the position), and a preset library in `Documents\vibeRacingOverlays\presets`: every preset is a file there, and preset files you put there (shared ones, or exported widgets) appear in the app, also while it runs. Delete presets in the app; a file deleted outside the app is written again.
+- Export and import (Layout and Widget menus): a layout file holds every widget's own current settings (also changes not saved in a preset); an imported layout becomes a layout preset, and its widgets follow one of your widget presets only when that holds exactly their settings. Widget presets can be exported and imported as preset files (the settings without the position). Your own presets are never replaced.
+- Preset library in `Documents\vibeRacingOverlays\presets`: every widget preset is a file there, and preset files you put there (shared ones, or exported widgets) appear in the app, also while it runs. Delete presets in the app; a file deleted outside the app is written again.
 - Drag and drop: drop layout, preset or widget files on the app window to import them.
 - Widget types a version doesn't know are skipped with a message.
 - Layouts and presets, in a new menu bar (**Layout** and **Widget** menus): layouts and their widgets are always the current version (every change is kept automatically); the layout selected in the list is the active one. **Layout presets**: **Save as preset** / **Save to preset** store the active layout, **New layout from preset** makes a new layout from one (a preset never overwrites a layout you work with), plus **Manage presets** and **Export / Import layout**. **Widget presets**: **Load preset** overwrites the selected widget's settings, **Save as preset** / **Save to preset** store them, plus **Manage presets** and **Export / Import preset**. **Get started** and the **Default** widget presets are the app's own and always stay intact; a new installation starts with Get started: Standings top left, Relative bottom right and Fuel calculator bottom left on the main screen. A widget you add starts in the centre of the main screen.
