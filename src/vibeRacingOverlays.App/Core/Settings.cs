@@ -89,13 +89,11 @@ namespace vibeRacingOverlays.App.Core
     public sealed class LayoutConfig
     {
         public string Id { get; set; } = Guid.NewGuid().ToString("N").Substring(0, 8);
-        public string Name { get; set; } = "Default";
+        public string Name { get; set; } = "Layout";
         /// <summary>The work version: everything you change lands here right away (and is saved to disk).</summary>
         public List<WidgetSettings> Widgets { get; set; } = new List<WidgetSettings>();
-        /// <summary>The version stored with Save; Revert goes back to it.</summary>
+        /// <summary>The version stored with Save (the "*" shows the work version differs from it).</summary>
         public List<WidgetSettings> Saved { get; set; }
-        /// <summary>The "Default" layout: always there, can't be renamed or deleted, and (DEV) the app's built-in default.</summary>
-        public bool IsDefault { get; set; }
         /// <summary>The work version differs from the saved one (kept up to date by the main window).</summary>
         [JsonIgnore] public bool Dirty { get; set; }
 
@@ -129,8 +127,6 @@ namespace vibeRacingOverlays.App.Core
         [JsonIgnore]
         public List<WidgetSettings> Widgets { get { return ActiveLayout.Widgets; } }
 
-        [JsonIgnore]
-        public LayoutConfig DefaultLayout { get { return Layouts.FirstOrDefault(l => l.IsDefault) ?? Layouts[0]; } }
 
         /// <summary>The Default preset of a widget type (always there after loading).</summary>
         public WidgetPreset DefaultPreset(Type type) { return Presets.FirstOrDefault(p => p.IsDefault && p.Settings != null && p.Settings.GetType() == type); }
@@ -142,13 +138,13 @@ namespace vibeRacingOverlays.App.Core
             return p != null ? CloneWidget(p.Settings) : Core.Defaults.Preset(type);
         }
 
-        /// <summary>A new widget of this type, made from its Default preset.</summary>
+        /// <summary>A new widget of this type, made from its Default preset, in the centre of the main screen.</summary>
         public WidgetSettings NewWidget(Type type)
         {
             var w = DefaultsFor(type);
             w.Id = Core.Defaults.NewId();
             w.Title = w.TypeName;
-            w.Screen = null;
+            Core.Defaults.Place(w, Anchor.Center, 0, 0);
             var p = DefaultPreset(type);
             w.PresetId = p != null ? p.Id : null;
             return w;
@@ -261,7 +257,7 @@ namespace vibeRacingOverlays.App.Core
             }
             // first start (or an unreadable file): the built-in Default layout and presets
             var d = new AppSettings();
-            d.Layouts.Add(new LayoutConfig { Name = "Default", IsDefault = true, Widgets = Core.Defaults.Layout() });
+            d.Layouts.Add(StartLayout());
             d.Normalize();
             return d;
         }
@@ -412,14 +408,7 @@ namespace vibeRacingOverlays.App.Core
                 if (Layouts.Count == 0) Layouts.Add(new LayoutConfig { Name = "Default", Widgets = LegacyWidgets });
                 LegacyWidgets = null;
             }
-            if (Layouts.Count == 0) Layouts.Add(new LayoutConfig { Name = "Default", IsDefault = true, Widgets = Core.Defaults.Layout() });
-
-            // exactly one Default layout: the one marked, else the one called "Default", else the built-in one
-            var def = Layouts.FirstOrDefault(l => l.IsDefault)
-                ?? Layouts.FirstOrDefault(l => string.Equals(l.Name, "Default", StringComparison.OrdinalIgnoreCase));
-            if (def == null) { def = new LayoutConfig { Name = "Default", Widgets = Core.Defaults.Layout() }; Layouts.Insert(0, def); }
-            foreach (var l in Layouts) l.IsDefault = l == def;
-            def.Name = "Default";
+            if (Layouts.Count == 0) Layouts.Add(StartLayout());
 
             var ids = new HashSet<string>();
             foreach (var l in Layouts)
@@ -495,6 +484,14 @@ namespace vibeRacingOverlays.App.Core
             for (int i = 2; Presets.Any(p => p != except && p.Settings != null && p.Settings.GetType() == type && string.Equals(p.Name, n, StringComparison.OrdinalIgnoreCase)); i++)
                 n = name + " (" + i + ")";
             return n;
+        }
+
+        /// <summary>A fresh install's layout "Get started" (saved as it is, so it starts without "*").</summary>
+        static LayoutConfig StartLayout()
+        {
+            var l = new LayoutConfig { Name = Core.Defaults.StartLayoutName, Widgets = Core.Defaults.StartLayout() };
+            l.Saved = CloneList(l.Widgets);
+            return l;
         }
 
         static void NormalizeWidget(WidgetSettings w)

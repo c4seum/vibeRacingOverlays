@@ -295,13 +295,9 @@ namespace vibeRacingOverlays.App
         {
             var l = settings.ActiveLayout;
             LayoutSaveButton.IsEnabled = l.Dirty;
-            // the Default layout is always there and keeps its name
-            LayoutRenameButton.IsEnabled = LayoutDeleteButton.IsEnabled = !l.IsDefault;
-            LayoutRenameButton.ToolTip = l.IsDefault ? "The Default layout keeps its name" : "Rename this layout";
-            LayoutDeleteButton.ToolTip = l.IsDefault ? "The Default layout can't be deleted" : "Delete this layout";
-            LayoutSaveButton.ToolTip = l.IsDefault && Core.Defaults.SourceFolder != null
-                ? "Store the changes in the Default layout. DEV build: this also becomes the app's built-in Default layout (app\\defaults)"
-                : "Store the changes in this layout";
+            // there is always at least one layout
+            LayoutDeleteButton.IsEnabled = settings.Layouts.Count > 1;
+            LayoutDeleteButton.ToolTip = settings.Layouts.Count > 1 ? "Delete this layout" : "The last layout can't be deleted";
         }
 
         /// <summary>Keeps the "*" of the active layout up to date (every change lands in the work version).</summary>
@@ -350,7 +346,6 @@ namespace vibeRacingOverlays.App
             var l = settings.ActiveLayout;
             l.Saved = AppSettings.CloneList(l.Widgets);
             overlays.SaveNow();
-            if (l.IsDefault) Core.Defaults.Export(settings);   // DEV: the app's built-in Default layout follows
             RefreshLayouts();
         }
 
@@ -368,7 +363,6 @@ namespace vibeRacingOverlays.App
         void RenameLayout()
         {
             var l = settings.ActiveLayout;
-            if (l.IsDefault) return;
             string name = InputDialog.Ask(this, "Rename layout", "New name for layout '" + l.Name + "':", l.Name);
             if (name == null || name == l.Name) return;
             l.Name = settings.Layouts.Any(x => x != l && string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)) ? UniqueLayoutName(name) : name;
@@ -379,7 +373,7 @@ namespace vibeRacingOverlays.App
         void DeleteLayout()
         {
             var l = settings.ActiveLayout;
-            if (l.IsDefault || settings.Layouts.Count < 2) return;
+            if (settings.Layouts.Count < 2) return;
             if (MessageBox.Show(this, "Delete layout '" + l.Name + "' and its " + l.Widgets.Count + " widgets?", "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
             int i = settings.Layouts.IndexOf(l);
             var next = settings.Layouts[i == 0 ? 1 : i - 1];
@@ -440,7 +434,7 @@ namespace vibeRacingOverlays.App
                     {
                         int skipped;
                         var l = Core.Exchange.ImportLayout(path, settings, out skipped);
-                        l.Name = UniqueLayoutName(string.Equals(l.Name, "Default", StringComparison.OrdinalIgnoreCase) ? "Default (imported)" : l.Name);
+                        l.Name = UniqueLayoutName(l.Name);
                         settings.Layouts.Add(l);
                         lastLayout = l;
                         report.Add("Layout '" + l.Name + "' (" + l.Widgets.Count + " widgets" + (skipped > 0 ? ", " + skipped + " of an unknown type skipped" : "") + ")");
@@ -511,9 +505,7 @@ namespace vibeRacingOverlays.App
                 var mi = new MenuItem { Header = e.Name };
                 mi.Click += (s, a) =>
                 {
-                    var ws = settings.NewWidget(e.Make().GetType());   // starts from the type's Default preset
-                    ws.X = 200 + 30 * settings.Widgets.Count;
-                    ws.Y = 200 + 30 * settings.Widgets.Count;
+                    var ws = settings.NewWidget(e.Make().GetType());   // Default preset, centre of the main screen
                     Add(ws);
                 };
                 menu.Items.Add(mi);

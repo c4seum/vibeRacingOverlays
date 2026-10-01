@@ -263,9 +263,7 @@ namespace vibeRacingOverlays.App.UI
                     combo.SelectedItem = items.FirstOrDefault(i => i.Preset == cur);
                     bool isDefault = cur != null && cur.IsDefault;
                     save.IsEnabled = mod;
-                    save.ToolTip = isDefault && Core.Defaults.SourceFolder != null
-                        ? "Store this widget's settings in the Default preset. DEV build: they also become the app's built-in defaults (app\\defaults)"
-                        : isDefault ? "Store this widget's settings in the Default preset: new " + ws.TypeName + " widgets and the reset buttons use them"
+                    save.ToolTip = isDefault ? "Store this widget's settings in the Default preset: new " + ws.TypeName + " widgets and the reset buttons use them"
                         : "Store this widget's settings in preset '" + (cur != null ? cur.Name : "") + "'";
                     rename.IsEnabled = !isDefault;
                     rename.ToolTip = isDefault ? "The Default preset keeps its name" : "Rename this preset";
@@ -310,8 +308,6 @@ namespace vibeRacingOverlays.App.UI
 
             void AfterPresetChange(WidgetPreset p)
             {
-                // the Default preset is the app's default set: DEV builds write it into the built-in defaults
-                if (p != null && p.IsDefault) Core.Defaults.Export(App);
                 Mirror();
                 changed();
                 Rebuild();   // new defaults for the reset buttons
@@ -374,13 +370,13 @@ namespace vibeRacingOverlays.App.UI
                 Rebuild();
             }
 
-            /// <summary>Default preset back to the factory settings (DEV: the code defaults; releases: the built-in defaults), also for this widget.</summary>
+            /// <summary>Default preset back to the factory settings (the app's built-in defaults), also for this widget.</summary>
             void FactoryReset(WidgetPreset p)
             {
                 var owner = Window.GetWindow(host);
                 if (MessageBox.Show(owner, "Restore the factory settings of the " + ws.TypeName + " Default preset, and load them into this widget?",
                     "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
-                var factory = BuildInfo.IsDev ? (WidgetSettings)Activator.CreateInstance(ws.GetType()) : Core.Defaults.Preset(ws.GetType());
+                var factory = Core.Defaults.Preset(ws.GetType());
                 p.Settings = AppSettings.CloneWidget(factory);
                 ApplyFrom(AppSettings.CloneWidget(p.Settings));
                 ws.PresetId = p.Id;
@@ -391,23 +387,16 @@ namespace vibeRacingOverlays.App.UI
 
             static void Mirror() { if (Core.PresetLibrary.Current != null) Core.PresetLibrary.Current.Mirror(); }
 
-            /// <summary>Export (this widget's current settings, under its preset's name), import, open the library folder.</summary>
+            /// <summary>Export (this widget's current settings, under its preset's name) and import.</summary>
             FrameworkElement PresetFileRow()
             {
                 var row = new StackPanel { Orientation = Orientation.Horizontal };
                 var export = new Button { Content = "Export...", ToolTip = "Save this widget's current settings as a preset file (to share)" };
                 var import = new Button { Content = "Import...", Margin = new Thickness(6, 0, 0, 0), ToolTip = "Add a preset from a file and load it into this widget (you can also drop files on the window)" };
-                var open = new Button { Content = "Open folder", Style = Ui.Style("GhostButton"), Margin = new Thickness(6, 0, 0, 0), ToolTip = "Open the preset library: " + Core.PresetLibrary.Folder };
                 export.Click += (s, e) => ExportPreset();
                 import.Click += (s, e) => ImportPreset();
-                open.Click += (s, e) =>
-                {
-                    System.IO.Directory.CreateDirectory(Core.PresetLibrary.Folder);
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", "\"" + Core.PresetLibrary.Folder + "\"") { UseShellExecute = true });
-                };
                 row.Children.Add(export);
                 row.Children.Add(import);
-                row.Children.Add(open);
                 return row;
             }
 
