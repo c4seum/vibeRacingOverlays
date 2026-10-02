@@ -200,6 +200,8 @@ namespace vibeRacingOverlays.App
             Grid.SetColumnSpan(e, colSpan);
         }
 
+        readonly DateTime noticeUntil = DateTime.Now.AddSeconds(20);
+
         void UpdateStatus()
         {
             var snap = telemetry.Latest;
@@ -214,6 +216,13 @@ namespace vibeRacingOverlays.App
                 return;
             }
             StatusText.ToolTip = null;
+            // a notice about this start (e.g. "Get started" added after an update) shows for the first 20 seconds
+            if (AppSettings.Notice != null && DateTime.Now < noticeUntil)
+            {
+                StatusDot.SetResourceReference(Shape.FillProperty, "Accent");
+                StatusText.Text = AppSettings.Notice;
+                return;
+            }
             if (src == "iRacing" && live)
             {
                 StatusDot.SetResourceReference(Shape.FillProperty, "Success");
@@ -417,6 +426,8 @@ namespace vibeRacingOverlays.App
             var next = settings.Layouts[i == 0 ? 1 : i - 1];
             overlays.SwitchLayout(next.Id);
             settings.Layouts.Remove(l);
+            // deleted on purpose: an update doesn't put "Get started" back (New layout from preset still can)
+            if (string.Equals(l.Name.Trim(), Defaults.StartLayoutName, StringComparison.OrdinalIgnoreCase)) settings.StartLayoutDeclined = true;
             overlays.ScheduleSave();
             ShowActiveLayout();
         }

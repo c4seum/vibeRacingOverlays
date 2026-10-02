@@ -275,6 +275,12 @@ namespace vibeRacingOverlays.App.Core
         /// <summary>App version that last saved this file (an update makes a backup first).</summary>
         public string SavedByVersion { get; set; }
 
+        /// <summary>The user deleted the "Get started" layout: an install or update doesn't put it back.</summary>
+        public bool StartLayoutDeclined { get; set; }
+
+        /// <summary>Something the user should know about this start (shown for a while in the status bar), null = nothing.</summary>
+        [JsonIgnore] public static string Notice { get; private set; }
+
         /// <summary>
         /// Widgets and presets this version can't read (e.g. from a newer version, after going back to an older one).
         /// They are kept as they are and put back when a version that knows them loads the file.
@@ -296,7 +302,7 @@ namespace vibeRacingOverlays.App.Core
                 if (File.Exists(FilePath))
                 {
                     var s = Parse(File.ReadAllText(FilePath));
-                    if (s != null) { s.Normalize(); return s; }
+                    if (s != null) { s.Normalize(); s.EnsureStartLayout(); return s; }
                 }
             }
             catch (Exception ex)
@@ -309,6 +315,24 @@ namespace vibeRacingOverlays.App.Core
             var d = new AppSettings();
             d.Normalize();
             return d;
+        }
+
+        /// <summary>
+        /// First start after an install or update (another version saved the file): a missing "Get started" layout
+        /// is added again from the built-in preset, so every user has the starting point. An existing one (by name)
+        /// is never touched, it may be the user's work version; a renamed one counts as missing. Not when the user
+        /// deleted it (<see cref="StartLayoutDeclined"/>). The added layout isn't made active: nothing on screen changes.
+        /// </summary>
+        internal void EnsureStartLayout()
+        {
+            if (SavedByVersion == BuildInfo.Version || StartLayoutDeclined) return;
+            if (Layouts.Any(l => string.Equals((l.Name ?? "").Trim(), Core.Defaults.StartLayoutName, StringComparison.OrdinalIgnoreCase))) return;
+            var start = LayoutPresets.FirstOrDefault(p => p.IsBuiltIn);
+            if (start == null) return;
+            var layout = new LayoutConfig { Name = Core.Defaults.StartLayoutName, Widgets = CloneList(start.Widgets), PresetId = start.Id };
+            foreach (var w in layout.Widgets) w.Id = Core.Defaults.NewId();   // widget ids identify the windows: unique across layouts
+            Layouts.Add(layout);
+            Notice = "Layout '" + Core.Defaults.StartLayoutName + "' added";
         }
 
         /// <summary>

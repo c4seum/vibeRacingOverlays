@@ -6,6 +6,9 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ## [Unreleased]
 
+### Changed
+- After an install or update, the layout **Get started** is added again when you don't have a layout with that name (for example after updating from an earlier version, or after renaming it). It's added next to your layouts; your active layout stays active, and the status bar says it was added. A "Get started" layout you already have is never changed: it may hold your own changes. If you delete Get started on purpose, updates don't bring it back (New layout from preset still can).
+
 ## [1.3.0] - 2026-10-02
 
 ### Added
