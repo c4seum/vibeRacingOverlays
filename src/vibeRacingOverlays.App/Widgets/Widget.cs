@@ -143,7 +143,7 @@ namespace vibeRacingOverlays.App.Widgets
         /// <summary>Draws in the widget's own font: column widths are measured and the text is drawn in it.</summary>
         public void Paint(DisplayList list, RaceSnapshot snap)
         {
-            string font = FontCatalog.Name(Settings.Font);
+            string font = FontCatalog.Key(Settings.Font, Settings.TextWeight);
             using (TextMeasure.Use(font)) Draw(list, snap);
             list.Font = font;
         }
