@@ -34,9 +34,9 @@ namespace vibeRacingOverlays.App.Rendering
         {
             if (f == font && regular != null) return;
             font = f;
-            var family = new FontFamily(string.IsNullOrWhiteSpace(f) ? "Segoe UI" : f);
-            regular = new Typeface(family, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
-            bold = new Typeface(family, FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
+            // bundled fonts and their semibold files: see FontCatalog
+            regular = FontCatalog.Face(f, false);
+            bold = FontCatalog.Face(f, true);
             digitWidths.Clear();
             cache.Clear();
         }
@@ -122,21 +122,37 @@ namespace vibeRacingOverlays.App.Rendering
     /// <summary>Text measuring for widget layout (same font and digit rules as the renderer).</summary>
     public static class TextMeasure
     {
-        static TabularText text = new TabularText("Bahnschrift");
+        // one layout per font: each widget has its own font (Style > Font)
+        static readonly Dictionary<string, TabularText> texts = new Dictionary<string, TabularText>(StringComparer.OrdinalIgnoreCase);
         // widgets measure the same column samples and header items every frame
-        static readonly Dictionary<(string, float, bool), float> cache = new Dictionary<(string, float, bool), float>();
+        static readonly Dictionary<(string, string, float, bool), float> cache = new Dictionary<(string, string, float, bool), float>();
+        static string fallback = "Bahnschrift";
+        [ThreadStatic] static string current;
 
-        public static void SetFont(string font) { lock (cache) { text.SetFont(font); cache.Clear(); } }
+        public static void SetFont(string font) { lock (cache) { fallback = font; } }
+
+        sealed class Scope : IDisposable
+        {
+            readonly string previous;
+            public Scope(string font) { previous = current; current = font; }
+            public void Dispose() { current = previous; }
+        }
+
+        /// <summary>Measures in this font until disposed (a widget's Draw, see Widget.Paint).</summary>
+        public static IDisposable Use(string font) { return new Scope(font); }
 
         public static float Measure(string s, float size, bool bold)
         {
             lock (cache)
             {
+                string font = current ?? fallback;
                 float w;
-                if (cache.TryGetValue((s, size, bold), out w)) return w;
-                if (cache.Count > 2000) cache.Clear();
+                if (cache.TryGetValue((font, s, size, bold), out w)) return w;
+                if (cache.Count > 4000) cache.Clear();
+                TabularText text;
+                if (!texts.TryGetValue(font, out text)) texts[font] = text = new TabularText(font);
                 w = (float)text.Measure(s, size, bold);
-                cache[(s, size, bold)] = w;
+                cache[(font, s, size, bold)] = w;
                 return w;
             }
         }

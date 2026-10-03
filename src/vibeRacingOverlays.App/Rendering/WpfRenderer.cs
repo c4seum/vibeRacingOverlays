@@ -99,6 +99,7 @@ namespace vibeRacingOverlays.App.Rendering
 
         public void Render(DrawingContext dc, DisplayList list)
         {
+            if (list.Font != null) SetFont(list.Font);
             foreach (var op in list.Ops)
             {
                 if (op.Kind == OpKind.Rect)

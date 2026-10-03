@@ -189,6 +189,10 @@ namespace vibeRacingOverlays.App.UI
         {
             string s = Convert.ToString(value);
             if (!(value is Enum) || string.IsNullOrEmpty(s)) return s;
+            // a value with its own spelling (a font name like "JetBrains Mono")
+            var field = value.GetType().GetField(s);
+            var desc = field != null ? (System.ComponentModel.DescriptionAttribute)Attribute.GetCustomAttribute(field, typeof(System.ComponentModel.DescriptionAttribute)) : null;
+            if (desc != null) return desc.Description;
             var sb = new StringBuilder();
             for (int i = 0; i < s.Length; i++)
             {

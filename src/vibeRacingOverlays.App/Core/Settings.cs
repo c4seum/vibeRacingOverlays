@@ -69,6 +69,10 @@ namespace vibeRacingOverlays.App.Core
         [Setting("Show", Group = "Layout", Order = -7)]
         public ShowWhen Show { get; set; } = ShowWhen.Always;
 
+        // Bahnschrift: the look every widget had before fonts could be chosen (also in the Default presets)
+        [Setting("Font", Group = "Style", Order = 19, Tooltip = "The widget's font. Bahnschrift is the original look; the others come with the app (open-license fonts).")]
+        public Rendering.WidgetFont Font { get; set; } = Rendering.WidgetFont.Bahnschrift;
+
         [JsonIgnore] public abstract string TypeName { get; }
     }
 

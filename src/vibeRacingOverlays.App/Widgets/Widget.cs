@@ -140,6 +140,14 @@ namespace vibeRacingOverlays.App.Widgets
         /// <summary>Draws the overlay at scale 1. Sets list.Width/Height.</summary>
         public abstract void Draw(DisplayList list, RaceSnapshot snap);
 
+        /// <summary>Draws in the widget's own font: column widths are measured and the text is drawn in it.</summary>
+        public void Paint(DisplayList list, RaceSnapshot snap)
+        {
+            string font = FontCatalog.Name(Settings.Font);
+            using (TextMeasure.Use(font)) Draw(list, snap);
+            list.Font = font;
+        }
+
         public virtual bool ShouldShow(RaceSnapshot snap)
         {
             if (snap == null || !snap.Connected) return false;

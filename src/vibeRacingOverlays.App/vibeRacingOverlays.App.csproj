@@ -31,6 +31,8 @@
 
   <ItemGroup>
     <Resource Include="app.ico" />
+    <!-- widget fonts (SIL Open Font License, licence texts next to them); see Rendering\FontCatalog.cs -->
+    <Resource Include="Fonts\*.ttf" />
   </ItemGroup>
 
   <!-- built-in defaults: the Default presets in app\defaults\presets (preset files) -->

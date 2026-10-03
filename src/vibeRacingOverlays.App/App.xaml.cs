@@ -287,11 +287,12 @@ namespace vibeRacingOverlays.App
                     bool unsnapped = spec.StartsWith("!");
                     string font = spec.TrimStart('!');
                     TabularText.PixelSnap = !unsnapped;
-                    TextMeasure.SetFont(font);
                     BitmapSource Render(Type t)
                     {
                         var dl = new DisplayList();
-                        Widget.Create(defaults.DefaultsFor(t)).Draw(dl, snap);
+                        // any font name, also installed fonts that aren't in the widget font list
+                        using (TextMeasure.Use(font)) Widget.Create(defaults.DefaultsFor(t)).Draw(dl, snap);
+                        dl.Font = font;
                         return PreviewRenderer.ToBitmap(dl, font, 8);
                     }
                     rows.Add((font + (unsnapped ? "  (before: not on whole pixels)" : ""), Render(typeof(RelativeSettings)), Render(typeof(FuelSettings))));
@@ -351,7 +352,7 @@ namespace vibeRacingOverlays.App
                     foreach (var job in jobs)
                     {
                         var dl = new DisplayList();
-                        Widget.Create(job.Item1).Draw(dl, snap);
+                        Widget.Create(job.Item1).Paint(dl, snap);
                         var bmp = PreviewRenderer.ToBitmap(dl, font, 10);
                         var enc = new PngBitmapEncoder();
                         enc.Frames.Add(BitmapFrame.Create(bmp));
@@ -369,7 +370,7 @@ namespace vibeRacingOverlays.App
                         {
                             var rs = new RelativeSettings { PitRows = style };
                             var dl = new DisplayList();
-                            Widget.Create(rs).Draw(dl, snap);
+                            Widget.Create(rs).Paint(dl, snap);
                             var enc = new PngBitmapEncoder();
                             enc.Frames.Add(BitmapFrame.Create(PreviewRenderer.ToBitmap(dl, font, 10)));
                             using (var fs = File.Create(Path.Combine(dir, "relative_pits_" + style.ToString().ToLowerInvariant() + run.Suffix + ".png"))) enc.Save(fs);

@@ -216,7 +216,7 @@ namespace vibeRacingOverlays.App.Overlay
             nextFrame = now.AddSeconds(1.0 / Math.Max(1, Widget.Settings.RefreshHz));
 
             next.Clear();
-            try { Widget.Draw(next, snap); }
+            try { Widget.Paint(next, snap); }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine("Widget draw: " + ex); }
 
             if (editMode) DrawEditFrame(next);

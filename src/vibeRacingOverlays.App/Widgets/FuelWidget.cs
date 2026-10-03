@@ -50,7 +50,10 @@ namespace vibeRacingOverlays.App.Widgets
         {
             var f = snap.Fuel;
             float big = (float)s.FontSize, label = big * 0.46f;
-            float colW = big * 3.3f, pad = big * 0.42f;
+            float pad = big * 0.42f;
+            // columns are 3.3x the value size (the original look); wider fonts (Orbitron, mono) get the room their values and labels need
+            float need = Math.Max(dl.Measure("88.88", big), new[] { "Laps in Race", "Laps Remain", "Fuel at End", "Clock 24h" }.Max(t => dl.Measure(t, label)));
+            float colW = Math.Max(big * 3.3f, need + big * 0.5f);
             float lblH = label * 1.35f, valH = big * 1.2f, block = lblH + valH + big * 0.25f;
             int rows = 2 + (s.ShowLast ? 1 : 0) + (s.ShowLastN ? 1 : 0) + (s.ShowStint ? 1 : 0) + (s.ShowCustom ? 1 : 0);
             // optional stops column between "Refuel" and "Fuel at End" (narrower: it only holds a small number)

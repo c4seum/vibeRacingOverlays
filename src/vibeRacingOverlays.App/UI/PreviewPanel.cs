@@ -169,7 +169,7 @@ namespace vibeRacingOverlays.App.UI
             bool hasData = snap != null && snap.Connected && (src != PreviewSource.Live || data.LiveAvailable);
             if (hasData)
             {
-                try { Widget.Create(ws).Draw(dl, snap); } catch { dl.Clear(); }
+                try { Widget.Create(ws).Paint(dl, snap); } catch { dl.Clear(); }
             }
 
             string layout = !hasData ? "" : (snap.Classes.Count > 1 ? "Multiclass (" + snap.Classes.Count + " classes)" : "Single class") + (snap.IsRace ? ", race" : ", " + (snap.SessionType ?? "practice").ToLowerInvariant());

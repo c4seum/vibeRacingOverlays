@@ -39,6 +39,8 @@ $portableDir = Join-Path $artifacts 'portable'
 New-Item -ItemType Directory -Force $portableDir | Out-Null
 Copy-Item $appExe $portableDir
 Copy-Item (Join-Path $root 'dist-readme.txt') (Join-Path $portableDir 'README.txt')
+# licences of the bundled widget fonts (SIL OFL: they go with every copy; the installer's exe carries them in the font files)
+Copy-Item (Join-Path $root 'src\vibeRacingOverlays.App\Fonts\FONT-LICENSES.txt') $portableDir
 $zip = Join-Path $dist "vibeRacingOverlays-$Version-portable.zip"
 if (Test-Path $zip) { [IO.File]::Delete($zip) }
 Compress-Archive -Path (Join-Path $portableDir '*') -DestinationPath $zip

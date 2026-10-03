@@ -23,8 +23,10 @@ namespace vibeRacingOverlays.App.Rendering
         public readonly List<DrawOp> Ops = new List<DrawOp>(256);
         public float Width;
         public float Height;
+        /// <summary>The widget's font (FontCatalog name); null = the renderer's own.</summary>
+        public string Font;
 
-        public void Clear() { Ops.Clear(); Width = Height = 0; }
+        public void Clear() { Ops.Clear(); Width = Height = 0; Font = null; }
 
         /// <summary>Width a text will take when drawn (same font and tabular digits as the renderer).</summary>
         public float Measure(string text, float size, bool bold = true) { return TextMeasure.Measure(text, size, bold); }
@@ -51,7 +53,7 @@ namespace vibeRacingOverlays.App.Rendering
 
         public bool SameAs(DisplayList other)
         {
-            if (other == null || other.Width != Width || other.Height != Height || other.Ops.Count != Ops.Count) return false;
+            if (other == null || other.Width != Width || other.Height != Height || other.Font != Font || other.Ops.Count != Ops.Count) return false;
             for (int i = 0; i < Ops.Count; i++)
                 if (!Ops[i].Equals(other.Ops[i])) return false;
             return true;
