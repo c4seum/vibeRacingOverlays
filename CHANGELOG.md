@@ -17,6 +17,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 - Buttons below the layout list: **Add layout**, rename, **duplicate** (new: a copy of the layout with all its widgets, also in the Layout menu) and delete.
 
 ### Changed
+- Fuel calculator: the *Stops* option "Next to refuel" is gone; stops are shown in a column (or off). Widgets that used "Next to refuel" (it was the default) show their stops in a column now.
 - Header bar (Relative and Standings): track and air temperature have an icon instead of a word: a road for the track, wind for the air (*Air 21.3°C* is now the wind icon with *21.3°C*).
 - Header item "Incidents and limits" without spaces: *5x/17x/25x* and *5x/25x* (shorter, reads as one value).
 - Demo race and practice: one car always drives through the pit lane right behind you, so you can see how cars in the pits look (Relative: *Cars in the pits*, the PIT badge) without waiting for a pit stop.

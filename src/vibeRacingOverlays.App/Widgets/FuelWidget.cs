@@ -6,13 +6,16 @@ namespace vibeRacingOverlays.App.Widgets
 {
     public enum ClockSource { RealTime, SimTime }
 
-    /// <summary>Where the number of pit stops is shown.</summary>
-    public enum StopsDisplay { Off, NextToRefuel, Column }
+    /// <summary>
+    /// Whether the number of pit stops has a column. NextToRefuel (small, above the refuel value) was removed on the
+    /// user's wish (2026-10-04): it is only read from older settings and becomes Column (FuelSettings.Normalize).
+    /// </summary>
+    public enum StopsDisplay { Off, [System.ComponentModel.Browsable(false)] NextToRefuel, Column }
 
     /// <summary>Classic: big values in a free grid (the original look). Table: header bar, big fuel level and laps, then one row per estimate, like the Relative and Standings.</summary>
     public enum FuelLayout { Classic, Table }
 
-    public sealed class FuelSettings : WidgetSettings
+    public sealed class FuelSettings : WidgetSettings, INormalizable
     {
         public override string TypeName { get { return "Fuel calculator"; } }
 
@@ -31,8 +34,11 @@ namespace vibeRacingOverlays.App.Widgets
         [Setting("Show 'Stint' row", Group = "Content", Order = 8, Tooltip = "Average fuel use of the valid laps since your last pit stop")]
         public bool ShowStint { get; set; } = false;
         [Setting("Stops", Group = "Content", Order = 9, Tooltip = "Pit stops needed to finish (0 = you make it without refuelling): the refuel amount divided by the tank capacity, rounded up. "
-            + "Next to refuel: small, above the refuel value. Column: a column of its own.")]
-        public StopsDisplay Stops { get; set; } = StopsDisplay.NextToRefuel;
+            + "Column: a column of its own.")]
+        public StopsDisplay Stops { get; set; } = StopsDisplay.Column;
+
+        // "next to refuel" is gone: widgets that used it (it was the default) keep seeing their stops, in a column
+        public void Normalize() { if (Stops == StopsDisplay.NextToRefuel) Stops = StopsDisplay.Column; }
 
         [Setting("Value font size", Group = "Style", Min = 12, Max = 40, Order = 20)] public double FontSize { get; set; } = 24;
         [Setting("Background", Group = "Style", IsColor = true, Order = 21)] public string BackgroundColor { get; set; } = "#FF2B2B2B";
@@ -138,12 +144,6 @@ namespace vibeRacingOverlays.App.Widgets
                 bool known = f.MaxFuel > 0 || f.Refuel(perLap, s.Margin) <= 0;
                 if (known && s.Stops == StopsDisplay.Column)
                     dl.Text(stopsX, vy, stopsW, valH, stops.ToString(), big, color);
-                else if (known && s.Stops == StopsDisplay.NextToRefuel)
-                {
-                    // on the label line, right above the refuel value ("Refuel" header on the left of it in the first row)
-                    float gap = label * 0.8f;
-                    dl.Text(x[2], y, colW - gap, lblH, stops == 1 ? "1 stop" : stops + " stops", label, color, Align.Right);
-                }
                 double end = f.FuelAtEnd(perLap);
                 dl.Text(x[3], vy, colW, valH, Fmt.Num(end, "0.00"), big, end < 0 ? Red : color);
             }

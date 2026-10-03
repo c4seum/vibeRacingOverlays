@@ -326,7 +326,13 @@ namespace vibeRacingOverlays.App.UI
                 }
                 if (t.IsEnum)
                 {
-                    var values = Enum.GetValues(t).Cast<object>().ToList();
+                    // values marked [Browsable(false)] are only read from older settings, never offered
+                    var values = Enum.GetValues(t).Cast<object>().Where(v =>
+                    {
+                        var field = t.GetField(v.ToString());
+                        var b = field != null ? (System.ComponentModel.BrowsableAttribute)Attribute.GetCustomAttribute(field, typeof(System.ComponentModel.BrowsableAttribute)) : null;
+                        return b == null || b.Browsable;
+                    }).ToList();
                     // a few short choices: segmented control; otherwise a drop-down
                     if (values.Count <= 3 && values.All(v => Ui.Label(v).Length <= 14))
                         return Ui.Segmented(values, p.GetValue(ws), v => { if (!Equals(p.GetValue(ws), v)) { p.SetValue(ws, v); Changed(); } });
