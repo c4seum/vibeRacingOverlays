@@ -251,6 +251,7 @@ namespace vibeRacingOverlays.App.Overlay
             uint border = locked ? 0xFF8A8F96u : 0xFF2F8CFFu;
             // translucent fill so empty overlays can still be grabbed, plus a border and a label (grey = locked)
             dl.Ops.Insert(0, new DrawOp(OpKind.Rect, 0, 0, w, h, locked ? 0x30808080u : 0x302080FFu));
+            if (dl.ClipCount > 0) dl.ClipCount++;   // the widget's own ops moved one place: keep clipping all of them
             dl.Rect(0, 0, w, 2, border);
             dl.Rect(0, h - 2, w, 2, border);
             dl.Rect(0, 0, 2, h, border);

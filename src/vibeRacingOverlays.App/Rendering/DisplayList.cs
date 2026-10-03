@@ -1,6 +1,6 @@
 namespace vibeRacingOverlays.App.Rendering
 {
-    public enum OpKind : byte { Rect, Text }
+    public enum OpKind : byte { Rect, Text, Icon }
     public enum Align : byte { Left, Center, Right }
 
     /// <summary>
@@ -47,6 +47,13 @@ namespace vibeRacingOverlays.App.Rendering
         {
             if (string.IsNullOrEmpty(text) || (color >> 24) == 0) return;
             Ops.Add(new DrawOp(OpKind.Text, x, y, w, h, color, 0, text, size, bold, align, fit));
+        }
+
+        /// <summary>A line icon (path data in a 24x24 box, see <see cref="Icons"/>) drawn <paramref name="size"/> pixels square.</summary>
+        public void Icon(float x, float y, float size, string path, uint color)
+        {
+            if (string.IsNullOrEmpty(path) || (color >> 24) == 0 || size <= 0) return;
+            Ops.Add(new DrawOp(OpKind.Icon, x, y, size, size, color, 0, path));
         }
 
         /// <summary>Text on a rounded "badge" background.</summary>

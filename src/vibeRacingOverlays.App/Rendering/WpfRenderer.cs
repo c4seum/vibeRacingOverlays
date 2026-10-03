@@ -97,6 +97,23 @@ namespace vibeRacingOverlays.App.Rendering
             return p;
         }
 
+        static readonly Dictionary<string, Geometry> iconShapes = new Dictionary<string, Geometry>();
+
+        /// <summary>An icon's strokes as a filled shape (round caps, Icons.Stroke units wide), made once per icon.</summary>
+        static Geometry IconShape(string path)
+        {
+            lock (iconShapes)
+            {
+                Geometry g;
+                if (iconShapes.TryGetValue(path, out g)) return g;
+                var pen = new Pen(Brushes.Black, Icons.Stroke) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round };
+                g = Geometry.Parse(path).GetWidenedPathGeometry(pen);
+                g.Freeze();
+                iconShapes[path] = g;
+                return g;
+            }
+        }
+
         public void Render(DrawingContext dc, DisplayList list)
         {
             if (list.Font != null) SetFont(list.Font);
@@ -112,6 +129,15 @@ namespace vibeRacingOverlays.App.Rendering
                     var r = new Rect(op.X, op.Y, op.W, op.H);
                     if (op.Radius > 0) dc.DrawRoundedRectangle(Brush(op.Color), null, r, op.Radius, op.Radius);
                     else dc.DrawRectangle(Brush(op.Color), null, r);
+                }
+                else if (op.Kind == OpKind.Icon)
+                {
+                    // on whole pixels like text, scaled from the 24x24 box
+                    dc.PushTransform(new TranslateTransform(tabular.Snap(op.X), tabular.Snap(op.Y)));
+                    dc.PushTransform(new ScaleTransform(op.W / 24.0, op.H / 24.0));
+                    dc.DrawGeometry(Brush(op.Color), null, IconShape(op.Text));
+                    dc.Pop();
+                    dc.Pop();
                 }
                 else
                 {

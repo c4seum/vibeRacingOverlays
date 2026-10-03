@@ -30,7 +30,7 @@ The classification of your session.
   - gap to the leader, interval to the car ahead, last lap (purple for fastest in class, green for a personal best), best lap;
   - pit status (in the pits, towed, out lap, number of stops), laps in the current stint, laps completed and tire compound.
 - Many columns have a format of their own, for example lap times with 3, 2 or 1 decimals, iRating as 4567 or 4.5k, and license as A3.48, A3.4 or only the letter. Numbers always line up neatly in their column.
-- Header bar with the items you choose, in your order: session type, class, laps (or an estimate for timed races), time, track and air temperature (°C and/or °F), humidity, strength of field and number of cars, split into a left and a right group.
+- Header bar with the items you choose, in your order: session type, class, laps (or an estimate for timed races), time, track and air temperature (°C and/or °F, with a road and a wind icon), humidity, strength of field and number of cars, split into a left and a right group.
 - **Separate settings for practice & qualifying and for the race:** rows, columns, header and formats can differ per session type (for example 3 decimals and best laps in qualifying, gaps with 1 decimal in the race). The widget switches automatically; colors and size are shared.
 
 ### Relative

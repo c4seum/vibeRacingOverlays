@@ -45,34 +45,49 @@ namespace vibeRacingOverlays.App.Widgets
             return d;
         }
 
+        // track and air temperature are told apart by an icon instead of a word ("Air 21.3°C" was the old look)
+        static string IconOf(string key) { return key == "tracktemp" ? Icons.Track : key == "airtemp" ? Icons.Air : null; }
+        const uint IconColor = 0xFFB4B4B4;
+
         /// <summary>
         /// Draws the enabled items left to right with measured widths; items after "spacer" are right-aligned.
         /// <paramref name="title"/> is the text of the "title" item.
         /// </summary>
         public static void Draw(DisplayList dl, RaceSnapshot snap, IEnumerable<ColumnConfig> items, string title, float width, float h, float fs, float pad, float gap)
         {
-            var left = new List<string>();
-            var right = new List<string>();
+            var left = new List<(string Text, string Icon)>();
+            var right = new List<(string Text, string Icon)>();
             var target = left;
             foreach (var item in items.Where(i => i.Enabled))
             {
                 if (item.Key == "spacer") { target = right; continue; }
                 string t = item.Key == "title" ? title : Text(item, snap);
-                if (!string.IsNullOrEmpty(t)) target.Add(t);
+                if (!string.IsNullOrEmpty(t)) target.Add((t, IconOf(item.Key)));
             }
-            float x = pad;
-            foreach (var t in left)
+            float iconSize = (float)Math.Round(fs * 1.15f), iconGap = (float)Math.Round(fs * 0.3f);
+            float Width((string Text, string Icon) e) { return dl.Measure(e.Text, fs) + (e.Icon != null ? iconSize + iconGap : 0); }
+            void Put((string Text, string Icon) e, float x)
             {
-                float w = dl.Measure(t, fs);
-                dl.Text(x, 0, w + 2, h, t, fs, 0xFFFFFFFF);
-                x += w + gap;
+                if (e.Icon != null)
+                {
+                    dl.Icon(x, (h - iconSize) / 2, iconSize, e.Icon, IconColor);
+                    x += iconSize + iconGap;
+                }
+                dl.Text(x, 0, dl.Measure(e.Text, fs) + 2, h, e.Text, fs, 0xFFFFFFFF);
+            }
+
+            float lx = pad;
+            foreach (var e in left)
+            {
+                Put(e, lx);
+                lx += Width(e) + gap;
             }
             float rx = width - pad;
             for (int i = right.Count - 1; i >= 0; i--)
             {
-                float w = dl.Measure(right[i], fs);
-                if (rx - w < x) break;   // never draw over the left group
-                dl.Text(rx - w - 2, 0, w + 2, h, right[i], fs, 0xFFFFFFFF, Align.Right);
+                float w = Width(right[i]);
+                if (rx - w < lx) break;   // never draw over the left group
+                Put(right[i], rx - w - 2);
                 rx -= w + gap;
             }
         }
@@ -100,7 +115,7 @@ namespace vibeRacingOverlays.App.Widgets
                     if (item.Format == "elapsed_total" && snap.TimeTotal > 0) return Fmt.Clock(Math.Max(0, snap.TimeTotal - snap.TimeRemain)) + "/" + Fmt.Short(snap.TimeTotal);
                     return Fmt.Clock(snap.TimeRemain) + (snap.TimeTotal > 0 ? "/" + Fmt.Short(snap.TimeTotal) : "");
                 case "tracktemp": return Fmt.Temperature(snap.TrackTemp, item.Format);
-                case "airtemp": return "Air " + Fmt.Temperature(snap.AirTemp, item.Format);
+                case "airtemp": return Fmt.Temperature(snap.AirTemp, item.Format);
                 case "humidity": return snap.Humidity > 0 ? Fmt.Humidity(snap.Humidity, item.Format) + " RH" : "";
                 case "sof":
                     int sof = cs != null ? cs.Sof : Data.Engine.RatingMath.StrengthOfField(snap.Cars.Select(c => c.IRating));
