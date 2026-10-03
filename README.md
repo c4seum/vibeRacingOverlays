@@ -81,6 +81,15 @@ What changed in each version is in the [changelog](CHANGELOG.md). Older versions
 5. **Layouts** are what you use: the layout selected in the list is the active one, and every change (also to its widgets) is kept automatically, there's nothing to save. Switch with the list or `Ctrl+Shift+L`. A widget you add appears in the centre of the main screen.
 6. **The Layout menu** (top bar): **New empty layout**, **New layout from preset** (a preset is only ever loaded into a new layout, so it never overwrites one you work with), **Rename**, **Delete**, **Save as preset** / **Save to preset** (store the active layout), **Manage presets** (rename / delete) and **Export / Import layout** (files to share or for another PC; an imported layout becomes a preset, you can also drop files on the window). **Get started** is the app's own preset and always stays intact; a new installation starts with it (Standings top left, Relative bottom right, Fuel calculator bottom left, on your main screen). After an update, a layout called "Get started" is added again if you don't have one (your active layout stays active). A "Get started" layout you already have is never changed, so your changes in it are safe. If you delete it, it doesn't come back with updates; you can always make it again with **New layout from preset**.
 
+### Undo
+
+Made a change you didn't want? **Undo** (↶ at the top, or `Ctrl+Z`) puts it back, **Redo** (↷, `Ctrl+Y`) does it again. The tooltip says what will be undone, for example *Undo: move 'Relative'*.
+- Everything about the widgets of a layout can be undone: settings, columns, reset buttons, position, dragging and resizing, locking, show/hide, adding, duplicating and removing widgets, and loading a preset into a widget.
+- **Deleting a layout** too: `Ctrl+Z` right after brings it back, with its widgets.
+- A slider you drag or a number you type counts as one step. The last 50 steps per layout are kept while the app is open.
+- Not part of undo: saving, renaming or deleting presets, importing files and the theme (these ask first or don't change your layout).
+- While you're typing in a text box, `Ctrl+Z` first undoes the typing in that box.
+
 ### Hotkeys
 
 These also work while iRacing has focus.

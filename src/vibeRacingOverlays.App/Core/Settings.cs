@@ -617,6 +617,9 @@ namespace vibeRacingOverlays.App.Core
             return JsonSerializer.Deserialize<WidgetSettings>(JsonSerializer.Serialize(w, Json), Json);
         }
 
+        /// <summary>Widget settings from their JSON (as written by ToJson(w, typeof(WidgetSettings))).</summary>
+        public static WidgetSettings ParseWidget(string json) { return JsonSerializer.Deserialize<WidgetSettings>(json, Json); }
+
         /// <summary>Deep copy of any settings value (for complex values like a session profile).</summary>
         public static object CloneValue(object v, Type type)
         {

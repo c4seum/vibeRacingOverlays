@@ -15,6 +15,9 @@
                     <MenuItem x:Name="LayoutMenu" Header="Layout"><MenuItem Header="..."/></MenuItem>
                     <MenuItem x:Name="WidgetMenu" Header="Widget"><MenuItem Header="..."/></MenuItem>
                 </Menu>
+                <!-- undo / redo of the active layout (MainWindow.Undo.cs) -->
+                <Button x:Name="UndoButton" Style="{StaticResource IconButton}" Content="&#xE7A7;" IsEnabled="False" ToolTipService.ShowOnDisabled="True" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <Button x:Name="RedoButton" Style="{StaticResource IconButton}" Content="&#xE7A6;" IsEnabled="False" ToolTipService.ShowOnDisabled="True" VerticalAlignment="Center" Margin="0,0,14,0"/>
                 <Border CornerRadius="12" Padding="10,4" Background="{DynamicResource Field}" VerticalAlignment="Center" Margin="0,0,14,0">
                     <StackPanel Orientation="Horizontal">
                         <Ellipse x:Name="StatusDot" Width="8" Height="8" Fill="{DynamicResource Muted}" VerticalAlignment="Center" Margin="0,0,7,0"/>

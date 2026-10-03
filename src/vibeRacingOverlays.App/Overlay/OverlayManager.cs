@@ -76,6 +76,17 @@ namespace vibeRacingOverlays.App.Overlay
             if (WidgetsChanged != null) WidgetsChanged();
         }
 
+        /// <summary>The settings objects of these widgets were replaced (undo): their windows are made again.</summary>
+        public void Reload(IEnumerable<string> ids)
+        {
+            foreach (var id in ids)
+            {
+                OverlayWindow w;
+                if (windows.TryGetValue(id, out w)) { w.Close(); windows.Remove(id); }
+            }
+            Sync();
+        }
+
         public void Invalidate(WidgetSettings ws)
         {
             OverlayWindow w;

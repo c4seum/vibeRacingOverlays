@@ -117,8 +117,9 @@ namespace vibeRacingOverlays.App
             Closed += (s, e) => previewData.Dispose();
 
             ShowActiveLayout();
+            InitUndo();
 
-            statusTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+            statusTimer =new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
             statusTimer.Tick += (s, e) => UpdateStatus();
             statusTimer.Start();
         }
@@ -436,6 +437,7 @@ namespace vibeRacingOverlays.App
             if (MessageBox.Show(this, "Delete layout '" + l.Name + "' and its " + l.Widgets.Count + " widgets?\n(Your layout presets stay.)", "vibeRacingOverlays", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
             int i = settings.Layouts.IndexOf(l);
             var next = settings.Layouts[i == 0 ? 1 : i - 1];
+            RecordLayoutDeleted(l, i, next);   // Ctrl+Z brings it back
             overlays.SwitchLayout(next.Id);
             settings.Layouts.Remove(l);
             // deleted on purpose: an update doesn't put "Get started" back (New layout from preset still can)
