@@ -72,7 +72,17 @@ namespace vibeRacingOverlays.App.UI
         readonly AppSettings settings;
         readonly ComboBox sourceBox = new ComboBox { Width = 170 };
         readonly TextBlock info = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0), FontSize = 12 };
-        readonly Surface surface = new Surface();
+        readonly Surface surface = InitSurface();
+
+        // text exactly like the overlay windows: grayscale, no ClearType. ClearType (the window default) gave colour
+        // fringes and made the preview look thinner and sharper-edged than the widget on screen
+        static Surface InitSurface()
+        {
+            var s = new Surface();
+            TextOptions.SetTextFormattingMode(s, TextFormattingMode.Display);
+            TextOptions.SetTextRenderingMode(s, TextRenderingMode.Grayscale);
+            return s;
+        }
         readonly TextBlock empty = new TextBlock { Text = "No data for this widget in the selected source.", Margin = new Thickness(0, 8, 0, 8) };
         readonly DispatcherTimer timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
         readonly Button layoutButton = new Button { Style = Ui.Style("GhostButton"), Margin = new Thickness(0) };

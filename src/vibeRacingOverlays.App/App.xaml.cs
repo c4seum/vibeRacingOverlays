@@ -38,6 +38,14 @@ namespace vibeRacingOverlays.App
             int fontIdx = Array.IndexOf(e.Args, "--font-samples");
             if (fontIdx >= 0)
             {
+                // --text-mode ideal|display: lay out and draw the text in one mode (default: as the overlays do)
+                int modeIdx = Array.IndexOf(e.Args, "--text-mode");
+                if (modeIdx >= 0 && modeIdx + 1 < e.Args.Length)
+                {
+                    var m = e.Args[modeIdx + 1] == "display" ? TextFormattingMode.Display : TextFormattingMode.Ideal;
+                    TabularText.LayoutMode = m;
+                    PreviewRenderer.VisualMode = m;
+                }
                 RenderFontSamples(fontIdx + 1 < e.Args.Length ? e.Args[fontIdx + 1] : "fonts.png", e.Args.Skip(fontIdx + 2).Where(a => !a.StartsWith("--")).ToArray());
                 Shutdown();
                 return;

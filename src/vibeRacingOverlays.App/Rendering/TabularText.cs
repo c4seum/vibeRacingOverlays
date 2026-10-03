@@ -26,6 +26,8 @@ namespace vibeRacingOverlays.App.Rendering
 
         /// <summary>Off only to compare (--font-samples): text at the exact, fractional positions.</summary>
         public static bool PixelSnap = true;
+        /// <summary>How glyphs are laid out (Ideal: the font's own shapes and spacing; Display: GDI-like, fitted to the pixel grid).</summary>
+        public static TextFormattingMode LayoutMode = TextFormattingMode.Ideal;
         string font;
 
         public TabularText(string font) { SetFont(font); }
@@ -52,7 +54,7 @@ namespace vibeRacingOverlays.App.Rendering
 
         public FormattedText Plain(string text, double size, bool isBold, Brush brush)
         {
-            return new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Face(isBold), size, brush, pixelsPerDip)
+            return new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Face(isBold), size, brush, null, LayoutMode, pixelsPerDip)
             { MaxLineCount = 1, Trimming = TextTrimming.None };
         }
 

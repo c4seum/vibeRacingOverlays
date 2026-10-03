@@ -24,7 +24,7 @@ Command-line options for design and debugging:
 - `--snapshot <folder> --live`: the same, with live iRacing data.
 - `--settings-dir <folder>`: use another settings folder (with its own `backups` and `errors.log`). UI tests always run like this on a copy of the settings, so they never touch the real `settings.json`.
 - `--dump <file>`: writes raw iRacing values (per car) to a text file.
-- `--font-samples <png> [font ...]`: one sheet with the Relative and Fuel calculator (Default presets, demo multiclass race) in each font, as the overlays draw them. Put `!` before a font name to see it without pixel snapping.
+- `--font-samples <png> [font ...]`: one sheet with the Relative and Fuel calculator (Default presets, demo multiclass race) in each font, as the overlays draw them. Put `!` before a font name to see it without pixel snapping. `--text-mode ideal|display` lays out and draws the text in one mode (to compare; the overlays lay text out in Ideal mode and draw in Display mode, grayscale).
 - `--zorder-log <file>`: every 2 seconds one line with the window in front, iRacing's window (position, size, style), its display mode from `Documents\iRacing\rendererDX11Monitor.ini` and whether Windows reports exclusive full screen, and per widget whether a window lies over it and whether it was lifted. Only process names and window classes, no window titles. For checking the widgets with iRacing in full screen, in a window and borderless.
 - `--update-feed <url or file>`: test the update notice with a fake release (JSON like GitHub's `{"tag_name": "v9.9.9", "html_url": "https://..."}`). Also turns the check on in DEV builds, which normally skip it (their version number isn't a release number).
 
