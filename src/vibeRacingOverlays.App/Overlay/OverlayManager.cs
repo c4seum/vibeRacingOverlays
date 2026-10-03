@@ -151,12 +151,44 @@ namespace vibeRacingOverlays.App.Overlay
             try { settings.Save(); } catch { }   // logged and shown in the status bar by Save itself
         }
 
+        // Windows screens the widgets must never be lifted over: the Win+Shift+S screenshot screen (its frozen
+        // image already shows the widgets, live widgets on top of it looked like duplicates), Start and search
+        static readonly HashSet<string> SystemScreens = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "ScreenClippingHost", "SnippingTool", "ScreenSketch", "ShellExperienceHost", "StartMenuExperienceHost", "SearchHost", "SearchApp", "ShellHost" };
+        static readonly HashSet<string> Sims = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "iRacingSim64DX11", "iRacingSim64" };
+        readonly Dictionary<uint, string> processNames = new Dictionary<uint, string>();
+
+        /// <summary>
+        /// Whether widgets may be put back on top now: not while a Windows screen like the screenshot tool is in front,
+        /// and not over another always-on-top app you're using (that one should stay in front while you use it).
+        /// Always while iRacing or this app is in front.
+        /// </summary>
+        bool MayGoOnTop()
+        {
+            var fg = Native.GetForegroundWindow();
+            if (fg == IntPtr.Zero) return true;
+            uint pid;
+            Native.GetWindowThreadProcessId(fg, out pid);
+            if (pid == (uint)Environment.ProcessId) return true;
+            string name;
+            if (!processNames.TryGetValue(pid, out name))
+            {
+                try { using (var p = System.Diagnostics.Process.GetProcessById((int)pid)) name = p.ProcessName; }
+                catch (Exception) { name = ""; }
+                if (processNames.Count > 200) processNames.Clear();
+                processNames[pid] = name;
+            }
+            if (Sims.Contains(name)) return true;
+            if (SystemScreens.Contains(name)) return false;
+            return (Native.GetWindowLong(fg, Native.GWL_EXSTYLE) & Native.WS_EX_TOPMOST) == 0;
+        }
+
         void Tick()
         {
             var snap = telemetry.Latest;
             var now = DateTime.UtcNow;
             bool reassert = now >= nextTopmost;
-            if (reassert) nextTopmost = now.AddSeconds(2);
+            if (reassert) { nextTopmost = now.AddSeconds(2); reassert = MayGoOnTop(); }
 
             foreach (var w in windows.Values)
             {

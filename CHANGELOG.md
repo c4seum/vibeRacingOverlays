@@ -15,9 +15,10 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 ### Changed
 - Starting the app while it's already running (for example from the tray) opens the running app instead of starting a second one.
 - The installer asks a running app to exit properly (it saves first) instead of only closing its window, which now hides the app to the tray.
-
-### Changed
 - After an install or update, the layout **Get started** is added again when you don't have a layout with that name (for example after updating from an earlier version, or after renaming it). It's added next to your layouts; your active layout stays active, and the status bar says it was added. A "Get started" layout you already have is never changed: it may hold your own changes. If you delete Get started on purpose, updates don't bring it back (New layout from preset still can).
+
+### Fixed
+- Widgets no longer jump in front of everything every 2 seconds. They are only put back on top when another app's window covers them, and not while a Windows screen is in front: with **Win+Shift+S** the live widgets appeared on top of the frozen screenshot image, so they looked doubled. Overlapping widgets also no longer swap places now and then. While iRacing is in front, widgets stay on top as before.
 
 ## [1.3.0] - 2026-10-02
 
