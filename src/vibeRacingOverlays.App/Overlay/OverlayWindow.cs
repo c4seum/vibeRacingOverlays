@@ -117,20 +117,23 @@ namespace vibeRacingOverlays.App.Overlay
             Native.SetWindowLong(hwnd, Native.GWL_EXSTYLE, ex);
         }
 
-        /// <summary>
-        /// Puts the widget back on top, but only when a window of another app covers it. Doing it every time
-        /// lifted the widgets over everything (the Win+Shift+S screen, menus) and shuffled overlapping widgets.
-        /// </summary>
-        public void ReassertTopmost()
+        /// <summary>Puts the widget on top of all always-on-top windows (only while iRacing is in front, see OverlayManager).</summary>
+        public void BringToTop()
         {
-            if (hwnd != IntPtr.Zero && CoveredByOtherApp())
+            if (hwnd != IntPtr.Zero)
                 Native.SetWindowPos(hwnd, Native.HWND_TOPMOST, 0, 0, 0, 0, Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOACTIVATE);
         }
 
-        bool CoveredByOtherApp()
+        /// <summary>
+        /// A visible window of another app that lies over this widget (Zero = none). Only those are a reason to bring
+        /// the widget back on top: lifting it every time shuffled overlapping widgets.
+        /// </summary>
+        static readonly string OwnName = IRacingWindow.ProcessName((uint)Environment.ProcessId);
+
+        public IntPtr CoveringWindow()
         {
             Native.RECT me;
-            if (!Native.GetWindowRect(hwnd, out me)) return false;
+            if (hwnd == IntPtr.Zero || !Native.GetWindowRect(hwnd, out me)) return IntPtr.Zero;
             uint own = (uint)Environment.ProcessId;
             // only the windows above this one in the z-order (a few topmost windows at most)
             for (IntPtr h = Native.GetWindow(hwnd, Native.GW_HWNDPREV); h != IntPtr.Zero; h = Native.GetWindow(h, Native.GW_HWNDPREV))
@@ -139,10 +142,11 @@ namespace vibeRacingOverlays.App.Overlay
                 Native.RECT r;
                 if (!Native.IsWindowVisible(h)) continue;
                 Native.GetWindowThreadProcessId(h, out pid);
-                if (pid == own || !Native.GetWindowRect(h, out r)) continue;
-                if (r.Left < me.Right && me.Left < r.Right && r.Top < me.Bottom && me.Top < r.Bottom) return true;
+                // widgets of another copy of this app (DEV next to the release) aren't a reason: both would keep lifting
+                if (pid == own || IRacingWindow.ProcessName(pid) == OwnName || !Native.GetWindowRect(h, out r)) continue;
+                if (r.Left < me.Right && me.Left < r.Right && r.Top < me.Bottom && me.Top < r.Bottom) return h;
             }
-            return false;
+            return IntPtr.Zero;
         }
 
         void OnWheel(object sender, MouseWheelEventArgs e)

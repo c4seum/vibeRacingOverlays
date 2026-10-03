@@ -236,7 +236,14 @@ namespace vibeRacingOverlays.App
                 StatusText.Text = AppSettings.Notice;
                 return;
             }
-            if (src == "iRacing" && live)
+            if (src == "iRacing" && live && IRacingWindow.BlocksWidgets())
+            {
+                // exclusive full screen: Windows can't draw other windows over the game
+                StatusDot.SetResourceReference(Shape.FillProperty, "Warning");
+                StatusText.Text = "iRacing runs in full screen: widgets can't show over it. Turn full screen off in iRacing's graphics options";
+                StatusText.ToolTip = "Widgets need iRacing in a window. Without a border it looks like full screen (also across triple screens).";
+            }
+            else if (src == "iRacing" && live)
             {
                 StatusDot.SetResourceReference(Shape.FillProperty, "Success");
                 StatusText.Text = snap.Connected && snap.Source == "iRacing"

@@ -151,44 +151,28 @@ namespace vibeRacingOverlays.App.Overlay
             try { settings.Save(); } catch { }   // logged and shown in the status bar by Save itself
         }
 
-        // Windows screens the widgets must never be lifted over: the Win+Shift+S screenshot screen (its frozen
-        // image already shows the widgets, live widgets on top of it looked like duplicates), Start and search
-        static readonly HashSet<string> SystemScreens = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { "ScreenClippingHost", "SnippingTool", "ScreenSketch", "ShellExperienceHost", "StartMenuExperienceHost", "SearchHost", "SearchApp", "ShellHost" };
-        static readonly HashSet<string> Sims = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "iRacingSim64DX11", "iRacingSim64" };
-        readonly Dictionary<uint, string> processNames = new Dictionary<uint, string>();
-
         /// <summary>
-        /// Whether widgets may be put back on top now: not while a Windows screen like the screenshot tool is in front,
-        /// and not over another always-on-top app you're using (that one should stay in front while you use it).
-        /// Always while iRacing or this app is in front.
+        /// Widgets are only put back on top while iRacing is the window in front. Topmost windows stay above normal
+        /// windows by themselves; re-asserting at other times lifted them over the taskbar, menus, tray flyouts and the
+        /// Win+Shift+S screen (whose frozen image already shows the widgets: they looked doubled). Never while iRacing
+        /// runs in exclusive full screen: nothing can be drawn over it there, and pushing windows over it can throw
+        /// the game out of full screen.
         /// </summary>
-        bool MayGoOnTop()
+        static bool MayGoOnTop()
         {
-            var fg = Native.GetForegroundWindow();
-            if (fg == IntPtr.Zero) return true;
-            uint pid;
-            Native.GetWindowThreadProcessId(fg, out pid);
-            if (pid == (uint)Environment.ProcessId) return true;
-            string name;
-            if (!processNames.TryGetValue(pid, out name))
-            {
-                try { using (var p = System.Diagnostics.Process.GetProcessById((int)pid)) name = p.ProcessName; }
-                catch (Exception) { name = ""; }
-                if (processNames.Count > 200) processNames.Clear();
-                processNames[pid] = name;
-            }
-            if (Sims.Contains(name)) return true;
-            if (SystemScreens.Contains(name)) return false;
-            return (Native.GetWindowLong(fg, Native.GWL_EXSTYLE) & Native.WS_EX_TOPMOST) == 0;
+            return IRacingWindow.InFront() && !IRacingWindow.ExclusiveFullScreenNow();
         }
+
+        /// <summary>--zorder-log &lt;file&gt;: every 2 seconds, what's in front and what the widgets do (to check iRacing's display modes).</summary>
+        public static string ZOrderLog;
 
         void Tick()
         {
             var snap = telemetry.Latest;
             var now = DateTime.UtcNow;
-            bool reassert = now >= nextTopmost;
-            if (reassert) { nextTopmost = now.AddSeconds(2); reassert = MayGoOnTop(); }
+            bool check = now >= nextTopmost, reassert = false;
+            if (check) { nextTopmost = now.AddSeconds(2); reassert = MayGoOnTop(); }
+            var log = check && ZOrderLog != null ? new System.Text.StringBuilder(ZOrderDiag.State(reassert)) : null;
 
             foreach (var w in windows.Values)
             {
@@ -198,10 +182,13 @@ namespace vibeRacingOverlays.App.Overlay
                 {
                     if (!w.IsVisible) { w.Show(); w.ApplyPosition(); w.Invalidate(); }
                     w.Tick(snap, now);
-                    if (reassert) w.ReassertTopmost();
+                    IntPtr cover = check ? w.CoveringWindow() : IntPtr.Zero;
+                    if (reassert && cover != IntPtr.Zero) w.BringToTop();
+                    if (log != null) log.Append(" | ").Append(ws.Title).Append(cover == IntPtr.Zero ? ": on top" : ": under " + ZOrderDiag.Describe(cover) + (reassert ? " -> lifted" : ""));
                 }
                 else if (w.IsVisible) w.Hide();
             }
+            if (log != null) ZOrderDiag.Write(ZOrderLog, log.ToString());
 
             if (now >= saveAt) SaveNow();
         }

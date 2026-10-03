@@ -22,6 +22,9 @@ namespace vibeRacingOverlays.App
             // --settings-dir <folder>: a separate settings folder (tests run on a copy, never on the user's own file)
             int dirIdx = Array.IndexOf(e.Args, "--settings-dir");
             if (dirIdx >= 0 && dirIdx + 1 < e.Args.Length) AppSettings.FolderOverride = Path.GetFullPath(e.Args[dirIdx + 1]);
+            // --zorder-log <file>: log what's in front and what the widgets do (iRacing display modes, see ZOrderDiag)
+            int zIdx = Array.IndexOf(e.Args, "--zorder-log");
+            if (zIdx >= 0 && zIdx + 1 < e.Args.Length) OverlayManager.ZOrderLog = Path.GetFullPath(e.Args[zIdx + 1]);
 
             int snapIdx = Array.IndexOf(e.Args, "--snapshot");
             if (snapIdx >= 0)

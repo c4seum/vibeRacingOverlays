@@ -117,7 +117,10 @@ These also work while iRacing has focus.
 ## Frequently asked questions
 
 **The widgets don't appear over iRacing.**
-Set iRacing to windowed or borderless mode. Exclusive fullscreen doesn't allow windows on top.
+Turn off full screen in iRacing's graphics options. In full screen iRacing has the screens to itself and Windows can't show other windows over it; the app then shows a warning at the top. A window **without a border** looks the same as full screen (also across triple screens) and the widgets show over it. A window with a border works too.
+
+**Do the widgets stay on top of everything?**
+Only over iRacing. While iRacing is the window in front, the widgets are kept on top. When you use something else (the taskbar, a menu, Win+Shift+S for a screenshot, another app that stays on top), the widgets don't push themselves over it.
 
 **Where are my layouts and settings stored?**
 In `%APPDATA%\vibeRacingOverlays`. Updating to a new version keeps them; uninstalling asks whether you want to keep them.

@@ -18,7 +18,8 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 - After an install or update, the layout **Get started** is added again when you don't have a layout with that name (for example after updating from an earlier version, or after renaming it). It's added next to your layouts; your active layout stays active, and the status bar says it was added. A "Get started" layout you already have is never changed: it may hold your own changes. If you delete Get started on purpose, updates don't bring it back (New layout from preset still can).
 
 ### Fixed
-- Widgets no longer jump in front of everything every 2 seconds. They are only put back on top when another app's window covers them, and not while a Windows screen is in front: with **Win+Shift+S** the live widgets appeared on top of the frozen screenshot image, so they looked doubled. Overlapping widgets also no longer swap places now and then. While iRacing is in front, widgets stay on top as before.
+- Widgets no longer jump in front of everything every 2 seconds. They are only put back on top while **iRacing is the window in front**, and only when another window covers them. So they stay behind the taskbar, menus, tray flyouts and the **Win+Shift+S** screen (where the live widgets on top of the frozen screenshot looked doubled), and overlapping widgets no longer swap places now and then. Two copies of the app (for example a test version next to the normal one) no longer push each other away.
+- With iRacing in **full screen** the app no longer pushes widgets over it (they can't show there, and it can disturb the game). The status bar now says that iRacing runs in full screen and how to fix it.
 
 ## [1.3.0] - 2026-10-02
 
