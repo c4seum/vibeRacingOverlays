@@ -92,6 +92,10 @@ namespace vibeRacingOverlays.App
             // preset files added or changed in the library folder (also while the app runs)
             if (Core.PresetLibrary.Current != null) Core.PresetLibrary.Current.Changed += () => { overlays.ScheduleSave(); ShowSelected(); };
 
+            AddLayoutButton.Click += (s, e) => NewLayout(null);
+            RenameLayoutButton.Click += (s, e) => RenameLayout();
+            DuplicateLayoutButton.Click += (s, e) => DuplicateLayout();
+            DeleteLayoutButton.Click += (s, e) => DeleteLayout();
             AddButton.Click += (s, e) => ShowAddMenu();
             DuplicateButton.Click += (s, e) => Duplicate();
             RemoveButton.Click += (s, e) => Remove();
@@ -335,6 +339,7 @@ namespace vibeRacingOverlays.App
             m.Items.Add(Item("New empty layout...", () => NewLayout(null)));
             m.Items.Add(Sub("New layout from preset", SortedLayoutPresets().Select(p => Item(p.Name + (p.IsBuiltIn ? "  (built-in)" : ""), () => NewLayout(p)))));
             m.Items.Add(Item("Rename '" + l.Name + "'...", RenameLayout));
+            m.Items.Add(Item("Duplicate '" + l.Name + "'", DuplicateLayout));
             m.Items.Add(Item("Delete '" + l.Name + "'", DeleteLayout, settings.Layouts.Count > 1, settings.Layouts.Count > 1 ? null : "The last layout can't be deleted"));
             m.Items.Add(new Separator());
             m.Items.Add(Item("Save as preset...", SaveLayoutAsPreset));
@@ -394,6 +399,20 @@ namespace vibeRacingOverlays.App
             LayoutBox.ItemsSource = settings.Layouts;
             LayoutBox.SelectedItem = settings.ActiveLayout;
             loading = false;
+            DeleteLayoutButton.IsEnabled = settings.Layouts.Count > 1;
+            DeleteLayoutButton.ToolTip = settings.Layouts.Count > 1 ? "Delete this layout" : "The last layout can't be deleted";
+        }
+
+        /// <summary>A copy of the active layout with all its widgets (new ids, so both can be changed on their own); it becomes active.</summary>
+        void DuplicateLayout()
+        {
+            var src = settings.ActiveLayout;
+            var l = new LayoutConfig { Name = UniqueLayoutName(src.Name + " (copy)"), PresetId = src.PresetId, Widgets = AppSettings.CloneList(src.Widgets) };
+            foreach (var w in l.Widgets) w.Id = Defaults.NewId();
+            settings.Layouts.Insert(settings.Layouts.IndexOf(src) + 1, l);
+            overlays.SwitchLayout(l.Id);
+            overlays.SaveNow();
+            ShowActiveLayout();
         }
 
         /// <summary>Shows the widgets of the active layout (after switching, creating or deleting layouts).</summary>

@@ -47,6 +47,18 @@
             <DockPanel Margin="12,14,12,12">
                 <TextBlock DockPanel.Dock="Top" Text="LAYOUT" Foreground="{DynamicResource Muted}" FontSize="11" FontWeight="SemiBold" Margin="4,0,0,6"/>
                 <ComboBox x:Name="LayoutBox" DockPanel.Dock="Top" Margin="0,0,0,8" ToolTip="The layout you're using (next layout: Ctrl+Shift+L). Every change is kept automatically. New layouts, presets and files: the Layout menu"/>
+                <!-- the layout actions, like the widget actions below the widget list -->
+                <DockPanel DockPanel.Dock="Top">
+                    <Button x:Name="DeleteLayoutButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE74D;" ToolTip="Delete this layout" ToolTipService.ShowOnDisabled="True"/>
+                    <Button x:Name="DuplicateLayoutButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE8C8;" ToolTip="Duplicate this layout (with all its widgets)" Margin="4,0,0,0"/>
+                    <Button x:Name="RenameLayoutButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE70F;" ToolTip="Rename this layout" Margin="4,0"/>
+                    <Button x:Name="AddLayoutButton" ToolTip="Add a new, empty layout (from a preset: Layout menu)" Margin="0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFont}" FontSize="11" VerticalAlignment="Center" Margin="0,1,8,0"/>
+                            <TextBlock Text="Add layout" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </DockPanel>
                 <Border DockPanel.Dock="Top" Height="14"/>
                 <TextBlock DockPanel.Dock="Top" Text="WIDGETS" Foreground="{DynamicResource Muted}" FontSize="11" FontWeight="SemiBold" Margin="4,0,0,6"/>
                 <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
