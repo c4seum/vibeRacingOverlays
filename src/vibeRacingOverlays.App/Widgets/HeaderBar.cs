@@ -36,7 +36,7 @@ namespace vibeRacingOverlays.App.Widgets
                 case "incidents":
                     // your incidents / the next penalty / the DQ limit of the event (most officials: 17x, every 8x more, 25x)
                     d = new ColumnDef(key, "Incidents and limits", "", 0, on, Align.Left)
-                        .WithFormats("full", ("full", "5x / 17x / 25x"), ("dq", "5x / 25x"), ("count", "5x"));
+                        .WithFormats("full", ("full", "5x/17x/25x"), ("dq", "5x/25x"), ("count", "5x"));
                     break;
                 case "clock": d = new ColumnDef(key, "Clock", "", 0, on, Align.Left).WithFormats("real", ("real", "21:30 (real time)"), ("sim", "14:05 (sim time)")); break;
                 default: throw new ArgumentException("Unknown header item " + key);
@@ -114,8 +114,8 @@ namespace vibeRacingOverlays.App.Widgets
                     string inc = snap.Incidents + "x";
                     if (item.Format == "count") return inc;
                     int next = snap.NextIncidentPenalty, dq = snap.IncidentLimit;
-                    if (item.Format == "full" && next > 0 && (dq <= 0 || next < dq)) inc += " / " + next + "x";
-                    if (dq > 0) inc += " / " + dq + "x";
+                    if (item.Format == "full" && next > 0 && (dq <= 0 || next < dq)) inc += "/" + next + "x";
+                    if (dq > 0) inc += "/" + dq + "x";
                     return inc;
                 case "clock":
                     return item.Format == "sim" ? TimeSpan.FromSeconds(snap.TimeOfDay).ToString(@"hh\:mm") : DateTime.Now.ToString("HH:mm");
