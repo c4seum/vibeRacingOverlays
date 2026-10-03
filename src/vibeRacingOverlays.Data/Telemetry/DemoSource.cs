@@ -48,6 +48,7 @@ namespace vibeRacingOverlays.Data.Telemetry
         float fuel = 70f;
         int playerIdx;
         Car pitShadow;   // always in the pit lane right behind the player, so a car in the pits is always visible
+        Car lapping, lapped;   // race: always a car a lap up just ahead and a lap down just behind the player (relative colours)
         TelemetryState lastState;
 
         readonly bool multiClass;
@@ -158,6 +159,11 @@ namespace vibeRacingOverlays.Data.Telemetry
             session.Drivers[playerIdx].AbbrevName = "You (Demo)";
             pitShadow = cars[13];
             pitShadow.Garage = false;
+            if (!practice)
+            {
+                lapping = cars[2];
+                lapped = cars[cars.Count - 2];
+            }
 
             var grid = cars.OrderBy(c => -c.Progress).ToList();
             for (int i = 0; i < grid.Count; i++)
@@ -227,6 +233,9 @@ namespace vibeRacingOverlays.Data.Telemetry
             // in the pits (to see the "Cars in the pits" styles and the PIT badge without waiting for a stop)
             var me = cars[playerIdx];
             if (pitShadow != null && me.Progress > 0) { pitShadow.Progress = me.Progress - 0.004; pitShadow.PitUntil = -1; }
+            // and the relative always shows its "lapping you" and "lapped by you" colours (race only: practice has no laps down)
+            if (lapping != null && me.Progress > 0) { lapping.Progress = me.Progress + 1.003; lapping.PitUntil = -1; lapping.TowUntil = -1; }
+            if (lapped != null && me.Progress > 1.1) { lapped.Progress = me.Progress - 1.002; lapped.PitUntil = -1; lapped.TowUntil = -1; }
         }
 
         /// <summary>Practice: the session results iRacing keeps (ranked by fastest lap, only cars with a time).</summary>
