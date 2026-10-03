@@ -15,6 +15,13 @@ namespace vibeRacingOverlays.App.Rendering
         Oxanium,
         Orbitron,
         [Description("JetBrains Mono")] JetBrainsMono,
+        // second round, chosen 2026-10-04
+        Tomorrow,
+        [Description("Bai Jamjuree")] BaiJamjuree,
+        [Description("IBM Plex Sans Condensed")] IbmPlexSansCondensed,
+        [Description("Sofia Sans Semi Condensed")] SofiaSansSemiCondensed,
+        Lexend,
+        Jura,
     }
 
     /// <summary>
@@ -50,6 +57,13 @@ namespace vibeRacingOverlays.App.Rendering
             // JetBrains' semibold file names itself "JetBrains Mono SemiBold"; asking "JetBrains Mono" for SemiBold
             // gives a fake bold made from the regular file
             { "JetBrains Mono", new Entry { Family = "JetBrains Mono", Bundled = true, BoldFamily = "JetBrains Mono SemiBold", BoldWeight = FontWeights.Normal } },
+            { "Tomorrow", new Entry { Family = "Tomorrow", Bundled = true } },
+            { "Bai Jamjuree", new Entry { Family = "Bai Jamjuree", Bundled = true } },
+            // same as JetBrains Mono: the semibold file is its own family for WPF
+            { "IBM Plex Sans Condensed", new Entry { Family = "IBM Plex Sans Condensed", Bundled = true, BoldFamily = "IBM Plex Sans Condensed SemiBold", BoldWeight = FontWeights.Normal } },
+            { "Sofia Sans Semi Condensed", new Entry { Family = "Sofia Sans Semi Condensed", Bundled = true } },
+            { "Lexend", new Entry { Family = "Lexend", Bundled = true } },
+            { "Jura", new Entry { Family = "Jura", Bundled = true } },
         };
 
         static readonly Uri PackRoot = new Uri("pack://application:,,,/");

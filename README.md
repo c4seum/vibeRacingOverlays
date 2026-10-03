@@ -109,7 +109,7 @@ These also work while iRacing has focus.
 ### Per widget
 
 - **Display name:** give a widget its own name, for example "Standings endurance".
-- **Font** (under *Style*): Bahnschrift (the original look), Rajdhani, Titillium Web, Chakra Petch, Exo 2, Oxanium, Orbitron or JetBrains Mono. The fonts come with the app, so they look the same on every PC. Column widths follow the font; the rest of the style stays the same. **Text weight**: *Regular* gives lighter, more open letters (closest to how fonts look in a web browser), *Semibold* is the original, heavier look.
+- **Font** (under *Style*): Bahnschrift (the original look), Rajdhani, Titillium Web, Chakra Petch, Exo 2, Oxanium, Orbitron, JetBrains Mono, Tomorrow, Bai Jamjuree, IBM Plex Sans Condensed, Sofia Sans Semi Condensed, Lexend or Jura. The fonts come with the app, so they look the same on every PC. Column widths follow the font; the rest of the style stays the same. **Text weight**: *Regular* gives lighter, more open letters (closest to how fonts look in a web browser), *Semibold* is the original, heavier look.
 - **The Widget menu** (top bar, for the widget selected in the list): **Load preset** overwrites the widget's settings with a preset (name and position stay), **Save as preset** / **Save to preset** store its settings (if other widgets use that preset, the app asks whether to update them too), **Manage presets**, and **Export / Import preset** (files). Every widget type has a **Default** preset with the app's own settings: new widgets start from it, the reset buttons go back to it, and it always stays intact. All your presets are also files in `Documents\vibeRacingOverlays\presets`: put preset files there and they appear in the app. Delete presets in the app, not in the folder.
 - **Show:** always, only when you're in the car, or only in races.
 - **Refresh rate:** how often the widget may update. Lower means even less FPS impact.
@@ -136,7 +136,7 @@ Yes. In a replay iRacing provides less data (for example no fuel data), so some 
 Through Windows Settings, under *Apps* > *Installed apps* > *vibeRacingOverlays* > *Uninstall*.
 
 **Which licences do the fonts have?**
-Rajdhani, Titillium Web, Chakra Petch, Exo 2, Oxanium, Orbitron and JetBrains Mono are free fonts under the SIL Open Font License 1.1. The licence texts are in `FONT-LICENSES.txt` (next to the portable exe, and in `src/vibeRacingOverlays.App/Fonts`). Bahnschrift is part of Windows.
+All fonts except Bahnschrift (Rajdhani, Titillium Web, Chakra Petch, Exo 2, Oxanium, Orbitron, JetBrains Mono, Tomorrow, Bai Jamjuree, IBM Plex Sans Condensed, Sofia Sans Semi Condensed, Lexend and Jura) are free fonts under the SIL Open Font License 1.1. The licence texts are in `FONT-LICENSES.txt` (next to the portable exe, and in `src/vibeRacingOverlays.App/Fonts`). Bahnschrift is part of Windows.
 
 ---
 
