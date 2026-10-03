@@ -11,22 +11,23 @@ namespace vibeRacingOverlays.App.Widgets
     {
         public override string TypeName { get { return "Relative"; } }
 
-        [Setting("Cars ahead", Group = "Content", Min = 0, Max = 10, Order = 1)] public int CarsAhead { get; set; } = 3;
-        [Setting("Cars behind", Group = "Content", Min = 0, Max = 10, Order = 2)] public int CarsBehind { get; set; } = 3;
-        [Setting("Header bar", Group = "Content", Order = 4)] public bool ShowHeader { get; set; } = true;
+        [Setting("Cars ahead", Group = "Rows", Min = 0, Max = 10, Order = 1)] public int CarsAhead { get; set; } = 3;
+        [Setting("Cars behind", Group = "Rows", Min = 0, Max = 10, Order = 2)] public int CarsBehind { get; set; } = 3;
+        [Setting("Show header bar", Group = "Header bar", Order = 0)] public bool ShowHeader { get; set; } = true;
 
-        [Setting("Font size", Group = "Style", Min = 8, Max = 30, Step = 0.5, Order = 20)] public double FontSize { get; set; } = 14;
-        [Setting("Row height", Group = "Style", Min = 12, Max = 50, Order = 21)] public int RowHeight { get; set; } = 22;
-        [Setting("Column spacing", Group = "Style", Min = 0, Max = 30, Order = 21, Tooltip = "Space between the columns (px). Column widths follow the content and the font size.")]
+        [Setting("Font size", Group = "Text & size", Min = 8, Max = 30, Step = 0.5, Order = 3)] public double FontSize { get; set; } = 14;
+        [Setting("Row height", Group = "Text & size", Min = 12, Max = 50, Order = 4)] public int RowHeight { get; set; } = 22;
+        [Setting("Column spacing", Group = "Text & size", Min = 0, Max = 30, Order = 5, Tooltip = "Space between the columns (px). Column widths follow the content and the font size.")]
         public int ColumnSpacing { get; set; } = 8;
-        [Setting("Row background", Group = "Style", IsColor = true, Order = 22)] public string RowColor { get; set; } = "#FF1E1E1E";
-        [Setting("Alternate row", Group = "Style", IsColor = true, Order = 23)] public string RowAltColor { get; set; } = "#FF282828";
-        [Setting("Player row", Group = "Style", IsColor = true, Order = 24)] public string PlayerColor { get; set; } = "#FF8E2A2A";
-        [Setting("Car number (single class)", Group = "Style", IsColor = true, Order = 27)] public string NumberColor { get; set; } = "#FF4A4F57";
-        [Setting("Lapping you (ahead)", Group = "Style", IsColor = true, Order = 25)] public string AheadLapColor { get; set; } = "#FFFF8A5B";
-        [Setting("Lapped by you (behind)", Group = "Style", IsColor = true, Order = 26)] public string BehindLapColor { get; set; } = "#FF6FA8FF";
+        [Setting("Header background", Group = "Colors", IsColor = true, Order = 2)] public string HeaderColor { get; set; } = "#FF1C1C1C";
+        [Setting("Row background", Group = "Colors", IsColor = true, Order = 3)] public string RowColor { get; set; } = "#FF1E1E1E";
+        [Setting("Alternate row", Group = "Colors", IsColor = true, Order = 4)] public string RowAltColor { get; set; } = "#FF282828";
+        [Setting("Player row", Group = "Colors", IsColor = true, Order = 5)] public string PlayerColor { get; set; } = "#FF8E2A2A";
+        [Setting("Car number (single class)", Group = "Colors", IsColor = true, Order = 9)] public string NumberColor { get; set; } = "#FF4A4F57";
+        [Setting("Lapping you (ahead)", Group = "Colors", IsColor = true, Order = 7)] public string AheadLapColor { get; set; } = "#FFFF8A5B";
+        [Setting("Lapped by you (behind)", Group = "Colors", IsColor = true, Order = 8)] public string BehindLapColor { get; set; } = "#FF6FA8FF";
         // DimText keeps the look of existing widgets; the Default preset uses DimRow (DEVELOPMENT.md, "Changing a widget")
-        [Setting("Cars in the pits", Group = "Style", Order = 28, Tooltip = "Cars on pit road: grey text only, or the whole row faded (car number, license and class color too). The PIT badge stays bright.")]
+        [Setting("Cars in the pits", Group = "Colors", Order = 10, Tooltip = "Cars on pit road: grey text only, or the whole row faded (car number, license and class color too). The PIT badge stays bright.")]
         public PitRowStyle PitRows { get; set; } = PitRowStyle.DimText;
 
         public List<ColumnConfig> Columns { get; set; }
@@ -100,7 +101,7 @@ namespace vibeRacingOverlays.App.Widgets
             if (s.ShowHeader)
             {
                 // the header is part of the widget: no gap, one shape with rounded corners (RoundCorners below)
-                dl.Rect(0, 0, width, rh + 2, Bg(0xFF1C1C1C));
+                dl.Rect(0, 0, width, rh + 2, Bg(Argb.Parse(s.HeaderColor)));
                 HeaderBar.Draw(dl, snap, s.Header, "RELATIVE", width, rh + 2, fs, Pad, 16);
                 y += rh + 2;
             }

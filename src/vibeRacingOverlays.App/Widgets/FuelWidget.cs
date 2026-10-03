@@ -20,33 +20,37 @@ namespace vibeRacingOverlays.App.Widgets
         public override string TypeName { get { return "Fuel calculator"; } }
 
         // Classic keeps the look of existing widgets; the Default preset uses Table (DEVELOPMENT.md, "Changing a widget")
-        [Setting("Layout", Group = "Content", Order = 0, Tooltip = "Table: in the style of the Relative and Standings (header bar, big fuel level and laps, a row per estimate). Classic: the original free layout.")]
+        [Setting("Layout", Group = "Content", Order = 1, Tooltip = "Table: in the style of the Relative and Standings (header bar, big fuel level and laps, a row per estimate). Classic: the original free layout.")]
         public FuelLayout Layout { get; set; } = FuelLayout.Classic;
 
-        [Setting("Safety margin (L)", Group = "Content", Min = 0, Max = 5, Step = 0.1, Order = 1)] public double Margin { get; set; } = 0.5;
-        [Setting("Custom per lap (0 = average)", Group = "Content", Min = 0, Max = 20, Step = 0.01, Order = 2)] public double CustomPerLap { get; set; } = 0;
-        [Setting("Clock", Group = "Content", Order = 3)] public ClockSource Clock { get; set; } = ClockSource.RealTime;
-        [Setting("Show 'Last' row", Group = "Content", Order = 4)] public bool ShowLast { get; set; } = true;
-        [Setting("Show 'Custom' row", Group = "Content", Order = 5)] public bool ShowCustom { get; set; } = true;
-        [Setting("Show 'Last N laps' row", Group = "Content", Order = 6, Tooltip = "Average fuel use of the last N valid laps (no pit visits, refuels or cautions)")]
+        [Setting("Safety margin (L)", Group = "Content", Min = 0, Max = 5, Step = 0.1, Order = 4)] public double Margin { get; set; } = 0.5;
+        [Setting("Custom per lap (0 = average)", Group = "Estimates", Min = 0, Max = 20, Step = 0.01, Order = 6)] public double CustomPerLap { get; set; } = 0;
+        [Setting("Clock", Group = "Content", Order = 2)] public ClockSource Clock { get; set; } = ClockSource.RealTime;
+        [Setting("Show 'Last' row", Group = "Estimates", Order = 1)] public bool ShowLast { get; set; } = true;
+        [Setting("Show 'Custom' row", Group = "Estimates", Order = 5)] public bool ShowCustom { get; set; } = true;
+        [Setting("Show 'Last N laps' row", Group = "Estimates", Order = 2, Tooltip = "Average fuel use of the last N valid laps (no pit visits, refuels or cautions)")]
         public bool ShowLastN { get; set; } = false;
-        [Setting("Laps for 'Last N' average", Group = "Content", Min = 2, Max = 50, Order = 7)] public int LastNLaps { get; set; } = 5;
-        [Setting("Show 'Stint' row", Group = "Content", Order = 8, Tooltip = "Average fuel use of the valid laps since your last pit stop")]
+        [Setting("Laps for 'Last N' average", Group = "Estimates", Min = 2, Max = 50, Order = 3)] public int LastNLaps { get; set; } = 5;
+        [Setting("Show 'Stint' row", Group = "Estimates", Order = 4, Tooltip = "Average fuel use of the valid laps since your last pit stop")]
         public bool ShowStint { get; set; } = false;
-        [Setting("Stops", Group = "Content", Order = 9, Tooltip = "Pit stops needed to finish (0 = you make it without refuelling): the refuel amount divided by the tank capacity, rounded up. "
+        [Setting("Stops", Group = "Content", Order = 3, Tooltip = "Pit stops needed to finish (0 = you make it without refuelling): the refuel amount divided by the tank capacity, rounded up. "
             + "Column: a column of its own.")]
         public StopsDisplay Stops { get; set; } = StopsDisplay.Column;
 
         // "next to refuel" is gone: widgets that used it (it was the default) keep seeing their stops, in a column
         public void Normalize() { if (Stops == StopsDisplay.NextToRefuel) Stops = StopsDisplay.Column; }
 
-        [Setting("Value font size", Group = "Style", Min = 12, Max = 40, Order = 20)] public double FontSize { get; set; } = 24;
-        [Setting("Background", Group = "Style", IsColor = true, Order = 21)] public string BackgroundColor { get; set; } = "#FF2B2B2B";
-        [Setting("Average color", Group = "Style", IsColor = true, Order = 22)] public string AvgColor { get; set; } = "#FF8FA8F0";
-        [Setting("Last color", Group = "Style", IsColor = true, Order = 23)] public string LastColor { get; set; } = "#FFF0C36A";
-        [Setting("Custom color", Group = "Style", IsColor = true, Order = 24)] public string CustomColor { get; set; } = "#FF7ED67E";
-        [Setting("Last N color", Group = "Style", IsColor = true, Order = 25)] public string LastNColor { get; set; } = "#FFD99AF0";
-        [Setting("Stint color", Group = "Style", IsColor = true, Order = 26)] public string StintColor { get; set; } = "#FF6FD3D8";
+        [Setting("Value font size", Group = "Text & size", Min = 12, Max = 40, Order = 3, Tooltip = "Size of the big values; the rest of the widget scales with it (Table: 24 gives the rows the size of the Relative's 14).")] public double FontSize { get; set; } = 24;
+        [Setting("Background (classic)", Group = "Colors", IsColor = true, Order = 1, Tooltip = "Background of the Classic layout")] public string BackgroundColor { get; set; } = "#FF2B2B2B";
+        // Table layout: the same colours as the Relative (these defaults are what Table drew before they were settings)
+        [Setting("Header background", Group = "Colors", IsColor = true, Order = 2, Tooltip = "Table layout")] public string HeaderColor { get; set; } = "#FF1C1C1C";
+        [Setting("Row background", Group = "Colors", IsColor = true, Order = 3, Tooltip = "Table layout")] public string RowColor { get; set; } = "#FF1E1E1E";
+        [Setting("Alternate row", Group = "Colors", IsColor = true, Order = 4, Tooltip = "Table layout")] public string RowAltColor { get; set; } = "#FF282828";
+        [Setting("Average color", Group = "Colors", IsColor = true, Order = 10)] public string AvgColor { get; set; } = "#FF8FA8F0";
+        [Setting("Last color", Group = "Colors", IsColor = true, Order = 11)] public string LastColor { get; set; } = "#FFF0C36A";
+        [Setting("Custom color", Group = "Colors", IsColor = true, Order = 14)] public string CustomColor { get; set; } = "#FF7ED67E";
+        [Setting("Last N color", Group = "Colors", IsColor = true, Order = 12)] public string LastNColor { get; set; } = "#FFD99AF0";
+        [Setting("Stint color", Group = "Colors", IsColor = true, Order = 13)] public string StintColor { get; set; } = "#FF6FD3D8";
 
         public FuelSettings() { Title = "Fuel calculator"; RefreshHz = 4; Show = ShowWhen.InCar; }
     }
@@ -151,7 +155,7 @@ namespace vibeRacingOverlays.App.Widgets
 
         // ---------------------------------------------------------------- Table layout (like the Relative and Standings)
 
-        const uint Dim = 0xFF9A9A9A, HeaderColor = 0xFF1C1C1C, RowColor = 0xFF1E1E1E, RowAltColor = 0xFF282828;
+        const uint Dim = 0xFF9A9A9A;
 
         /// <summary>The estimates shown, in order: name, fuel per lap, colour.</summary>
         List<(string Name, double PerLap, uint Color)> Estimates(FuelInfo f)
@@ -201,7 +205,7 @@ namespace vibeRacingOverlays.App.Widgets
 
             // header bar: title, clock
             float y = 0;
-            dl.Rect(0, y, width, hh, Bg(HeaderColor));
+            dl.Rect(0, y, width, hh, Bg(Argb.Parse(s.HeaderColor)));
             dl.Text(pad, y, width / 2, hh, "FUEL", fs, White);
             string clock = s.Clock == ClockSource.RealTime ? DateTime.Now.ToString("HH:mm") : TimeSpan.FromSeconds(snap.TimeOfDay).ToString(@"hh\:mm");
             float clockW = M("88:88", fs);
@@ -212,7 +216,7 @@ namespace vibeRacingOverlays.App.Widgets
 
             // big band: fuel level, laps in race, pit indicator
             float lblH = heroLbl * 1.5f, valH = heroFs * 1.15f, heroH = lblH + valH + 6;
-            dl.Rect(0, y, width, heroH, Bg(RowColor));
+            dl.Rect(0, y, width, heroH, Bg(Argb.Parse(s.RowColor)));
             float hx = pad + 2;
             dl.Text(hx, y + 3, levelW, lblH, "FUEL LEVEL", heroLbl, Dim);
             dl.Text(hx, y + 3 + lblH, levelW, valH, level, heroFs, White);
@@ -223,7 +227,7 @@ namespace vibeRacingOverlays.App.Widgets
             y += heroH;
 
             // column titles
-            dl.Rect(0, y, width, rh, Bg(HeaderColor));
+            dl.Rect(0, y, width, rh, Bg(Argb.Parse(s.HeaderColor)));
             var titles = new List<string> { "", "", "L/LAP", "LAPS", "REFUEL" };
             if (stopsCol) titles.Add("STOPS");
             titles.Add("AT END");
@@ -234,7 +238,7 @@ namespace vibeRacingOverlays.App.Widgets
             for (int r = 0; r < rows.Count; r++)
             {
                 var (name, perLap, color) = rows[r];
-                dl.Rect(0, y, width, rh, Bg(r % 2 == 1 ? RowAltColor : RowColor));
+                dl.Rect(0, y, width, rh, Bg(Argb.Parse(r % 2 == 1 ? s.RowAltColor : s.RowColor)));
                 dl.Rect(x[0], y + 2, w[0], rh - 4, color);
                 dl.Text(x[1], y, w[1], rh, name, fs, color);
                 if (perLap > 0)

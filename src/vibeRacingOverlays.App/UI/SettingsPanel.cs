@@ -100,18 +100,21 @@ namespace vibeRacingOverlays.App.UI
                 var title = new TextBox { Text = ws.Title, FontWeight = FontWeights.SemiBold, ToolTip = "Only changes the name shown in the app; it stays a " + ws.TypeName + " widget." };
                 title.TextChanged += (s, e) => { ws.Title = string.IsNullOrWhiteSpace(title.Text) ? ws.TypeName : title.Text; titleChanged(); changed(); };
                 Ui.Row(widgetCard, "Display name", title, "Only changes the name shown in the app", null);
+                // when the widget shows and how often it redraws: with its name (user's choice, 2026-10-04)
+                AddRows(widgetCard, ws, defaults, SettingProps(ws).Where(x => x.A.Group == "Widget"));
 
-
+                // the cards of the session profile (Standings) and of the widget, in one order for every widget type:
+                // rows, columns, header bar, text & size, colors
+                var cards = new List<(int Rank, Action Draw)>();
                 var profiles = ws as ISessionProfiles;
                 if (profiles != null)
                 {
                     object profile = profiles.Profile(Kind), defProfile = ((ISessionProfiles)defaults).Profile(Kind);
                     SessionCard(profiles, profile);
-                    RenderProps(profile, defProfile);
-                    RenderLists(profile, defProfile);
+                    CollectCards(cards, profile, defProfile);
                 }
-                RenderProps(ws, defaults);
-                RenderLists(ws, defaults);
+                CollectCards(cards, ws, defaults);
+                foreach (var c in cards.OrderBy(c => c.Rank)) c.Draw();   // stable: profile cards before widget cards of the same rank
             }
 
             static string KindName(SessionKind k) { return k == SessionKind.Race ? "Race" : "Practice & qualifying"; }
@@ -159,46 +162,72 @@ namespace vibeRacingOverlays.App.UI
                 Ui.Row(card, "Copy", copy, null, null);
             }
 
-            /// <summary>One card per [Setting] group of <paramref name="t"/> (the widget or its session profile).</summary>
-            void RenderProps(object t, object d)
-            {
-                var props = t.GetType().GetProperties()
-                    .Select(p => new { P = p, A = p.GetCustomAttribute<SettingAttribute>() })
-                    .Where(x => x.A != null)
-                    .OrderBy(x => GroupRank(x.A.Group)).ThenBy(x => x.A.Order)
-                    .ToList();
+            sealed class SettingProp { public PropertyInfo P; public SettingAttribute A; }
 
-                foreach (var group in props.GroupBy(x => x.A.Group))
+            static List<SettingProp> SettingProps(object t)
+            {
+                return t.GetType().GetProperties()
+                    .Select(p => new SettingProp { P = p, A = p.GetCustomAttribute<SettingAttribute>() })
+                    .Where(x => x.A != null)
+                    .OrderBy(x => x.A.Order)
+                    .ToList();
+            }
+
+            void AddRows(Panel card, object t, object d, IEnumerable<SettingProp> props)
+            {
+                foreach (var x in props)
                 {
-                    var groupProps = group.Select(x => x.P).ToList();
-                    var card = Ui.Card(host, Header(group.Key, () => groupProps.All(p => IsDefault(p, t, d)), () => { foreach (var p in groupProps) ResetProp(p, t, d); }));
-                    foreach (var x in group)
-                    {
-                        var p = x.P;
-                        var reset = ResetButton(() => IsDefault(p, t, d), () => ResetProp(p, t, d), "Reset to default (" + Describe(p.GetValue(d)) + ")");
-                        Ui.Row(card, x.A.Label, CreateEditor(p, x.A, t), x.A.Tooltip, reset);
-                    }
+                    var p = x.P;
+                    var reset = ResetButton(() => IsDefault(p, t, d), () => ResetProp(p, t, d), "Reset to default (" + Describe(p.GetValue(d)) + ")");
+                    Ui.Row(card, x.A.Label, CreateEditor(p, x.A, t), x.A.Tooltip, reset);
                 }
             }
 
-            /// <summary>The column list and the header item list of <paramref name="t"/>, if it has them.</summary>
-            void RenderLists(object t, object d)
+            /// <summary>
+            /// The cards of <paramref name="t"/> (the widget or its session profile): one per [Setting] group, and the column
+            /// and header lists with the settings of their group ("Columns", "Header bar") on top of the list.
+            /// </summary>
+            void CollectCards(List<(int Rank, Action Draw)> cards, object t, object d)
             {
+                var props = SettingProps(t);
                 var table = t as ITableSettings;
+                var header = t as IHeaderItems;
+                foreach (var group in props.GroupBy(x => x.A.Group))
+                {
+                    string g = group.Key;
+                    if (g == "Widget" || (g == "Columns" && table != null) || (g == "Header bar" && header != null)) continue;
+                    var list = group.ToList();
+                    cards.Add((GroupRank(g), () =>
+                    {
+                        var card = Ui.Card(host, Header(g, () => list.All(x => IsDefault(x.P, t, d)), () => { foreach (var x in list) ResetProp(x.P, t, d); }));
+                        AddRows(card, t, d, list);
+                    }));
+                }
                 if (table != null)
                 {
+                    var own = props.Where(x => x.A.Group == "Columns").ToList();
                     var defTable = (ITableSettings)d;
-                    var card = Ui.Card(host, Header("Columns", () => ListIsDefault(table.Columns, defTable.Columns), () => table.Columns = CopyList(defTable.Columns)));
-                    AddHint(card, table.AvailableColumns.Any(c => c.Formats != null) ? "Order, on / off and format of the columns. Widths follow the content and font size; only the driver name has a width (px) of its own." : "Order and on / off of the columns. Widths follow the content and font size; only the driver name has a width (px) of its own.");
-                    card.Children.Add(new ListEditor(table.Columns, table.AvailableColumns, true, Changed, this));   // rows add the card inset themselves
+                    cards.Add((GroupRank("Columns"), () =>
+                    {
+                        var card = Ui.Card(host, Header("Columns", () => ListIsDefault(table.Columns, defTable.Columns) && own.All(x => IsDefault(x.P, t, d)),
+                            () => { table.Columns = CopyList(defTable.Columns); foreach (var x in own) ResetProp(x.P, t, d); }));
+                        AddRows(card, t, d, own);
+                        AddHint(card, table.AvailableColumns.Any(c => c.Formats != null) ? "Order, on / off and format of the columns. Widths follow the content and font size; only the driver name has a width (px) of its own." : "Order and on / off of the columns. Widths follow the content and font size; only the driver name has a width (px) of its own.");
+                        card.Children.Add(new ListEditor(table.Columns, table.AvailableColumns, true, Changed, this));   // rows add the card inset themselves
+                    }));
                 }
-                var header = t as IHeaderItems;
                 if (header != null)
                 {
+                    var own = props.Where(x => x.A.Group == "Header bar").ToList();
                     var defHeader = (IHeaderItems)d;
-                    var card = Ui.Card(host, Header("Header items", () => ListIsDefault(header.Header, defHeader.Header), () => header.Header = CopyList(defHeader.Header)));
-                    AddHint(card, "Order, on / off and format of the header bar. Items after \"Push what follows to the right\" are right-aligned.");
-                    card.Children.Add(new ListEditor(header.Header, header.AvailableHeader, false, Changed, this));
+                    cards.Add((GroupRank("Header bar"), () =>
+                    {
+                        var card = Ui.Card(host, Header("Header bar", () => ListIsDefault(header.Header, defHeader.Header) && own.All(x => IsDefault(x.P, t, d)),
+                            () => { header.Header = CopyList(defHeader.Header); foreach (var x in own) ResetProp(x.P, t, d); }));
+                        AddRows(card, t, d, own);
+                        AddHint(card, "Order, on / off and format of the header bar items. Items after \"Push what follows to the right\" are right-aligned.");
+                        card.Children.Add(new ListEditor(header.Header, header.AvailableHeader, false, Changed, this));
+                    }));
                 }
             }
 
@@ -531,7 +560,20 @@ namespace vibeRacingOverlays.App.UI
 
         static int GroupRank(string g)
         {
-            switch (g) { case "Content": return 0; case "Single class": return 1; case "Multiclass": return 2; case "Layout": return 3; case "Style": return 4; default: return 5; }
+            // the same order for every widget type (user's wish, 2026-10-04): what it shows, its lists, then how it looks
+            switch (g)
+            {
+                case "Content": return 0;
+                case "Rows": return 1;
+                case "Rows (single class)": return 2;
+                case "Rows (multiclass)": return 3;
+                case "Estimates": return 4;
+                case "Columns": return 10;
+                case "Header bar": return 11;
+                case "Text & size": return 20;
+                case "Colors": return 21;
+                default: return 30;
+            }
         }
     }
 }

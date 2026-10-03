@@ -56,25 +56,25 @@ namespace vibeRacingOverlays.App.Core
         /// <summary>Preset last loaded into / saved from this widget (null = none).</summary>
         public string PresetId { get; set; }
 
-        [Setting("Scale", Group = "Layout", Min = 0.5, Max = 3, Step = 0.05, Order = -10)]
+        [Setting("Scale", Group = "Text & size", Min = 0.5, Max = 3, Step = 0.05, Order = 90, Tooltip = "Makes the whole widget bigger or smaller (also with the mouse wheel in edit layout mode).")]
         public double Scale { get; set; } = 1.0;
 
-        [Setting("Background opacity", Group = "Layout", Min = 0, Max = 1, Step = 0.05, Order = -9)]
+        [Setting("Background opacity", Group = "Colors", Min = 0, Max = 1, Step = 0.05, Order = 0)]
         public double BackgroundOpacity { get; set; } = 0.9;
 
-        [Setting("Refresh rate (Hz)", Group = "Layout", Min = 1, Max = 60, Step = 1, Order = -8,
+        [Setting("Refresh rate (Hz)", Group = "Widget", Min = 1, Max = 60, Step = 1, Order = 2,
             Tooltip = "How often the widget may redraw. Lower = less FPS impact.")]
         public int RefreshHz { get; set; } = 10;
 
-        [Setting("Show", Group = "Layout", Order = -7)]
+        [Setting("Show", Group = "Widget", Order = 1)]
         public ShowWhen Show { get; set; } = ShowWhen.Always;
 
         // Bahnschrift: the look every widget had before fonts could be chosen (also in the Default presets)
-        [Setting("Font", Group = "Style", Order = 18, Tooltip = "The widget's font. Bahnschrift is the original look; the others come with the app (open-license fonts).")]
+        [Setting("Font", Group = "Text & size", Order = 1, Tooltip = "The widget's font. Bahnschrift is the original look; the others come with the app (open-license fonts).")]
         public Rendering.WidgetFont Font { get; set; } = Rendering.WidgetFont.Bahnschrift;
 
         // Semibold: the weight every widget had before this setting
-        [Setting("Text weight", Group = "Style", Order = 19, Tooltip = "Regular: lighter, more open letters. Semibold: the original, heavier look.")]
+        [Setting("Text weight", Group = "Text & size", Order = 2, Tooltip = "Regular: lighter, more open letters. Semibold: the original, heavier look.")]
         public Rendering.TextWeight TextWeight { get; set; } = Rendering.TextWeight.SemiBold;
 
         [JsonIgnore] public abstract string TypeName { get; }
