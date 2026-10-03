@@ -261,6 +261,8 @@ namespace vibeRacingOverlays.App.Core
         [JsonPropertyName("Widgets"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public List<WidgetSettings> LegacyWidgets { get; set; }
 
+        /// <summary>The options the settings file is written with (undo compares and restores with them too).</summary>
+        public static JsonSerializerOptions JsonOptions { get { return Json; } }
         static readonly JsonSerializerOptions Json = new JsonSerializerOptions
         {
             WriteIndented = true,

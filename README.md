@@ -84,10 +84,10 @@ What changed in each version is in the [changelog](CHANGELOG.md). Older versions
 ### Undo
 
 Made a change you didn't want? **Undo** (↶ at the top, or `Ctrl+Z`) puts it back, **Redo** (↷, `Ctrl+Y`) does it again. The tooltip says what will be undone, for example *Undo: move 'Relative'*.
-- Everything about the widgets of a layout can be undone: settings, columns, reset buttons, position, dragging and resizing, locking, show/hide, adding, duplicating and removing widgets, and loading a preset into a widget.
-- **Deleting a layout** too: `Ctrl+Z` right after brings it back, with its widgets.
-- A slider you drag or a number you type counts as one step. The last 50 steps per layout are kept while the app is open.
-- Not part of undo: saving, renaming or deleting presets, importing files and the theme (these ask first or don't change your layout).
+- **Every change can be undone:** widget settings, columns, reset buttons, position, dragging and resizing, locking, show/hide, adding, duplicating and removing widgets; new, renamed and deleted layouts; saving, renaming, deleting and importing widget presets and layout presets (their files in `Documents\vibeRacingOverlays\presets` follow); and the app settings such as theme, data source and snapping.
+- Undoing a change in another layout first switches to that layout, so you see what comes back.
+- A slider you drag or a number you type counts as one step. The last 50 steps are kept while the app is open.
+- Not part of undo: switching layouts and showing/hiding all widgets (that's where you are, not what you changed), and files you export.
 - While you're typing in a text box, `Ctrl+Z` first undoes the typing in that box.
 
 ### Hotkeys
