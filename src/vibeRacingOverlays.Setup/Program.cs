@@ -142,6 +142,14 @@ namespace vibeRacingOverlays.Setup
                 return false;
             foreach (var p in running)
             {
+                // since 1.4 closing the window only hides the app to the tray: ask it to exit (it saves first);
+                // older versions don't have this event and close with their window
+                try
+                {
+                    using (var ev = System.Threading.EventWaitHandle.OpenExisting(@"Local\vibeRacingOverlays-exit-" + p.Id)) ev.Set();
+                    if (p.WaitForExit(6000)) continue;
+                }
+                catch { }
                 try { if (!p.CloseMainWindow() || !p.WaitForExit(4000)) { p.Kill(); p.WaitForExit(3000); } }
                 catch { }
             }

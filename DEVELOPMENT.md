@@ -16,12 +16,19 @@ Technical notes for working on vibeRacingOverlays. For what the app does, see [R
 
 Local builds are **DEV builds**. They are called "vibeRacingOverlays DEV" (orange title) and use their own settings folder, `%APPDATA%\vibeRacingOverlays-dev`. On first start that folder gets a copy of the release settings, so testing never changes the layouts of an installed release. Release builds pass `-p:ReleaseBuild=true`.
 
+A running DEV app (started from `.\publish`) is asked to exit before the build (it saves first) and started again afterwards. Closing the app's window only hides it to the tray; tools that must stop the app set the named event `Local\vibeRacingOverlays-exit-<process id>` (`App.ExitEventName`, used by the installer and `publish-dev.ps1`). One app runs per settings folder (a second start shows the running app's window), so DEV, release and `--settings-dir` test instances can run side by side.
+
 Command-line options for design and debugging:
 
 - `vibeRacingOverlays.exe --snapshot <folder>`: renders every widget to PNG with the demo race and demo practice (single class and multiclass; practice files end in `_pq`), plus your saved widgets and a narrow-columns test.
 - `--snapshot <folder> --live`: the same, with live iRacing data.
 - `--settings-dir <folder>`: use another settings folder (with its own `backups` and `errors.log`). UI tests always run like this on a copy of the settings, so they never touch the real `settings.json`.
 - `--dump <file>`: writes raw iRacing values (per car) to a text file.
+- `--update-feed <url or file>`: test the update notice with a fake release (JSON like GitHub's `{"tag_name": "v9.9.9", "html_url": "https://..."}`). Also turns the check on in DEV builds, which normally skip it (their version number isn't a release number).
+
+## Update notice
+
+`Core/UpdateCheck.cs` asks `https://api.github.com/repos/c4seum/vibeRacingOverlays/releases/latest` (no account, no data sent) at start and every 12 hours, and compares its `tag_name` with the running version. **GitHub only answers this for a public repository**: while the repository is private the check silently finds nothing. To use it with a private source repository, publish the releases in a separate public repository and change `UpdateCheck.Repository`.
 
 ## Commits and the changelog
 

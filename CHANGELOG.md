@@ -8,6 +8,12 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ### Added
 - Relative: new style setting **Cars in the pits**. *Dim row* fades the whole row of a car on pit road (car number, license and class color too, the PIT badge stays bright), so it's clear it isn't racing you. *Dim text* is the old look (only the text in grey). Your existing Relative widgets keep *Dim text*; the Default preset (and so new widgets and fresh installs) uses *Dim row*.
+- **System tray icon.** Closing the window keeps the app and your widgets running in the tray; click the icon to open it again. Its menu has show widgets, edit layout, switch layout and Exit. *Keep running when the window is closed* (in that menu) turns this off.
+- **Update notice.** The app looks for a new version at start and twice a day. A newer version shows a button at the top of the window and one Windows notification; both open the download page. Nothing is downloaded by itself. *Check for updates* in the tray menu turns it off.
+
+### Changed
+- Starting the app while it's already running (for example from the tray) opens the running app instead of starting a second one.
+- The installer asks a running app to exit properly (it saves first) instead of only closing its window, which now hides the app to the tray.
 
 ### Changed
 - After an install or update, the layout **Get started** is added again when you don't have a layout with that name (for example after updating from an earlier version, or after renaming it). It's added next to your layouts; your active layout stays active, and the status bar says it was added. A "Get started" layout you already have is never changed: it may hold your own changes. If you delete Get started on purpose, updates don't bring it back (New layout from preset still can).

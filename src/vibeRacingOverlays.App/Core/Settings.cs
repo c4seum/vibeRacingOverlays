@@ -136,6 +136,14 @@ namespace vibeRacingOverlays.App.Core
         public string HotkeyEditMode { get; set; } = "Ctrl+Shift+E";
         public string HotkeyToggleOverlays { get; set; } = "Ctrl+Shift+H";
         public string HotkeyNextLayout { get; set; } = "Ctrl+Shift+L";
+        /// <summary>The window's close button hides the app to the system tray (widgets keep running); Exit is in the tray menu.</summary>
+        public bool CloseToTray { get; set; } = true;
+        /// <summary>The tray tip "still running" was shown once, so it doesn't come back every time.</summary>
+        public bool TrayTipShown { get; set; }
+        /// <summary>Look for a newer release on GitHub at start and twice a day.</summary>
+        public bool CheckForUpdates { get; set; } = true;
+        /// <summary>The newest version a tray notification was shown for (each new version is announced once).</summary>
+        public string UpdateNotified { get; set; }
 
         public List<LayoutConfig> Layouts { get; set; } = new List<LayoutConfig>();
         public List<WidgetPreset> Presets { get; set; } = new List<WidgetPreset>();

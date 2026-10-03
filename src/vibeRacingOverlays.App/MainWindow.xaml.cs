@@ -123,6 +123,18 @@ namespace vibeRacingOverlays.App
             statusTimer.Start();
         }
 
+        UpdateInfo update;
+
+        /// <summary>A newer release exists: a button in the top bar opens its download page.</summary>
+        public void ShowUpdate(UpdateInfo info)
+        {
+            if (update == null) UpdateButton.Click += (s, e) => UpdateCheck.Open(update);
+            update = info;
+            UpdateButton.Content = "Version " + info.Version + " available";
+            UpdateButton.ToolTip = "Open the download page of version " + info.Version + " (you're using " + BuildInfo.Version + ")";
+            UpdateButton.Visibility = Visibility.Visible;
+        }
+
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);

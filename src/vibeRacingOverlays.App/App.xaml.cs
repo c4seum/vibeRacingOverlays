@@ -40,6 +40,8 @@ namespace vibeRacingOverlays.App
                 return;
             }
 
+            if (!FirstInstance()) { Shutdown(); return; }
+
             var settings = AppSettings.Load();
             settings.StartupBackup();   // before anything can be saved
             var settingsSaved = File.Exists(AppSettings.SettingsFile) ? File.GetLastWriteTimeUtc(AppSettings.SettingsFile) : DateTime.MinValue;
@@ -51,10 +53,30 @@ namespace vibeRacingOverlays.App
             telemetry.Start();
             overlays = new OverlayManager(settings, telemetry);
 
+            // --update-feed <url or file>: test the update notice (also in DEV builds)
+            int feedIdx = Array.IndexOf(e.Args, "--update-feed");
+            if (feedIdx >= 0 && feedIdx + 1 < e.Args.Length) UpdateCheck.FeedOverride = e.Args[feedIdx + 1];
+
             var main = new MainWindow(settings, telemetry, overlays);
             MainWindow = main;
+            tray = new UI.TrayIcon(settings, overlays, ShowMain, ExitApp);
+            // closing the window keeps the app (and its widgets) running in the tray, unless the user turned that off
+            main.Closing += (s, ev) =>
+            {
+                if (exiting || !settings.CloseToTray) return;
+                ev.Cancel = true;
+                main.Hide();
+                if (!settings.TrayTipShown)
+                {
+                    tray.Notify(BuildInfo.AppName + " is still running", "Your widgets stay on screen. Open the app or exit it from this icon in the system tray.");
+                    settings.TrayTipShown = true;
+                    overlays.ScheduleSave();
+                }
+            };
+            SessionEnding += (s, ev) => exiting = true;
             main.Show();
             overlays.Start();
+            StartUpdateChecks(settings, main);
 
             if (AppSettings.LoadProblem != null)
                 MessageBox.Show(main, "Your settings file could not be read, so the app started with the default layout.\n\n"
@@ -67,9 +89,86 @@ namespace vibeRacingOverlays.App
         }
 
         PresetLibrary library;
+        UI.TrayIcon tray;
+        bool exiting;
+
+        Mutex instance;
+        EventWaitHandle showRequest, exitRequest;
+
+        /// <summary>Same name in the installer (Program.CloseRunningApp).</summary>
+        public static string ExitEventName(int processId) { return @"Local\vibeRacingOverlays-exit-" + processId; }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")] static extern bool AllowSetForegroundWindow(int processId);
+
+        /// <summary>
+        /// One app per settings folder: with the app running in the tray, starting it again (Start menu) would
+        /// otherwise give two apps writing the same settings. The second start asks the first to show its window.
+        /// DEV, release and --settings-dir test folders each count separately.
+        /// </summary>
+        bool FirstInstance()
+        {
+            byte[] hash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(AppSettings.Folder.TrimEnd('\\').ToLowerInvariant()));
+            string name = @"Local\vibeRacingOverlays-" + Convert.ToHexString(hash, 0, 8);
+            bool first;
+            instance = new Mutex(true, name, out first);
+            if (!first)
+            {
+                try
+                {
+                    AllowSetForegroundWindow(-1);   // ASFW_ANY: the running app may bring its window to the front
+                    using (var ev = EventWaitHandle.OpenExisting(name + "-show")) ev.Set();
+                }
+                catch (Exception) { }
+                return false;
+            }
+            showRequest = new EventWaitHandle(false, EventResetMode.AutoReset, name + "-show");
+            ThreadPool.RegisterWaitForSingleObject(showRequest, (s, timedOut) => Dispatcher.BeginInvoke(new Action(ShowMain)), null, -1, false);
+            // the installer (and the DEV build script) ask the app to exit through this event: closing the window only hides it to the tray
+            exitRequest = new EventWaitHandle(false, EventResetMode.AutoReset, ExitEventName(Environment.ProcessId));
+            ThreadPool.RegisterWaitForSingleObject(exitRequest, (s, timedOut) => Dispatcher.BeginInvoke(new Action(ExitApp)), null, -1, true);
+            return true;
+        }
+
+        void ShowMain()
+        {
+            var w = MainWindow;
+            if (w == null) return;
+            w.Show();
+            if (w.WindowState == WindowState.Minimized) w.WindowState = WindowState.Normal;
+            w.Activate();
+        }
+
+        void ExitApp()
+        {
+            exiting = true;
+            Shutdown();
+        }
+
+        /// <summary>Looks for a newer release shortly after the start and then twice a day; each new version is announced once in the tray.</summary>
+        void StartUpdateChecks(AppSettings settings, MainWindow main)
+        {
+            var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+            timer.Tick += async (s, e) =>
+            {
+                timer.Interval = TimeSpan.FromHours(12);
+                if (!UpdateCheck.Enabled(settings)) return;
+                var info = await UpdateCheck.FindAsync();
+                if (info == null || exiting) return;
+                tray.Update = info;
+                main.ShowUpdate(info);
+                if (settings.UpdateNotified != info.Version)
+                {
+                    tray.Notify("Version " + info.Version + " is available", "Click to open the download page.", () => UpdateCheck.Open(info));
+                    settings.UpdateNotified = info.Version;
+                    overlays.ScheduleSave();
+                }
+            };
+            timer.Start();
+        }
 
         protected override void OnExit(ExitEventArgs e)
         {
+            if (tray != null) tray.Dispose();
             if (library != null) library.Dispose();
             if (overlays != null) overlays.Dispose();
             if (telemetry != null) telemetry.Dispose();

@@ -27,6 +27,8 @@
                 <ToggleButton x:Name="OverlaysToggle" DockPanel.Dock="Right" Content="Toggle overlay" ToolTip="Show or hide all widgets (Ctrl+Shift+H)" Margin="0"/>
                 <ToggleButton x:Name="EditToggle" DockPanel.Dock="Right" Content="Edit layout" ToolTip="Move, resize and lock widgets on screen (Ctrl+Shift+E)"/>
                 <Border DockPanel.Dock="Right" Width="1" Height="20" Background="{DynamicResource Divider}" Margin="8,0,14,0" VerticalAlignment="Center"/>
+                <!-- shown when the update check found a newer release -->
+                <Button x:Name="UpdateButton" DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Visibility="Collapsed" Margin="0,0,14,0" VerticalAlignment="Center"/>
                 <ComboBox x:Name="ThemeBox" DockPanel.Dock="Right" Width="96" VerticalAlignment="Center" ToolTip="App theme"/>
                 <TextBlock DockPanel.Dock="Right" Text="Theme" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
             </DockPanel>

@@ -91,6 +91,12 @@ These also work while iRacing has focus.
 | `Ctrl+Shift+H` | Show/hide all widgets |
 | `Ctrl+Shift+L` | Switch to the next layout |
 
+### System tray and updates
+
+- **Closing the window keeps the app running** in the system tray (bottom right of the taskbar, maybe under the ^ arrow), so your widgets stay on screen. Click the icon to open the app again. Starting the app again from the Start menu also opens the window that's already running.
+- **Right-click the tray icon** for: show widgets on/off, edit layout, switch layout, and **Exit** to really close the app. Turn off *Keep running when the window is closed* there if you want the close button to exit the app.
+- **New versions:** the app looks for a new version when it starts and twice a day. When there is one, a button *Version x.y.z available* appears at the top of the window and Windows shows a notification once; both open the download page. Nothing is downloaded or installed by itself. Turn it off with *Check for updates* in the tray menu.
+
 ### Per widget
 
 - **Display name:** give a widget its own name, for example "Standings endurance".
