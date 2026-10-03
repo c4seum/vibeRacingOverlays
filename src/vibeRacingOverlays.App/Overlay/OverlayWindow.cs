@@ -234,7 +234,7 @@ namespace vibeRacingOverlays.App.Overlay
             // anchored widgets grow away from their anchor (e.g. bottom right grows up and to the left)
             if (resized && !dragging) ApplyPosition();
 
-            renderer.SetDpi(VisualTreeHelper.GetDpi(this).PixelsPerDip);
+            renderer.SetDpi(VisualTreeHelper.GetDpi(this).PixelsPerDip, Widget.Settings.Scale);
             using (var dc = surface.Visual.RenderOpen())
             {
                 dc.PushTransform(new ScaleTransform(scale, scale));

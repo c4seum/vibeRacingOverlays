@@ -33,7 +33,20 @@ namespace vibeRacingOverlays.App.Rendering
             texts.Clear();
         }
 
-        public void SetDpi(double ppd) { tabular.SetDpi(ppd); texts.Clear(); }
+        double ppd = 1, scale = 1;
+
+        public void SetDpi(double ppd) { SetDpi(ppd, scale); }
+
+        /// <summary>Screen DPI and the scale the list is drawn at: together they say where the whole pixels are.</summary>
+        public void SetDpi(double ppd, double scale)
+        {
+            if (ppd == this.ppd && scale == this.scale) return;
+            this.ppd = ppd;
+            this.scale = scale;
+            tabular.SetDpi(ppd);
+            tabular.SetGrid(ppd * scale);
+            texts.Clear();
+        }
 
         SolidColorBrush Brush(uint c)
         {
@@ -100,6 +113,9 @@ namespace vibeRacingOverlays.App.Rendering
                     double w = op.W > 0 ? Math.Min(t.Width, op.W) : t.Width;
                     double x = op.Align == Align.Right ? op.X + op.W - w : op.Align == Align.Center ? op.X + (op.W - w) / 2 : op.X;
                     double y = op.Y + (op.H - t.Height) / 2;
+                    // on whole pixels: text between pixels is smeared over two, so strokes look thinner and uneven
+                    x = tabular.Snap(x);
+                    y = tabular.Snap(y);
                     if (t.Trimmed != null) { dc.DrawText(t.Trimmed, new Point(x, y)); continue; }
                     dc.PushTransform(new TranslateTransform(x, y));
                     dc.DrawDrawing(t.Drawing);

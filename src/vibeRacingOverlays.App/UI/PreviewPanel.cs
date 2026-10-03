@@ -199,6 +199,7 @@ namespace vibeRacingOverlays.App.UI
             info.Text = layout + "   " + (int)Math.Round(scale * 100) + "%";
             surface.Width = w; surface.Height = h;
             surface.HorizontalAlignment = HorizontalAlignment.Center;
+            renderer.SetDpi(VisualTreeHelper.GetDpi(this).PixelsPerDip, scale);
             using (var dc = surface.Visual.RenderOpen()) PreviewRenderer.Draw(dc, renderer, dl, scale, Pad, w, h);
         }
     }

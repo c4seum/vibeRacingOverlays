@@ -22,6 +22,10 @@ namespace vibeRacingOverlays.App.Rendering
         readonly Dictionary<(string, double, bool, uint), Layout> cache = new Dictionary<(string, double, bool, uint), Layout>();
         Typeface regular, bold;
         double pixelsPerDip = 1;
+        double grid = 1;   // device pixels per unit (DPI x widget scale): glyphs are placed on whole pixels
+
+        /// <summary>Off only to compare (--font-samples): text at the exact, fractional positions.</summary>
+        public static bool PixelSnap = true;
         string font;
 
         public TabularText(string font) { SetFont(font); }
@@ -38,6 +42,11 @@ namespace vibeRacingOverlays.App.Rendering
         }
 
         public void SetDpi(double ppd) { if (ppd != pixelsPerDip) { pixelsPerDip = ppd; cache.Clear(); } }
+
+        /// <summary>Device pixels per layout unit, so digits land on whole pixels (a glyph between pixels looks thinner or blurred).</summary>
+        public void SetGrid(double g) { if (g > 0 && g != grid) { grid = g; cache.Clear(); } }
+
+        public double Snap(double v) { return PixelSnap ? Math.Round(v * grid) / grid : v; }
 
         public Typeface Face(bool isBold) { return isBold ? bold : regular; }
 
@@ -90,7 +99,7 @@ namespace vibeRacingOverlays.App.Rendering
                     if (char.IsDigit(text[i]))
                     {
                         var ft = Plain(text[i].ToString(), size, isBold, brush);
-                        dc.DrawText(ft, new Point(x + (dw - ft.WidthIncludingTrailingWhitespace) / 2, 0));   // centred in its cell
+                        dc.DrawText(ft, new Point(Snap(x + (dw - ft.WidthIncludingTrailingWhitespace) / 2), 0));   // centred in its cell, on a whole pixel
                         h = Math.Max(h, ft.Height);
                         x += dw; i++;
                         continue;
@@ -98,7 +107,7 @@ namespace vibeRacingOverlays.App.Rendering
                     int start = i;
                     while (i < text.Length && !char.IsDigit(text[i])) i++;
                     var run = Plain(text.Substring(start, i - start), size, isBold, brush);
-                    dc.DrawText(run, new Point(x, 0));
+                    dc.DrawText(run, new Point(Snap(x), 0));
                     h = Math.Max(h, run.Height);
                     x += run.WidthIncludingTrailingWhitespace;
                 }

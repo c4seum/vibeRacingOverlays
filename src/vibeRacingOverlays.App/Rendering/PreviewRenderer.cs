@@ -25,6 +25,9 @@ namespace vibeRacingOverlays.App.Rendering
         {
             int w = (int)Math.Ceiling(dl.Width + pad * 2), h = (int)Math.Ceiling(dl.Height + pad * 2);
             var visual = new DrawingVisual();
+            // the same text settings as the overlay windows, so snapshots look like the real widgets
+            TextOptions.SetTextFormattingMode(visual, TextFormattingMode.Display);
+            TextOptions.SetTextRenderingMode(visual, TextRenderingMode.Grayscale);
             using (var dc = visual.RenderOpen()) Draw(dc, new WpfRenderer(font), dl, 1, pad, w, h);
             var bmp = new RenderTargetBitmap(Math.Max(1, w), Math.Max(1, h), 96, 96, PixelFormats.Pbgra32);
             bmp.Render(visual);

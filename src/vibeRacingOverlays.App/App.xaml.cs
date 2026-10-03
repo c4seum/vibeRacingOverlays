@@ -35,6 +35,14 @@ namespace vibeRacingOverlays.App
                 return;
             }
 
+            int fontIdx = Array.IndexOf(e.Args, "--font-samples");
+            if (fontIdx >= 0)
+            {
+                RenderFontSamples(fontIdx + 1 < e.Args.Length ? e.Args[fontIdx + 1] : "fonts.png", e.Args.Skip(fontIdx + 2).Where(a => !a.StartsWith("--")).ToArray());
+                Shutdown();
+                return;
+            }
+
             int dumpIdx = Array.IndexOf(e.Args, "--dump");
             if (dumpIdx >= 0)
             {
@@ -256,6 +264,65 @@ namespace vibeRacingOverlays.App
                 c.Enabled = true;
             }
             return s;
+        }
+
+        /// <summary>
+        /// --font-samples &lt;png&gt; [font...]: one sheet with the Relative and Fuel calculator (Default presets, demo
+        /// multiclass race) in each font, to compare fonts in the widgets' own look. "!Font" = without pixel snapping.
+        /// </summary>
+        static void RenderFontSamples(string file, string[] fonts)
+        {
+            if (fonts.Length == 0) fonts = new[] { "Bahnschrift" };
+            var defaults = AppSettings.Load();
+            using (var svc = new TelemetryService { Mode = SourceMode.Demo, DemoMultiClass = true })
+            {
+                svc.Start();
+                var until = DateTime.UtcNow.AddSeconds(30);
+                while (svc.Latest.SessionTime < 600 && DateTime.UtcNow < until) Thread.Sleep(50);
+                Thread.Sleep(200);
+                var snap = svc.Latest;
+                var rows = new List<(string Label, BitmapSource A, BitmapSource B)>();
+                foreach (var spec in fonts)
+                {
+                    bool unsnapped = spec.StartsWith("!");
+                    string font = spec.TrimStart('!');
+                    TabularText.PixelSnap = !unsnapped;
+                    TextMeasure.SetFont(font);
+                    BitmapSource Render(Type t)
+                    {
+                        var dl = new DisplayList();
+                        Widget.Create(defaults.DefaultsFor(t)).Draw(dl, snap);
+                        return PreviewRenderer.ToBitmap(dl, font, 8);
+                    }
+                    rows.Add((font + (unsnapped ? "  (before: not on whole pixels)" : ""), Render(typeof(RelativeSettings)), Render(typeof(FuelSettings))));
+                }
+                TabularText.PixelSnap = true;
+
+                const int labelH = 26, gap = 12;
+                int width = (int)rows.Max(r => r.A.PixelWidth + gap + r.B.PixelWidth) + 2 * gap;
+                int height = rows.Sum(r => labelH + Math.Max(r.A.PixelHeight, r.B.PixelHeight) + gap) + gap;
+                var visual = new DrawingVisual();
+                TextOptions.SetTextFormattingMode(visual, TextFormattingMode.Display);
+                using (var dc = visual.RenderOpen())
+                {
+                    dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x20, 0x22, 0x26)), null, new Rect(0, 0, width, height));
+                    double y = gap;
+                    var face = new Typeface("Segoe UI");
+                    foreach (var r in rows)
+                    {
+                        dc.DrawText(new FormattedText(r.Label, System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, face, 15, Brushes.White, 1), new Point(gap, y + 3));
+                        y += labelH;
+                        dc.DrawImage(r.A, new Rect(gap, y, r.A.PixelWidth, r.A.PixelHeight));
+                        dc.DrawImage(r.B, new Rect(gap + r.A.PixelWidth + gap, y, r.B.PixelWidth, r.B.PixelHeight));
+                        y += Math.Max(r.A.PixelHeight, r.B.PixelHeight) + gap;
+                    }
+                }
+                var bmp = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+                bmp.Render(visual);
+                var enc = new PngBitmapEncoder();
+                enc.Frames.Add(BitmapFrame.Create(bmp));
+                using (var fs = File.Create(file)) enc.Save(fs);
+            }
         }
 
         static void RenderSnapshots(string dir, bool live)
