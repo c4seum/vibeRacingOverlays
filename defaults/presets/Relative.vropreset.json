@@ -18,6 +18,7 @@
     "NumberColor": "#FF4A4F57",
     "AheadLapColor": "#FFFF8A5B",
     "BehindLapColor": "#FF6FA8FF",
+    "PitRows": "DimRow",
     "Columns": [
       {
         "Key": "classbar",

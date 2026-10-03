@@ -80,6 +80,14 @@ namespace vibeRacingOverlays.App.Rendering
             return (a << 24) | (c & 0xFFFFFF);
         }
 
+        /// <summary>Color a, moved a fraction t (0..1) towards color b (alpha of a is kept).</summary>
+        public static uint Mix(uint a, uint b, double t)
+        {
+            t = Math.Max(0, Math.Min(1, t));
+            uint Ch(int shift) { double x = (a >> shift) & 0xFF, y = (b >> shift) & 0xFF; return (uint)Math.Round(x + (y - x) * t) << shift; }
+            return (a & 0xFF000000) | Ch(16) | Ch(8) | Ch(0);
+        }
+
         /// <summary>Black or white, whichever reads better on the given background.</summary>
         public static uint ContrastText(uint bg)
         {

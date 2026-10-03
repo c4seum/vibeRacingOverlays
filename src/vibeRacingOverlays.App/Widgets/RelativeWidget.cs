@@ -4,6 +4,9 @@ using vibeRacingOverlays.Data.Model;
 
 namespace vibeRacingOverlays.App.Widgets
 {
+    /// <summary>How cars on pit road are shown: grey text only (the look before 1.4), or the whole row faded.</summary>
+    public enum PitRowStyle { DimText, DimRow }
+
     public sealed class RelativeSettings : WidgetSettings, ITableSettings, IHeaderItems, INormalizable
     {
         public override string TypeName { get { return "Relative"; } }
@@ -22,6 +25,9 @@ namespace vibeRacingOverlays.App.Widgets
         [Setting("Car number (single class)", Group = "Style", IsColor = true, Order = 27)] public string NumberColor { get; set; } = "#FF4A4F57";
         [Setting("Lapping you (ahead)", Group = "Style", IsColor = true, Order = 25)] public string AheadLapColor { get; set; } = "#FFFF8A5B";
         [Setting("Lapped by you (behind)", Group = "Style", IsColor = true, Order = 26)] public string BehindLapColor { get; set; } = "#FF6FA8FF";
+        // DimText keeps the look of existing widgets; the Default preset uses DimRow (DEVELOPMENT.md, "Changing a widget")
+        [Setting("Cars in the pits", Group = "Style", Order = 28, Tooltip = "Cars on pit road: grey text only, or the whole row faded (car number, license and class color too). The PIT badge stays bright.")]
+        public PitRowStyle PitRows { get; set; } = PitRowStyle.DimText;
 
         public List<ColumnConfig> Columns { get; set; }
         /// <summary>Header bar items (on/off, order, format).</summary>
@@ -77,7 +83,8 @@ namespace vibeRacingOverlays.App.Widgets
         const float Pad = 6;
         const uint Dim = 0xFF9A9A9A, Orange = 0xFFF08C1E, Red = 0xFFE8433A;
         readonly RelativeSettings s;
-        bool multi, race;
+        bool multi, race, fade;
+        uint fadeTo;
 
         public RelativeWidget(RelativeSettings s) : base(s) { this.s = s; }
 
@@ -106,6 +113,7 @@ namespace vibeRacingOverlays.App.Widgets
 
             uint rowBg = Bg(Argb.Parse(s.RowColor)), altBg = Bg(Argb.Parse(s.RowAltColor)), playerBg = Bg(Argb.Parse(s.PlayerColor));
             uint aheadLap = Argb.Parse(s.AheadLapColor), behindLap = Argb.Parse(s.BehindLapColor);
+            fadeTo = Argb.Parse(s.RowColor);
 
             for (int r = 0; r < rows.Count; r++)
             {
@@ -114,7 +122,9 @@ namespace vibeRacingOverlays.App.Widgets
                 if (c != null)
                 {
                     uint text = c.IsPlayer || c.RelativeLap == 0 ? 0xFFFFFFFF : c.RelativeLap > 0 ? aheadLap : behindLap;
-                    if (c.OnPitRoad && !c.IsPlayer) text = Dim;
+                    bool inPits = c.OnPitRoad && !c.IsPlayer;
+                    if (inPits) text = Dim;
+                    fade = inPits && s.PitRows == PitRowStyle.DimRow;
                     float x = Pad;
                     foreach (var col in cols)
                     {
@@ -131,14 +141,16 @@ namespace vibeRacingOverlays.App.Widgets
         void DrawCell(DisplayList dl, ColumnConfig col, CarInfo c, float x, float y, float w, float h, float fs, uint text)
         {
             float small = fs * 0.85f;
+            // a car in the pits isn't racing you: its colored parts fade towards the row, like its text
+            uint F(uint color, double t = 0.6) { return fade ? Argb.Mix(color, fadeTo, t) : color; }
             switch (col.Key)
             {
-                case "classbar": dl.Rect(x, y + 2, w, h - 4, Argb.FromRgb(c.ClassColor)); break;
+                case "classbar": dl.Rect(x, y + 2, w, h - 4, F(Argb.FromRgb(c.ClassColor))); break;
                 case "pos": if (c.ClassPos > 0) dl.Text(x, y, w, h, c.ClassPos.ToString(), fs, text, Align.Right); break;
                 case "num":
                     // multiclass: badge in the iRacing class color; single class: neutral
                     uint cc = multi ? Argb.FromRgb(c.ClassColor) : Argb.Parse(s.NumberColor);
-                    dl.Badge(x, y + 3, w, h - 6, c.Number, small, cc, Argb.ContrastText(cc), 3);
+                    dl.Badge(x, y + 3, w, h - 6, c.Number, small, F(cc), F(Argb.ContrastText(cc), 0.45), 3);
                     break;
                 case "name":
                     string name = StandingsDefs.DriverName(c, col.Format);
@@ -146,7 +158,7 @@ namespace vibeRacingOverlays.App.Widgets
                     break;
                 case "lic":
                     uint lc = Fmt.LicenseColor(c.LicLetter);
-                    dl.Badge(x, y + 3, w, h - 6, Fmt.License(c.LicLetter, c.LicSR, col.Format), small, lc, Argb.ContrastText(lc), 4);
+                    dl.Badge(x, y + 3, w, h - 6, Fmt.License(c.LicLetter, c.LicSR, col.Format), small, F(lc), F(Argb.ContrastText(lc), 0.45), 4);
                     break;
                 case "ir": dl.Text(x, y, w, h, Fmt.Rating(c.IRating, col.Format), fs, text, Align.Right); break;
                 case "pit":

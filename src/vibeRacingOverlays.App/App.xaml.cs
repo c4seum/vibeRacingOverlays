@@ -189,6 +189,23 @@ namespace vibeRacingOverlays.App
                         string name = string.Concat(job.Item2.Select(ch => char.IsLetterOrDigit(ch) ? char.ToLowerInvariant(ch) : '_')) + run.Suffix + ".png";
                         using (var fs = File.Create(Path.Combine(dir, name))) enc.Save(fs);
                     }
+
+                    // relative with the cars right ahead and behind in the pits, in both "Cars in the pits" styles (demo only: changes the snapshot)
+                    if (!live && snap.Player != null)
+                    {
+                        int pi = snap.Relative.IndexOf(snap.Player);
+                        foreach (int k in new[] { pi - 1, pi + 1 })
+                            if (k >= 0 && k < snap.Relative.Count) snap.Relative[k].OnPitRoad = true;
+                        foreach (var style in new[] { PitRowStyle.DimText, PitRowStyle.DimRow })
+                        {
+                            var rs = new RelativeSettings { PitRows = style };
+                            var dl = new DisplayList();
+                            Widget.Create(rs).Draw(dl, snap);
+                            var enc = new PngBitmapEncoder();
+                            enc.Frames.Add(BitmapFrame.Create(PreviewRenderer.ToBitmap(dl, font, 10)));
+                            using (var fs = File.Create(Path.Combine(dir, "relative_pits_" + style.ToString().ToLowerInvariant() + run.Suffix + ".png"))) enc.Save(fs);
+                        }
+                    }
                 }
             }
         }

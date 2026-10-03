@@ -41,6 +41,7 @@ The cars directly around you on track, with the time difference to each.
 - Colors show whether a car is a lap ahead of you or a lap down.
 - In multiclass sessions, class color bars and car numbers in the class color.
 - Pit and tow status per car.
+- Cars in the pits are shown in grey, so you see at a glance who isn't racing you. With **Cars in the pits: Dim row** the whole row fades (car number, license and class color too); only the PIT badge stays bright.
 - Optional columns: last lap and laps in the current stint.
 
 ### Fuel calculator
