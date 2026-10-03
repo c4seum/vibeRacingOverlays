@@ -179,12 +179,26 @@ namespace vibeRacingOverlays.App.Widgets
             else if (race && (c.OnPitRoad || c.InPitStall)) dl.Badge(x, by, w, bh, "PIT", small, Orange, 0xFF000000);
             else if (c.InPitStall) dl.Text(x, y, w, h, "PIT", small, Dim, Align.Center);
             else if (c.OnPitRoad) dl.Badge(x, by, w, bh, "PIT", small, Orange, 0xFF000000);
-            else if ((f & Data.Telemetry.SessionFlags.Black) != 0) FlagBadge(dl, x, by, w, bh, "⚑", small, 0xFF000000, 0xFFFFFFFF);
-            else if ((f & Data.Telemetry.SessionFlags.Furled) != 0) dl.Badge(x, by, w, bh, "⚑", small, Yellow, 0xFF000000);
-            else if ((f & Data.Telemetry.SessionFlags.Repair) != 0) FlagBadge(dl, x, by, w, bh, "●", small, 0xFF000000, Orange);
+            // the flags as drawn icons (the ⚑ and ● characters were small and depended on the font)
+            else if ((f & Data.Telemetry.SessionFlags.Black) != 0) IconBadge(dl, x, by, w, bh, Icons.Flag, 0xFF000000, 0xFFFFFFFF, true);
+            else if ((f & Data.Telemetry.SessionFlags.Furled) != 0) IconBadge(dl, x, by, w, bh, Icons.Flag, Yellow, 0xFF000000, false);
+            else if ((f & Data.Telemetry.SessionFlags.Repair) != 0) IconBadge(dl, x, by, w, bh, Icons.Ball, 0xFF000000, Orange, true);
             else if (c.OutLap) dl.Text(x, y, w, h, "OUT", small, Orange, Align.Center);
             else if (stops && race && c.PitCount > 0) dl.Text(x, y, w, h, "P" + c.PitCount, small, Dim, Align.Center);
         }
+        /// <summary>A badge with an icon as big as the badge allows; black badges get a thin white edge (visible on dark rows).</summary>
+        static void IconBadge(DisplayList dl, float x, float y, float w, float h, string icon, uint bg, uint fg, bool edge)
+        {
+            if (edge)
+            {
+                dl.Rect(x, y, w, h, 0xFFFFFFFF, 3);
+                dl.Rect(x + 1, y + 1, w - 2, h - 2, bg, 2);
+            }
+            else dl.Rect(x, y, w, h, bg, 3);
+            float s = Math.Max(4, h - 3);
+            dl.Icon(x + (w - s) / 2, y + (h - s) / 2, s, icon, fg);
+        }
+
         /// <summary>Black flag badge with a thin white edge, so it stays visible on dark rows.</summary>
         static void FlagBadge(DisplayList dl, float x, float y, float w, float h, string text, float size, uint bg, uint fg)
         {

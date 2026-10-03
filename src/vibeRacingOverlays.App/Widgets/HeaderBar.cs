@@ -45,8 +45,8 @@ namespace vibeRacingOverlays.App.Widgets
             return d;
         }
 
-        // track and air temperature are told apart by an icon instead of a word ("Air 21.3°C" was the old look)
-        static string IconOf(string key) { return key == "tracktemp" ? Icons.Track : key == "airtemp" ? Icons.Air : null; }
+        // track and air temperature and humidity are told apart by an icon instead of a word ("Air 21.3°C", "55% RH" was the old look)
+        static string IconOf(string key) { return key == "tracktemp" ? Icons.Track : key == "airtemp" ? Icons.Air : key == "humidity" ? Icons.Humidity : null; }
         const uint IconColor = 0xFFB4B4B4;
 
         /// <summary>
@@ -116,7 +116,7 @@ namespace vibeRacingOverlays.App.Widgets
                     return Fmt.Clock(snap.TimeRemain) + (snap.TimeTotal > 0 ? "/" + Fmt.Short(snap.TimeTotal) : "");
                 case "tracktemp": return Fmt.Temperature(snap.TrackTemp, item.Format);
                 case "airtemp": return Fmt.Temperature(snap.AirTemp, item.Format);
-                case "humidity": return snap.Humidity > 0 ? Fmt.Humidity(snap.Humidity, item.Format) + " RH" : "";
+                case "humidity": return snap.Humidity > 0 ? Fmt.Humidity(snap.Humidity, item.Format) : "";   // the drop icon says what it is
                 case "sof":
                     int sof = cs != null ? cs.Sof : Data.Engine.RatingMath.StrengthOfField(snap.Cars.Select(c => c.IRating));
                     return sof > 0 ? "SOF " + Fmt.Rating(sof, item.Format) : "";

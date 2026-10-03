@@ -17,6 +17,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 - Buttons below the layout list: **Add layout**, rename, **duplicate** (new: a copy of the layout with all its widgets, also in the Layout menu) and delete.
 
 ### Changed
+- Pit column flags drawn as icons instead of text characters, bigger and clearer: the black flag and the furled black flag as a flag on a pole, the meatball (repair) as a big orange disc. Header bar: humidity has a drop icon instead of "RH".
 - Widget settings have the same order for every widget: the widget card (name, Show, Refresh rate), then what it shows (Rows; Fuel: Content and Estimates), Columns (with *Column titles row*), Header bar (with *Show header bar*), Text & size, Colors. The old "Layout" and "Style" cards are gone. Relative: new setting *Header background*. Fuel calculator (Table): *Header background*, *Row background* and *Alternate row* like the Relative.
 - Fuel calculator: the *Stops* option "Next to refuel" is gone; stops are shown in a column (or off). Widgets that used "Next to refuel" (it was the default) show their stops in a column now.
 - Header bar (Relative and Standings): track and air temperature have an icon instead of a word: a road for the track, wind for the air (*Air 21.3°C* is now the wind icon with *21.3°C*).

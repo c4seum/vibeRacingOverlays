@@ -374,6 +374,10 @@ namespace vibeRacingOverlays.App
                         int pi = snap.Relative.IndexOf(snap.Player);
                         foreach (int k in new[] { pi - 1, pi + 1 })
                             if (k >= 0 && k < snap.Relative.Count) snap.Relative[k].OnPitRoad = true;
+                        // and the three flags of the pit column: meatball, black flag, furled black flag
+                        var flags = new[] { (pi - 2, Data.Telemetry.SessionFlags.Repair), (pi + 2, Data.Telemetry.SessionFlags.Black), (pi + 3, Data.Telemetry.SessionFlags.Furled) };
+                        foreach (var fl in flags)
+                            if (fl.Item1 >= 0 && fl.Item1 < snap.Relative.Count) { snap.Relative[fl.Item1].DriverFlags = fl.Item2; snap.Relative[fl.Item1].OnPitRoad = false; snap.Relative[fl.Item1].InPitStall = false; }
                         foreach (var style in new[] { PitRowStyle.DimText, PitRowStyle.DimRow })
                         {
                             var rs = new RelativeSettings { PitRows = style };

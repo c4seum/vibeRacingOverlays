@@ -106,8 +106,12 @@ namespace vibeRacingOverlays.App.Rendering
             {
                 Geometry g;
                 if (iconShapes.TryGetValue(path, out g)) return g;
-                var pen = new Pen(Brushes.Black, Icons.Stroke) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round };
-                g = Geometry.Parse(path).GetWidenedPathGeometry(pen);
+                if (path.StartsWith(Icons.FillPrefix)) g = Geometry.Parse(path.Substring(Icons.FillPrefix.Length)).Clone();   // a filled shape
+                else
+                {
+                    var pen = new Pen(Brushes.Black, Icons.Stroke) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round };
+                    g = Geometry.Parse(path).GetWidenedPathGeometry(pen);
+                }
                 g.Freeze();
                 iconShapes[path] = g;
                 return g;
