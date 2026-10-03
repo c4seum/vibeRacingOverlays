@@ -80,6 +80,9 @@ namespace vibeRacingOverlays.Data.Engine
         }
 
         /// <summary>Call for every telemetry frame (cheap: only tracking).</summary>
+        /// <summary>Forgets the measured fuel use per lap (a hotkey: the averages start again from the next lap).</summary>
+        public void ResetFuel() { fuel.Reset(); }
+
         public void Track(TelemetryState s)
         {
             if (session == null) return;

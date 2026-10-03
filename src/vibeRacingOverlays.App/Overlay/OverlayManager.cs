@@ -10,7 +10,6 @@ namespace vibeRacingOverlays.App.Overlay
     /// <summary>Owns the overlay windows: creation, visibility, edit mode, hotkeys and saving.</summary>
     public sealed class OverlayManager : IDisposable
     {
-        const int HotkeyEdit = 1, HotkeyToggle = 2, HotkeyNextLayout = 3;
 
         readonly AppSettings settings;
         readonly TelemetryService telemetry;
@@ -143,6 +142,13 @@ namespace vibeRacingOverlays.App.Overlay
             SwitchLayout(settings.Layouts[(i + 1) % settings.Layouts.Count].Id);
         }
 
+        public void PreviousLayout()
+        {
+            if (settings.Layouts.Count < 2) return;
+            int i = settings.Layouts.IndexOf(settings.ActiveLayout);
+            SwitchLayout(settings.Layouts[(i - 1 + settings.Layouts.Count) % settings.Layouts.Count].Id);
+        }
+
         public void ScheduleSave() { saveAt = DateTime.UtcNow.AddSeconds(1); }
 
         public void SaveNow()
@@ -193,32 +199,134 @@ namespace vibeRacingOverlays.App.Overlay
             if (now >= saveAt) SaveNow();
         }
 
-        // ---------------------------------------------------------------- global hotkeys
+        // ---------------------------------------------------------------- hotkeys and wheel buttons
+
+        readonly ControllerInput controller = new ControllerInput();
+        readonly List<int> registered = new List<int>();
+        const int HotkeyIdBase = 100;   // id = base + index in Hotkeys.Catalog
+
+        /// <summary>Actions whose keys couldn't be registered (another program uses that combination).</summary>
+        public readonly HashSet<HotkeyAction> KeysInUse = new HashSet<HotkeyAction>();
+
+        /// <summary>A widget's settings were changed by a hotkey (shown / hidden, fuel custom per lap): the editor refreshes.</summary>
+        public event Action<WidgetSettings> WidgetEdited;
+
+        /// <summary>The Hotkeys window waits for a wheel button: it gets the next press instead of an action (UI thread).</summary>
+        public Action<string, string, int> CaptureButton
+        {
+            get { return captureButton; }
+            set { captureButton = value; UpdateController(); }
+        }
+        Action<string, string, int> captureButton;
 
         public void RegisterHotkeys(IntPtr hwnd)
         {
             hotkeySource = HwndSource.FromHwnd(hwnd);
             hotkeySource.AddHook(HotkeyHook);
-            Register(hwnd, HotkeyEdit, settings.HotkeyEditMode);
-            Register(hwnd, HotkeyToggle, settings.HotkeyToggleOverlays);
-            Register(hwnd, HotkeyNextLayout, settings.HotkeyNextLayout);
+            controller.Pressed += (device, name, button) =>
+            {
+                // on the input thread: only hand the press to the UI thread
+                hotkeySource.Dispatcher.BeginInvoke(new Action(() => ButtonPressed(device, name, button)));
+            };
+            ReloadHotkeys();
         }
 
-        static void Register(IntPtr hwnd, int id, string combo)
+        bool paused;
+
+        /// <summary>No actions while the Hotkeys window is open (pressing a combination to set it must not also run it).</summary>
+        public void SuspendHotkeys()
         {
-            uint mods, vk;
-            if (!ParseHotkey(combo, out mods, out vk)) return;
-            Native.RegisterHotKey(hwnd, id, mods | Native.MOD_NOREPEAT, vk);
+            paused = true;
+            if (hotkeySource == null) return;
+            foreach (int id in registered) Native.UnregisterHotKey(hotkeySource.Handle, id);
+            registered.Clear();
+        }
+
+        /// <summary>(Re)registers every keyboard binding and starts the wheel input only when a button is bound.</summary>
+        public void ReloadHotkeys()
+        {
+            if (hotkeySource == null) return;
+            paused = false;
+            foreach (int id in registered) Native.UnregisterHotKey(hotkeySource.Handle, id);
+            registered.Clear();
+            KeysInUse.Clear();
+            for (int i = 0; i < Hotkeys.Catalog.Length; i++)
+            {
+                var b = Hotkeys.Of(settings, Hotkeys.Catalog[i].Action);
+                uint mods, vk;
+                if (b == null || !ParseHotkey(b.Keys, out mods, out vk)) continue;
+                if (Native.RegisterHotKey(hotkeySource.Handle, HotkeyIdBase + i, mods | Native.MOD_NOREPEAT, vk)) registered.Add(HotkeyIdBase + i);
+                else KeysInUse.Add(b.Action);
+            }
+            UpdateController();
+        }
+
+        // the wheel input runs only while a button is bound or the Hotkeys window waits for one (no cost otherwise)
+        void UpdateController()
+        {
+            bool need = captureButton != null || (settings.Hotkeys != null && settings.Hotkeys.Any(b => b.Device != null));
+            if (need) controller.Start(); else controller.Stop();
+        }
+
+        void ButtonPressed(string device, string name, int button)
+        {
+            if (captureButton != null) { captureButton(device, name, button); return; }
+            if (paused) return;
+            foreach (var b in settings.Hotkeys.Where(x => x.Device == device && x.Button == button)) Do(b.Action);
         }
 
         IntPtr HotkeyHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             if (msg != Native.WM_HOTKEY) return IntPtr.Zero;
-            int id = wParam.ToInt32();
-            if (id == HotkeyEdit) { SetEditMode(!EditMode); handled = true; }
-            else if (id == HotkeyToggle) { ToggleOverlays(); handled = true; }
-            else if (id == HotkeyNextLayout) { NextLayout(); handled = true; }
+            int i = wParam.ToInt32() - HotkeyIdBase;
+            if (i >= 0 && i < Hotkeys.Catalog.Length) { Do(Hotkeys.Catalog[i].Action); handled = true; }
             return IntPtr.Zero;
+        }
+
+        /// <summary>Runs an action (from a hotkey or a wheel button).</summary>
+        public void Do(HotkeyAction a)
+        {
+            switch (a)
+            {
+                case HotkeyAction.EditLayout: SetEditMode(!EditMode); break;
+                case HotkeyAction.ToggleWidgets: ToggleOverlays(); break;
+                case HotkeyAction.NextLayout: NextLayout(); break;
+                case HotkeyAction.PreviousLayout: PreviousLayout(); break;
+                case HotkeyAction.Layout1: case HotkeyAction.Layout2: case HotkeyAction.Layout3: case HotkeyAction.Layout4:
+                    int li = a - HotkeyAction.Layout1;
+                    if (li < settings.Layouts.Count) SwitchLayout(settings.Layouts[li].Id);
+                    break;
+                case HotkeyAction.Widget1: case HotkeyAction.Widget2: case HotkeyAction.Widget3: case HotkeyAction.Widget4: case HotkeyAction.Widget5:
+                    // widget n of the active layout, in the order of the widget list
+                    int wi = a - HotkeyAction.Widget1;
+                    if (wi < settings.Widgets.Count)
+                    {
+                        var ws = settings.Widgets[wi];
+                        ws.Enabled = !ws.Enabled;
+                        Invalidate(ws);
+                        if (WidgetEdited != null) WidgetEdited(ws);
+                    }
+                    break;
+                case HotkeyAction.FuelCustomUp: StepFuelCustom(0.05); break;
+                case HotkeyAction.FuelCustomDown: StepFuelCustom(-0.05); break;
+                case HotkeyAction.FuelResetAverage: telemetry.ResetFuelAverages(); break;
+            }
+        }
+
+        /// <summary>
+        /// Custom fuel per lap of the fuel calculators of the active layout, in steps (a fuel saving target during the
+        /// race). From "0 = average" it starts at the current average.
+        /// </summary>
+        void StepFuelCustom(double step)
+        {
+            double avg = telemetry.Latest != null && telemetry.Latest.Fuel != null ? telemetry.Latest.Fuel.AvgPerLap : 0;
+            foreach (var fs in settings.Widgets.OfType<FuelSettings>())
+            {
+                double from = fs.CustomPerLap > 0 ? fs.CustomPerLap : Math.Round(avg, 2);
+                fs.CustomPerLap = Math.Max(0.01, Math.Round(from + step, 2));
+                Invalidate(fs);
+                if (WidgetEdited != null) WidgetEdited(fs);
+            }
         }
 
         public static bool ParseHotkey(string combo, out uint mods, out uint vk)
@@ -247,12 +355,8 @@ namespace vibeRacingOverlays.App.Overlay
         public void Dispose()
         {
             timer.Stop();
-            if (hotkeySource != null)
-            {
-                Native.UnregisterHotKey(hotkeySource.Handle, HotkeyEdit);
-                Native.UnregisterHotKey(hotkeySource.Handle, HotkeyToggle);
-                Native.UnregisterHotKey(hotkeySource.Handle, HotkeyNextLayout);
-            }
+            if (hotkeySource != null) foreach (int id in registered) Native.UnregisterHotKey(hotkeySource.Handle, id);
+            controller.Dispose();
             foreach (var w in windows.Values) w.Close();
             windows.Clear();
             SaveNow();

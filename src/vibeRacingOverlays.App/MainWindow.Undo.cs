@@ -181,6 +181,8 @@ namespace vibeRacingOverlays.App
             if (settings.Font != oldFont) overlays.SetFont(settings.Font);
 
             overlays.Reload(changedWidgets);   // also creates / removes windows for the (new) active layout
+            overlays.ReloadHotkeys();   // the bindings may have changed too
+            UpdateFooter();
             overlays.SaveNow();
 
             // the editor follows: select the widget that changed (or keep the selection)

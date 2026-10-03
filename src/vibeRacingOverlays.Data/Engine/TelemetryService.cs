@@ -32,6 +32,11 @@ namespace vibeRacingOverlays.Data.Engine
         public string ActiveSource { get { var a = active; return a != null ? a.Name : "-"; } }
         public bool IRacingConnected { get { return iracing.Connected; } }
 
+        volatile bool resetFuel;
+
+        /// <summary>Starts the fuel averages again (after a caution or an incident skewed them); done on the telemetry thread.</summary>
+        public void ResetFuelAverages() { resetFuel = true; }
+
         public void Start()
         {
             if (running) return;
@@ -75,6 +80,7 @@ namespace vibeRacingOverlays.Data.Engine
                     {
                         if (session != null) engine.SetSession(session);
                         engine.LivePositions = LivePositions;
+                        if (resetFuel) { resetFuel = false; engine.ResetFuel(); }
                         engine.Track(state);
                         lastState = state;
                     }

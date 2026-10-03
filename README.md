@@ -91,15 +91,22 @@ Made a change you didn't want? **Undo** (↶ at the top, or `Ctrl+Z`) puts it ba
 - Not part of undo: switching layouts and showing/hiding all widgets (that's where you are, not what you changed), and files you export.
 - While you're typing in a text box, `Ctrl+Z` first undoes the typing in that box.
 
-### Hotkeys
+### Hotkeys and wheel buttons
 
-These also work while iRacing has focus.
+These also work while iRacing has focus. Set them in the **Hotkeys** menu: click a field and press a key combination, or a button on your **wheel or button box** (no extra program needed). ✕ removes a key or button.
 
-| Keys | Action |
+| Default keys | Action |
 |---|---|
 | `Ctrl+Shift+E` | Edit layout on/off (move, resize and lock widgets) |
 | `Ctrl+Shift+H` | Show/hide all widgets |
 | `Ctrl+Shift+L` | Switch to the next layout |
+| (choose) | Previous layout |
+| (choose) | Layout 1 to 4 (by their place in the layout list) |
+| (choose) | Show/hide widget 1 to 5 (by their place in the widget list of the active layout) |
+| (choose) | Fuel calculator: custom fuel per lap +0.05 L / -0.05 L (a fuel saving target; from "average" it starts at your current average) |
+| (choose) | Fuel calculator: start the averages again (after a caution or an incident) |
+
+The new actions have no keys yet: hotkeys work in all of Windows, so pick combinations your other programs don't use (for example `Ctrl+Shift+F5`). A combination that another program already uses turns red in the Hotkeys window.
 
 ### System tray and updates
 

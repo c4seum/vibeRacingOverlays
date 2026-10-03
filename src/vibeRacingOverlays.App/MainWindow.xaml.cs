@@ -101,9 +101,10 @@ namespace vibeRacingOverlays.App
             RemoveButton.Click += (s, e) => Remove();
             WidgetList.SelectionChanged += (s, e) => ShowSelected();
 
-            FooterText.Text = "Edit layout (" + settings.HotkeyEditMode + "): drag widgets to move them (Shift: no snapping), mouse wheel to resize.   "
-                + "Show/hide all: " + settings.HotkeyToggleOverlays + ".   Next layout: " + settings.HotkeyNextLayout
-                + ".   Every change is kept automatically; presets and files: the Layout and Widget menus. Settings: " + AppSettings.Folder;
+            UpdateFooter();
+            HotkeysMenu.Click += (s, e) => { HotkeysWindow.Show(this, settings, overlays); UpdateFooter(); };
+            // a hotkey or wheel button showed / hid a widget or changed the fuel target: the list and settings follow
+            overlays.WidgetEdited += ws => { RefreshList(); if (ws == Selected) ShowSelected(); };
 
             SettingsPanel.App = settings;
             previewData = new PreviewData(telemetry);
@@ -138,6 +139,14 @@ namespace vibeRacingOverlays.App
             UpdateButton.Content = "Version " + info.Version + " available";
             UpdateButton.ToolTip = "Open the download page of version " + info.Version + " (you're using " + BuildInfo.Version + ")";
             UpdateButton.Visibility = Visibility.Visible;
+        }
+
+        void UpdateFooter()
+        {
+            string K(HotkeyAction a) { var b = Hotkeys.Of(settings, a); return b != null && !string.IsNullOrEmpty(b.Keys) ? " (" + Hotkeys.Show(b.Keys) + ")" : ""; }
+            FooterText.Text = "Edit layout" + K(HotkeyAction.EditLayout) + ": drag widgets to move them (Shift: no snapping), mouse wheel to resize.   "
+                + "Show/hide all" + K(HotkeyAction.ToggleWidgets) + ".   Next layout" + K(HotkeyAction.NextLayout) + ".   More keys and wheel buttons: the Hotkeys menu.   "
+                + "Every change is kept automatically; presets and files: the Layout and Widget menus. Settings: " + AppSettings.Folder;
         }
 
         protected override void OnSourceInitialized(EventArgs e)

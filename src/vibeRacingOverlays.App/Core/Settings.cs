@@ -144,6 +144,8 @@ namespace vibeRacingOverlays.App.Core
         public string HotkeyEditMode { get; set; } = "Ctrl+Shift+E";
         public string HotkeyToggleOverlays { get; set; } = "Ctrl+Shift+H";
         public string HotkeyNextLayout { get; set; } = "Ctrl+Shift+L";
+        /// <summary>Every action with its keys and / or wheel button (Hotkeys window). The three strings above are only read once from older settings.</summary>
+        public List<HotkeyBinding> Hotkeys { get; set; }
         /// <summary>The window's close button hides the app to the system tray (widgets keep running); Exit is in the tray menu.</summary>
         public bool CloseToTray { get; set; } = true;
         /// <summary>The tray tip "still running" was shown once, so it doesn't come back every time.</summary>
@@ -499,6 +501,7 @@ namespace vibeRacingOverlays.App.Core
 
         void Normalize()
         {
+            Hotkeys = Core.Hotkeys.Complete(Hotkeys, this);
             if (LegacyWidgets != null)
             {
                 if (Layouts.Count == 0) Layouts.Add(new LayoutConfig { Name = "Default", Widgets = LegacyWidgets });

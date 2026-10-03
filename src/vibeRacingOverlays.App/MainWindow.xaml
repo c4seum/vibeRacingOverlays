@@ -14,6 +14,7 @@
                 <Menu x:Name="MainMenu" VerticalAlignment="Center" Margin="0,0,14,0">
                     <MenuItem x:Name="LayoutMenu" Header="Layout"><MenuItem Header="..."/></MenuItem>
                     <MenuItem x:Name="WidgetMenu" Header="Widget"><MenuItem Header="..."/></MenuItem>
+                    <MenuItem x:Name="HotkeysMenu" Header="Hotkeys"/>
                 </Menu>
                 <!-- undo / redo of the active layout (MainWindow.Undo.cs) -->
                 <Button x:Name="UndoButton" Style="{StaticResource IconButton}" Content="&#xE7A7;" IsEnabled="False" ToolTipService.ShowOnDisabled="True" VerticalAlignment="Center" Margin="0,0,4,0"/>
