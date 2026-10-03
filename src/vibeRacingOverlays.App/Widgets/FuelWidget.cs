@@ -9,9 +9,16 @@ namespace vibeRacingOverlays.App.Widgets
     /// <summary>Where the number of pit stops is shown.</summary>
     public enum StopsDisplay { Off, NextToRefuel, Column }
 
+    /// <summary>Classic: big values in a free grid (the original look). Table: header bar, big fuel level and laps, then one row per estimate, like the Relative and Standings.</summary>
+    public enum FuelLayout { Classic, Table }
+
     public sealed class FuelSettings : WidgetSettings
     {
         public override string TypeName { get { return "Fuel calculator"; } }
+
+        // Classic keeps the look of existing widgets; the Default preset uses Table (DEVELOPMENT.md, "Changing a widget")
+        [Setting("Layout", Group = "Content", Order = 0, Tooltip = "Table: in the style of the Relative and Standings (header bar, big fuel level and laps, a row per estimate). Classic: the original free layout.")]
+        public FuelLayout Layout { get; set; } = FuelLayout.Classic;
 
         [Setting("Safety margin (L)", Group = "Content", Min = 0, Max = 5, Step = 0.1, Order = 1)] public double Margin { get; set; } = 0.5;
         [Setting("Custom per lap (0 = average)", Group = "Content", Min = 0, Max = 20, Step = 0.01, Order = 2)] public double CustomPerLap { get; set; } = 0;
@@ -48,6 +55,7 @@ namespace vibeRacingOverlays.App.Widgets
 
         public override void Draw(DisplayList dl, RaceSnapshot snap)
         {
+            if (s.Layout == FuelLayout.Table) { DrawTable(dl, snap); return; }
             var f = snap.Fuel;
             float big = (float)s.FontSize, label = big * 0.46f;
             float pad = big * 0.42f;
@@ -139,6 +147,122 @@ namespace vibeRacingOverlays.App.Widgets
                 double end = f.FuelAtEnd(perLap);
                 dl.Text(x[3], vy, colW, valH, Fmt.Num(end, "0.00"), big, end < 0 ? Red : color);
             }
+        }
+
+        // ---------------------------------------------------------------- Table layout (like the Relative and Standings)
+
+        const uint Dim = 0xFF9A9A9A, HeaderColor = 0xFF1C1C1C, RowColor = 0xFF1E1E1E, RowAltColor = 0xFF282828;
+
+        /// <summary>The estimates shown, in order: name, fuel per lap, colour.</summary>
+        List<(string Name, double PerLap, uint Color)> Estimates(FuelInfo f)
+        {
+            var list = new List<(string, double, uint)> { ("Average", f.AvgPerLap, Argb.Parse(s.AvgColor)) };
+            if (s.ShowLast) list.Add(("Last", f.LastPerLap, Argb.Parse(s.LastColor)));
+            if (s.ShowLastN)
+            {
+                int n = Math.Max(2, s.LastNLaps), have = Math.Min(n, f.Laps.Length);
+                list.Add(("Last " + (have > 0 && have < n ? have + "/" : "") + n + " avg", f.AverageOfLast(n), Argb.Parse(s.LastNColor)));
+            }
+            if (s.ShowStint) list.Add(("Stint avg" + (f.StintValidLaps > 0 ? " (" + f.StintValidLaps + ")" : ""), f.StintAvgPerLap, Argb.Parse(s.StintColor)));
+            if (s.ShowCustom) list.Add((s.CustomPerLap > 0 ? "Custom" : "Custom (avg)", s.CustomPerLap > 0 ? s.CustomPerLap : Math.Round(f.AvgPerLap, 2), Argb.Parse(s.CustomColor)));
+            return list;
+        }
+
+        /// <summary>
+        /// Header bar (title and clock), a band with the fuel level and laps in race big and the pit indicator, column
+        /// titles, then a row per estimate with a colour bar. One rounded shape, like the Relative and Standings.
+        /// "Value font size" scales it all: the rows are 0.58x (24 = the Relative's 14).
+        /// </summary>
+        void DrawTable(DisplayList dl, RaceSnapshot snap)
+        {
+            var live = snap.Fuel;
+            var f = live.AtLine ?? live;   // estimates change once a lap (see Draw); level, laps and pit stay live
+            float fs = (float)s.FontSize * 0.58f, small = fs * 0.75f;
+            float rh = (float)Math.Round(fs * 1.8f), hh = rh + 2, sp = (float)Math.Round(fs * 0.7f), pad = 8;
+            float heroFs = fs * 1.9f, heroLbl = fs * 0.7f;
+            var rows = Estimates(f);
+            bool stopsCol = s.Stops != StopsDisplay.Off;
+            // measured widths get 2 px of slack: text is placed on whole pixels and must never be cut off by a hair
+            Func<string, float, float> M = (t, size) => dl.Measure(t, size) + 2;
+
+            // columns: colour bar | name | L/lap | laps | refuel | (stops) | at end
+            float num = Math.Max(M("188.88", fs), M("REFUEL", small));
+            var w = new List<float> { 4, rows.Max(r => M(r.Name, fs)), num, num, num };
+            if (stopsCol) w.Add(Math.Max(M("8", fs), M("STOPS", small)));
+            w.Add(Math.Max(M("-188.88", fs), M("AT END", small)));
+            var x = new float[w.Count];
+            for (int i = 1; i < w.Count; i++) x[i] = x[i - 1] + w[i - 1] + sp;
+            float width = x[w.Count - 1] + w[w.Count - 1] + pad;
+
+            string level = Fmt.Num(live.Level, "0.00"), laps = live.LapsToGo >= 0 ? Fmt.Num(live.LapsToGo, "0.0") : "-";
+            float levelW = Math.Max(M("188.88", heroFs), M("FUEL LEVEL", heroLbl)), lapsW = Math.Max(M("188.8", heroFs), M("LAPS IN RACE", heroLbl));
+            float pitW = dl.Measure("PIT", fs) + fs * 1.4f, pitH = rh * 0.85f;
+            width = Math.Max(width, pad + levelW + fs * 1.5f + lapsW + fs * 1.5f + pitW + pad);
+
+            // header bar: title, clock
+            float y = 0;
+            dl.Rect(0, y, width, hh, Bg(HeaderColor));
+            dl.Text(pad, y, width / 2, hh, "FUEL", fs, White);
+            string clock = s.Clock == ClockSource.RealTime ? DateTime.Now.ToString("HH:mm") : TimeSpan.FromSeconds(snap.TimeOfDay).ToString(@"hh\:mm");
+            float clockW = M("88:88", fs);
+            dl.Text(width - pad - clockW, y, clockW, hh, clock, fs, White, Align.Right);
+            string clockLbl = s.Clock == ClockSource.RealTime ? "Clock" : "Sim time";
+            dl.Text(width / 2, y, width / 2 - pad - clockW - fs * 0.6f, hh, clockLbl, small, Dim, Align.Right);
+            y += hh;
+
+            // big band: fuel level, laps in race, pit indicator
+            float lblH = heroLbl * 1.5f, valH = heroFs * 1.15f, heroH = lblH + valH + 6;
+            dl.Rect(0, y, width, heroH, Bg(RowColor));
+            float hx = pad + 2;
+            dl.Text(hx, y + 3, levelW, lblH, "FUEL LEVEL", heroLbl, Dim);
+            dl.Text(hx, y + 3 + lblH, levelW, valH, level, heroFs, White);
+            hx += levelW + fs * 1.5f;
+            dl.Text(hx, y + 3, lapsW, lblH, "LAPS IN RACE", heroLbl, Dim);
+            dl.Text(hx, y + 3 + lblH, lapsW, valH, laps, heroFs, White);
+            DrawPit(dl, live, width - pad - pitW, y + (heroH - pitH) / 2, pitW, pitH, fs);
+            y += heroH;
+
+            // column titles
+            dl.Rect(0, y, width, rh, Bg(HeaderColor));
+            var titles = new List<string> { "", "", "L/LAP", "LAPS", "REFUEL" };
+            if (stopsCol) titles.Add("STOPS");
+            titles.Add("AT END");
+            for (int i = 2; i < titles.Count; i++) dl.Text(x[i], y, w[i], rh, titles[i], small, Dim, Align.Right);
+            y += rh;
+
+            // a row per estimate
+            for (int r = 0; r < rows.Count; r++)
+            {
+                var (name, perLap, color) = rows[r];
+                dl.Rect(0, y, width, rh, Bg(r % 2 == 1 ? RowAltColor : RowColor));
+                dl.Rect(x[0], y + 2, w[0], rh - 4, color);
+                dl.Text(x[1], y, w[1], rh, name, fs, color);
+                if (perLap > 0)
+                {
+                    int c = 2;
+                    dl.Text(x[c], y, w[c], rh, Fmt.Num(perLap, "0.00"), fs, White, Align.Right); c++;
+                    dl.Text(x[c], y, w[c], rh, Fmt.Num(f.LapsRemaining(perLap), "0.00"), fs, White, Align.Right); c++;
+                    if (f.LapsToGo >= 0)
+                    {
+                        dl.Text(x[c], y, w[c], rh, Fmt.Num(f.Refuel(perLap, s.Margin), "0.00"), fs, White, Align.Right); c++;
+                        if (stopsCol)
+                        {
+                            // not when the tank size is unknown and fuel is still needed (that would read as 0)
+                            bool known = f.MaxFuel > 0 || f.Refuel(perLap, s.Margin) <= 0;
+                            if (known) dl.Text(x[c], y, w[c], rh, f.StopsNeeded(perLap, s.Margin).ToString(), fs, White, Align.Right);
+                            c++;
+                        }
+                        double end = f.FuelAtEnd(perLap);
+                        dl.Text(x[c], y, w[c], rh, Fmt.Num(end, "0.00"), fs, end < 0 ? Red : White, Align.Right);
+                    }
+                }
+                else dl.Text(x[2], y, w[2], rh, "-", fs, Dim, Align.Right);
+                y += rh;
+            }
+
+            dl.Width = width;
+            dl.Height = y;
+            dl.RoundCorners(6);
         }
 
         void DrawPit(DisplayList dl, FuelInfo f, float x, float y, float w, float h, float size)
