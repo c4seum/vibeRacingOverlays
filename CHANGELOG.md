@@ -15,6 +15,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 - Buttons below the layout list: **Add layout**, rename, **duplicate** (new: a copy of the layout with all its widgets, also in the Layout menu) and delete.
 
 ### Changed
+- Standings and Relative are one shape now: the header bar sits directly on the rows (no gap), the whole widget has rounded corners, and the space between classes and blocks in the Standings is filled in the header colour.
 - Starting the app while it's already running (for example from the tray) opens the running app instead of starting a second one.
 - The installer asks a running app to exit properly (it saves first) instead of only closing its window, which now hides the app to the tray.
 - After an install or update, the layout **Get started** is added again when you don't have a layout with that name (for example after updating from an earlier version, or after renaming it). It's added next to your layouts; your active layout stays active, and the status bar says it was added. A "Get started" layout you already have is never changed: it may hold your own changes. If you delete Get started on purpose, updates don't bring it back (New layout from preset still can).

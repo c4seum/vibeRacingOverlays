@@ -229,7 +229,7 @@ namespace vibeRacingOverlays.App.Widgets
 
     public sealed class StandingsWidget : Widget
     {
-        const float Pad = 6, HeaderGap = 16;
+        const float Pad = 6, HeaderGap = 16, Corner = 6;
         const uint Dim = 0xFF9A9A9A, Green = 0xFF3CC850, Red = 0xFFE8433A, Purple = 0xFFA04BE0, Orange = 0xFFF08C1E;
 
         readonly StandingsSettings s;
@@ -256,13 +256,15 @@ namespace vibeRacingOverlays.App.Widgets
 
             if (pr.ShowHeader)
             {
-                dl.Rect(0, 0, width, rh + 2, Bg(Argb.Parse(s.HeaderColor)), 4);
+                // the header is part of the widget: no gap, one shape with rounded corners (RoundCorners below)
+                dl.Rect(0, 0, width, rh + 2, Bg(Argb.Parse(s.HeaderColor)));
                 HeaderBar.Draw(dl, snap, pr.Header, "STANDINGS", width, rh + 2, fs, Pad, HeaderGap);
-                y += rh + 6;
+                y += rh + 2;
             }
             if (pr.ShowColumnTitles)
             {
                 float x = Pad;
+                dl.Rect(0, y, width, rh, Bg(Argb.Parse(s.HeaderColor)));
                 foreach (var c in cols)
                 {
                     var def = pr.AvailableColumns.First(d => d.Key == c.Key);
@@ -282,7 +284,7 @@ namespace vibeRacingOverlays.App.Widgets
                     bool mine = cs == snap.PlayerClass;
                     int rows = mine ? pr.MyClassRows : pr.OtherClassRows;
                     if (rows <= 0 || cs.Cars.Count == 0) continue;
-                    if (!first) y += 4;
+                    if (!first) y = Gap(dl, y, 4, width);
                     first = false;
                     if (pr.ShowClassHeaders) { DrawClassHeader(dl, cs, y, width, rh, fs); y += rh; }
                     // in my class: leaders + a window around my position
@@ -298,6 +300,14 @@ namespace vibeRacingOverlays.App.Widgets
             }
             dl.Width = width;
             dl.Height = y;
+            dl.RoundCorners(Corner);
+        }
+
+        /// <summary>Space between blocks, in the header colour: the widget stays one shape instead of loose pieces.</summary>
+        float Gap(DisplayList dl, float y, float h, float width)
+        {
+            dl.Rect(0, y, width, h, Bg(Argb.Parse(s.HeaderColor)));
+            return y + h;
         }
 
         /// <summary>
@@ -336,9 +346,9 @@ namespace vibeRacingOverlays.App.Widgets
                     x += c.Width + Math.Max(0, s.ColumnSpacing);
                 }
                 y += rh;
-                if (r == splitAfter) y += 6;
+                if (r == splitAfter) y = Gap(dl, y, 6, width);
             }
-            if (splitAfter < 0 && field.Count > total && top > 0 && top < total) y += 6; // keep the height stable
+            if (splitAfter < 0 && field.Count > total && top > 0 && top < total) y = Gap(dl, y, 6, width); // keep the height stable
             return y;
         }
 

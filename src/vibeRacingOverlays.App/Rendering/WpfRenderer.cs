@@ -100,8 +100,13 @@ namespace vibeRacingOverlays.App.Rendering
         public void Render(DrawingContext dc, DisplayList list)
         {
             if (list.Font != null) SetFont(list.Font);
-            foreach (var op in list.Ops)
+            // the widget as one shape with rounded corners (header, rows and gaps together)
+            bool clip = list.ClipRadius > 0 && list.ClipCount > 0;
+            if (clip) dc.PushClip(new RectangleGeometry(new Rect(0, 0, list.ClipWidth, list.ClipHeight), list.ClipRadius, list.ClipRadius));
+            for (int i = 0; i < list.Ops.Count; i++)
             {
+                if (clip && i == list.ClipCount) { dc.Pop(); clip = false; }
+                var op = list.Ops[i];
                 if (op.Kind == OpKind.Rect)
                 {
                     var r = new Rect(op.X, op.Y, op.W, op.H);
@@ -123,6 +128,7 @@ namespace vibeRacingOverlays.App.Rendering
                     dc.Pop();
                 }
             }
+            if (clip) dc.Pop();
         }
     }
 }

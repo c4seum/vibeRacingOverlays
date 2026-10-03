@@ -80,7 +80,7 @@ namespace vibeRacingOverlays.App.Widgets
 
     public sealed class RelativeWidget : Widget
     {
-        const float Pad = 6;
+        const float Pad = 6, Corner = 6;
         const uint Dim = 0xFF9A9A9A, Orange = 0xFFF08C1E, Red = 0xFFE8433A;
         readonly RelativeSettings s;
         bool multi, race, fade;
@@ -99,9 +99,10 @@ namespace vibeRacingOverlays.App.Widgets
 
             if (s.ShowHeader)
             {
-                dl.Rect(0, 0, width, rh + 2, Bg(0xFF1C1C1C), 4);
+                // the header is part of the widget: no gap, one shape with rounded corners (RoundCorners below)
+                dl.Rect(0, 0, width, rh + 2, Bg(0xFF1C1C1C));
                 HeaderBar.Draw(dl, snap, s.Header, "RELATIVE", width, rh + 2, fs, Pad, 16);
-                y += rh + 6;
+                y += rh + 2;
             }
 
             var list = snap.Relative;
@@ -136,6 +137,7 @@ namespace vibeRacingOverlays.App.Widgets
             }
             dl.Width = width;
             dl.Height = y;
+            dl.RoundCorners(Corner);
         }
 
         void DrawCell(DisplayList dl, ColumnConfig col, CarInfo c, float x, float y, float w, float h, float fs, uint text)

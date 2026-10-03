@@ -25,8 +25,14 @@ namespace vibeRacingOverlays.App.Rendering
         public float Height;
         /// <summary>The widget's font (FontCatalog name); null = the renderer's own.</summary>
         public string Font;
+        /// <summary>The widget is one shape with rounded corners: the first ClipCount ops are clipped to it (an edit frame added later isn't).</summary>
+        public float ClipRadius, ClipWidth, ClipHeight;
+        public int ClipCount;
 
-        public void Clear() { Ops.Clear(); Width = Height = 0; Font = null; }
+        /// <summary>Rounds the corners of everything drawn so far (call at the end of Draw, after Width and Height are set).</summary>
+        public void RoundCorners(float radius) { ClipRadius = radius; ClipCount = Ops.Count; ClipWidth = Width; ClipHeight = Height; }
+
+        public void Clear() { Ops.Clear(); Width = Height = 0; Font = null; ClipRadius = 0; ClipCount = 0; ClipWidth = ClipHeight = 0; }
 
         /// <summary>Width a text will take when drawn (same font and tabular digits as the renderer).</summary>
         public float Measure(string text, float size, bool bold = true) { return TextMeasure.Measure(text, size, bold); }
@@ -53,7 +59,7 @@ namespace vibeRacingOverlays.App.Rendering
 
         public bool SameAs(DisplayList other)
         {
-            if (other == null || other.Width != Width || other.Height != Height || other.Font != Font || other.Ops.Count != Ops.Count) return false;
+            if (other == null || other.Width != Width || other.Height != Height || other.Font != Font || other.ClipRadius != ClipRadius || other.ClipCount != ClipCount || other.ClipWidth != ClipWidth || other.ClipHeight != ClipHeight || other.Ops.Count != Ops.Count) return false;
             for (int i = 0; i < Ops.Count; i++)
                 if (!Ops[i].Equals(other.Ops[i])) return false;
             return true;
