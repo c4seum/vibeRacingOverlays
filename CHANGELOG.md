@@ -16,6 +16,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 - Buttons below the layout list: **Add layout**, rename, **duplicate** (new: a copy of the layout with all its widgets, also in the Layout menu) and delete.
 
 ### Changed
+- Demo race and practice: one car always drives through the pit lane right behind you, so you can see how cars in the pits look (Relative: *Cars in the pits*, the PIT badge) without waiting for a pit stop.
 - Standings and Relative are one shape now: the header bar sits directly on the rows (no gap), the whole widget has rounded corners, and the space between classes and blocks in the Standings is filled in the header colour.
 - Starting the app while it's already running (for example from the tray) opens the running app instead of starting a second one.
 - The installer asks a running app to exit properly (it saves first) instead of only closing its window, which now hides the app to the tray.

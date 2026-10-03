@@ -47,6 +47,7 @@ namespace vibeRacingOverlays.Data.Telemetry
         double lastWall;
         float fuel = 70f;
         int playerIdx;
+        Car pitShadow;   // always in the pit lane right behind the player, so a car in the pits is always visible
         TelemetryState lastState;
 
         readonly bool multiClass;
@@ -155,6 +156,8 @@ namespace vibeRacingOverlays.Data.Telemetry
             session.DriverCarIdx = playerIdx;
             session.Drivers[playerIdx].UserName = "You (Demo)";
             session.Drivers[playerIdx].AbbrevName = "You (Demo)";
+            pitShadow = cars[13];
+            pitShadow.Garage = false;
 
             var grid = cars.OrderBy(c => -c.Progress).ToList();
             for (int i = 0; i < grid.Count; i++)
@@ -219,6 +222,11 @@ namespace vibeRacingOverlays.Data.Telemetry
 
                 if (c.Idx == playerIdx && !inPit) fuel = Math.Max(0, fuel - (float)(speed * dt * (FuelPerLap + (rnd.NextDouble() - 0.5) * 0.1)));
             }
+
+            // the pit shadow drives down the pit lane alongside the player: the relative and standings always show a car
+            // in the pits (to see the "Cars in the pits" styles and the PIT badge without waiting for a stop)
+            var me = cars[playerIdx];
+            if (pitShadow != null && me.Progress > 0) { pitShadow.Progress = me.Progress - 0.004; pitShadow.PitUntil = -1; }
         }
 
         /// <summary>Practice: the session results iRacing keeps (ranked by fastest lap, only cars with a time).</summary>
@@ -266,7 +274,7 @@ namespace vibeRacingOverlays.Data.Telemetry
 
                 bool inPit = c.PitUntil > simTime || c.TowUntil > simTime;
                 double frac = c.Progress - Math.Floor(c.Progress);
-                bool pitLane = inPit || (c.Pitted && c.PitUntil > 0 && simTime - c.PitUntil < 6);
+                bool pitLane = inPit || (c.Pitted && c.PitUntil > 0 && simTime - c.PitUntil < 6) || (c == pitShadow && cars[playerIdx].Progress > 0);
 
                 s.CarIdxLap[ci] = (int)Math.Floor(c.Progress) + 1;
                 s.CarIdxLapCompleted[ci] = (int)Math.Floor(c.Progress);
