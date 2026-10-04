@@ -126,12 +126,12 @@ namespace vibeRacingOverlays.App.Widgets
             }
             if (s.ShowCustom) { DrawRow(dl, f, s.CustomPerLap > 0 ? "Custom" : "Custom (avg)", custom, Argb.Parse(s.CustomColor), x, y, colW, lblH, valH, label, big, false); y += block; }
 
-            // a hotkey confirmation over the top label row (Classic has no header bar)
+            // a hotkey confirmation over the top label row (Classic has no header bar), up to the clock label, which stays
             string flash = FlashNow;
             if (flash != null)
             {
-                dl.Rect(0, 0, width, lblH + pad, Bg(Argb.Parse(s.BackgroundColor)), 6);
-                dl.Text(pad, pad * 0.3f, width - pad * 2, lblH + pad * 0.4f, flash, label * 1.25f, Yellow);
+                dl.Rect(0, 0, x[3] - pad * 0.5f, lblH + pad, Bg(Argb.Parse(s.BackgroundColor)), 6);
+                dl.Text(pad, pad * 0.3f, x[3] - pad * 2, lblH + pad * 0.4f, flash, label * 1.25f, Yellow);
             }
 
             dl.Width = width;
@@ -228,13 +228,12 @@ namespace vibeRacingOverlays.App.Widgets
             float clockW = M("88:88", fs);
             dl.Text(width - pad - clockW, y, clockW, hh, clock, fs, White, Align.Right);
             float fuelW = dl.Measure("FUEL", fs) + fs;
-            // a hotkey confirmation takes the place of the clock label for 2 s
-            if (flashed != null) dl.Text(pad + fuelW, y, width - pad * 2 - fuelW - clockW - fs * 0.6f, hh, flashed, fs, Yellow);
-            else
-            {
-                string clockLbl = s.Clock == ClockSource.RealTime ? "Clock" : "Sim time";
-                dl.Text(width / 2, y, width / 2 - pad - clockW - fs * 0.6f, hh, clockLbl, small, Dim, Align.Right);
-            }
+            // the clock label always stays; a hotkey confirmation shows for 2 s in the space between the title and the label
+            string clockLbl = s.Clock == ClockSource.RealTime ? "Clock" : "Sim time";
+            float lblW = dl.Measure(clockLbl, small);
+            float lblX = width - pad - clockW - fs * 0.6f - lblW;
+            dl.Text(lblX, y, lblW, hh, clockLbl, small, Dim, Align.Right);
+            if (flashed != null) dl.Text(pad + fuelW, y, lblX - fs * 0.6f - pad - fuelW, hh, flashed, fs, Yellow);
             y += hh;
 
             // big band: fuel level, laps in race, pit indicator

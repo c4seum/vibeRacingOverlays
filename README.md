@@ -99,7 +99,7 @@ These also work while iRacing has focus. Set them in the **Hotkeys** menu: every
 |---|---|
 | Widgets | Edit layout on/off (move, resize and lock widgets), show/hide all widgets, show/hide widget 1 to 5 (by their place in the widget list of the active layout) |
 | Layouts | Next layout, previous layout, layout 1 to 4 (by their place in the layout list) |
-| Fuel calculator | Increase custom / Decrease custom (custom fuel per lap +0.05 / -0.05 L, a fuel saving target; from "average" it starts at your current average), Set custom (custom = your current average), Reset average (start the averages again, after a caution or an incident) |
+| Fuel calculator | Increase custom / Decrease custom (custom fuel per lap +0.01 / -0.01 L, a fuel saving target; from "average" it starts at your current average), Set custom (custom = your current average), Reset average (start the averages again, after a caution or an incident) |
 
 A key or button can do two things: one action on a short press and one on a hold. A short press goes off right away, or, when the same key or button also has a hold action, when you let go before the hold time. A hold goes off once the hold time has passed, while you still hold it. **Repeat** (behind the field; for fuel +/- and next / previous layout) makes a short press go on while you hold it: again after half a second, then every 0.15 s. It's greyed when the key or button also has a hold action. The Fuel calculator confirms its hotkeys for 2 seconds in its header (for example "Averages reset").
 

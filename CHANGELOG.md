@@ -10,6 +10,8 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 - **Show: In pits** for every widget (widget card > Show): the widget is only on screen while you are out of the car (garage, pits, spectating). Together with *In car* you can have two versions of a widget in one layout, for example standings with other columns while you're out of the car.
 
 ### Changed
+- Fuel calculator: the custom fuel hotkeys (Increase custom / Decrease custom) step by 0.01 L instead of 0.05 L.
+- Fuel calculator: the hotkey confirmation (for example "Custom 2.53 L/lap") no longer hides the clock label ("Sim time" / "Clock"); it shows next to it.
 - Hotkeys window: **Save** and **Cancel** at the top and the bottom, with a line that says whether there are unsaved changes. Hotkeys and the hold time only change when you save; Cancel leaves them as they were, closing the window with changes asks whether to save. A saved change is one undo step.
 - Hotkeys window: a hold shows before the device name ("Button 17 · hold (wheel name)"), so it stays visible when a long wheel name is cut off; the full text is in the tooltip.
 

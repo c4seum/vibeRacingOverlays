@@ -383,8 +383,8 @@ namespace vibeRacingOverlays.App.Overlay
                         if (WidgetEdited != null) WidgetEdited(ws);
                     }
                     break;
-                case HotkeyAction.FuelCustomUp: SetFuelCustom(from => from + 0.05, v => "Custom " + Rendering.Fmt.Num(v, "0.00") + " L/lap"); break;
-                case HotkeyAction.FuelCustomDown: SetFuelCustom(from => from - 0.05, v => "Custom " + Rendering.Fmt.Num(v, "0.00") + " L/lap"); break;
+                case HotkeyAction.FuelCustomUp: SetFuelCustom(from => from + 0.01, v => "Custom " + Rendering.Fmt.Num(v, "0.00") + " L/lap"); break;
+                case HotkeyAction.FuelCustomDown: SetFuelCustom(from => from - 0.01, v => "Custom " + Rendering.Fmt.Num(v, "0.00") + " L/lap"); break;
                 case HotkeyAction.FuelCustomToAverage:
                     double avg = CurrentAverage();
                     if (avg > 0) SetFuelCustom(from => avg, v => "Custom = avg " + Rendering.Fmt.Num(v, "0.00"));

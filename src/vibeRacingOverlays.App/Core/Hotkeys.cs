@@ -106,8 +106,8 @@ namespace vibeRacingOverlays.App.Core
         {
             switch (a)
             {
-                case HotkeyAction.FuelCustomUp: return "Custom fuel per lap +0.05 L (a fuel saving target). From \"average\" it starts at your current average.";
-                case HotkeyAction.FuelCustomDown: return "Custom fuel per lap -0.05 L. From \"average\" it starts at your current average.";
+                case HotkeyAction.FuelCustomUp: return "Custom fuel per lap +0.01 L (a fuel saving target). From \"average\" it starts at your current average.";
+                case HotkeyAction.FuelCustomDown: return "Custom fuel per lap -0.01 L. From \"average\" it starts at your current average.";
                 case HotkeyAction.FuelCustomToAverage: return "Custom fuel per lap = your current average";
                 case HotkeyAction.FuelResetAverage: return "Start the fuel averages again (after a caution or an incident skewed them)";
                 default: return null;
