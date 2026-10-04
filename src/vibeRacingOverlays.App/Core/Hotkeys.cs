@@ -11,7 +11,7 @@ namespace vibeRacingOverlays.App.Core
 
     /// <summary>
     /// How a binding goes off. Press: when pressed (when released if the same key or button also has a Hold action, to
-    /// tell the two apart). PressRepeat: when pressed and, while held, again after 0.5 s every 0.15 s. Hold: once, after
+    /// tell the two apart). PressRepeat: when pressed and, while held, again after 0.4 s every 0.07 s. Hold: once, after
     /// the hold time while still held.
     /// </summary>
     public enum PressMode { Press, PressRepeat, Hold }

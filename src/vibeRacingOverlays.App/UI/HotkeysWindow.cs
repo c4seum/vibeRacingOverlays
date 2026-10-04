@@ -138,7 +138,7 @@ namespace vibeRacingOverlays.App.UI
                     var repeat = new CheckBox { Content = "Repeat", Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, IsChecked = b.Repeat && !b.Hold };
                     string why = RepeatBlocked(b);
                     repeat.IsEnabled = why == null;
-                    repeat.ToolTip = why ?? "Goes on while you hold the key or button (again after 0.5 s, then every 0.15 s)";
+                    repeat.ToolTip = why ?? "Goes on while you hold the key or button (again after 0.4 s, then about 14 times a second)";
                     ToolTipService.SetShowOnDisabled(repeat, true);
                     // Checked/Unchecked instead of Click: also fires for keyboard and UI Automation
                     repeat.Checked += (s, e) => { if (!b.Repeat) { b.Repeat = true; Changed(); } };

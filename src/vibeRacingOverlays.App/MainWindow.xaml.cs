@@ -104,8 +104,23 @@ namespace vibeRacingOverlays.App
             InitFooter();
             UpdateFooter();
             HotkeysMenu.Click += (s, e) => { HotkeysWindow.Show(this, settings, overlays); UpdateFooter(); };
-            // a hotkey or wheel button showed / hid a widget or changed the fuel target: the list and settings follow
-            overlays.WidgetEdited += ws => { RefreshList(); if (ws == Selected) ShowSelected(); };
+            // a hotkey or wheel button showed / hid a widget or changed the fuel target: the list and settings follow, once the
+            // presses stop. Rebuilding the settings panel on every press (or repeat) held up the UI thread the widgets draw on
+            var editedTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+            WidgetSettings edited = null; bool editedOther = false;
+            editedTimer.Tick += (s, e) =>
+            {
+                editedTimer.Stop();
+                RefreshList();
+                if (edited == Selected || editedOther) ShowSelected();
+                edited = null; editedOther = false;
+            };
+            overlays.WidgetEdited += ws =>
+            {
+                if (edited != null && edited != ws) editedOther = true;
+                edited = ws;
+                editedTimer.Stop(); editedTimer.Start();
+            };
 
             SettingsPanel.App = settings;
             previewData = new PreviewData(telemetry);

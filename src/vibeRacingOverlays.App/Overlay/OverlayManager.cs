@@ -331,8 +331,8 @@ namespace vibeRacingOverlays.App.Overlay
                 if (h.Press != null) Do(h.Press.Value);
                 if (h.Repeat)
                 {
-                    h.Timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(0.5) };
-                    h.Timer.Tick += (s, e) => { h.Timer.Interval = TimeSpan.FromSeconds(0.15); Do(h.Press.Value); };
+                    h.Timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(0.4) };
+                    h.Timer.Tick += (s, e) => { h.Timer.Interval = TimeSpan.FromSeconds(0.07); Do(h.Press.Value); };   // ~14 steps a second: 0.01 L steps need it
                     h.Timer.Start();
                 }
             }
