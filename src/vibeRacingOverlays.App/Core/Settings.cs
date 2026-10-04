@@ -59,14 +59,14 @@ namespace vibeRacingOverlays.App.Core
         [Setting("Scale", Group = "Text & size", Min = 0.5, Max = 3, Step = 0.05, Order = 90, Tooltip = "Makes the whole widget bigger or smaller (also with the mouse wheel in edit layout mode).")]
         public double Scale { get; set; } = 1.0;
 
-        [Setting("Background opacity", Group = "Colors", Min = 0, Max = 1, Step = 0.05, Order = 0)]
+        [Setting("Background opacity", Group = "Colors", Min = 0, Max = 1, Step = 0.05, Order = 0, Tooltip = "How much of the game shows through the widget background: 1 is solid, 0 is fully see-through")]
         public double BackgroundOpacity { get; set; } = 0.9;
 
         [Setting("Refresh rate (Hz)", Group = "Widget", Min = 1, Max = 60, Step = 1, Order = 2,
             Tooltip = "How often the widget may redraw. Lower = less FPS impact.")]
         public int RefreshHz { get; set; } = 10;
 
-        [Setting("Show", Group = "Widget", Order = 1)]
+        [Setting("Show", Group = "Widget", Order = 1, Tooltip = "When the widget is on screen: always, only while you are in the car, or only in races")]
         public ShowWhen Show { get; set; } = ShowWhen.Always;
 
         // Bahnschrift: the look every widget had before fonts could be chosen (also in the Default presets)

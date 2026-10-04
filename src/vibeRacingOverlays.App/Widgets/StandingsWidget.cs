@@ -15,19 +15,19 @@ namespace vibeRacingOverlays.App.Widgets
     {
         public SessionKind Kind { get; set; }
 
-        [Setting("Show header bar", Group = "Header bar", Order = 0)] public bool ShowHeader { get; set; } = true;
-        [Setting("Column titles row", Group = "Columns", Order = 0)] public bool ShowColumnTitles { get; set; } = false;
+        [Setting("Show header bar", Group = "Header bar", Order = 0, Tooltip = "The bar above the rows with the title and the header items below")] public bool ShowHeader { get; set; } = true;
+        [Setting("Column titles row", Group = "Columns", Order = 0, Tooltip = "A row with the column names above the drivers")] public bool ShowColumnTitles { get; set; } = false;
 
-        [Setting("Total rows", Group = "Rows (single class)", Min = 3, Max = 40, Order = 1)] public int Rows { get; set; } = 16;
-        [Setting("Leader rows (top block)", Group = "Rows (single class)", Min = 0, Max = 20, Order = 2)] public int TopRows { get; set; } = 5;
+        [Setting("Total rows", Group = "Rows (single class)", Min = 3, Max = 40, Order = 1, Tooltip = "Number of drivers shown when everyone is in one class")] public int Rows { get; set; } = 16;
+        [Setting("Leader rows (top block)", Group = "Rows (single class)", Min = 0, Max = 20, Order = 2, Tooltip = "How many of those rows show the leaders; the rest is a window around your position")] public int TopRows { get; set; } = 5;
 
-        [Setting("Rows for my class", Group = "Rows (multiclass)", Min = 1, Max = 40, Order = 1)] public int MyClassRows { get; set; } = 8;
+        [Setting("Rows for my class", Group = "Rows (multiclass)", Min = 1, Max = 40, Order = 1, Tooltip = "Number of drivers of your own class shown in multiclass sessions")] public int MyClassRows { get; set; } = 8;
         [Setting("Leader rows in my class", Group = "Rows (multiclass)", Min = 0, Max = 20, Order = 2,
             Tooltip = "The rest of your class block is a window around your position.")]
         public int MyClassTopRows { get; set; } = 3;
         [Setting("Rows per other class", Group = "Rows (multiclass)", Min = 0, Max = 40, Order = 3, Tooltip = "0 = only show my class.")]
         public int OtherClassRows { get; set; } = 3;
-        [Setting("Class headers", Group = "Rows (multiclass)", Order = 4)] public bool ShowClassHeaders { get; set; } = true;
+        [Setting("Class headers", Group = "Rows (multiclass)", Order = 4, Tooltip = "A bar above each class with its name, best lap, strength of field and number of cars")] public bool ShowClassHeaders { get; set; } = true;
         [Setting("My class first", Group = "Rows (multiclass)", Order = 5, Tooltip = "Otherwise classes are ordered fastest first.")]
         public bool PlayerClassFirst { get; set; } = false;
 
@@ -158,15 +158,15 @@ namespace vibeRacingOverlays.App.Widgets
         public StandingsProfile PracticeQualify { get; set; } = new StandingsProfile(SessionKind.PracticeQualify);
         public StandingsProfile Race { get; set; } = new StandingsProfile(SessionKind.Race);
 
-        [Setting("Font size", Group = "Text & size", Min = 8, Max = 30, Step = 0.5, Order = 3)] public double FontSize { get; set; } = 14;
-        [Setting("Row height", Group = "Text & size", Min = 12, Max = 50, Order = 4)] public int RowHeight { get; set; } = 22;
+        [Setting("Font size", Group = "Text & size", Min = 8, Max = 30, Step = 0.5, Order = 3, Tooltip = "Size of the text in the rows; badges and the header follow it")] public double FontSize { get; set; } = 14;
+        [Setting("Row height", Group = "Text & size", Min = 12, Max = 50, Order = 4, Tooltip = "Height of each row (px)")] public int RowHeight { get; set; } = 22;
         [Setting("Column spacing", Group = "Text & size", Min = 0, Max = 30, Order = 5, Tooltip = "Space between the columns (px). Column widths follow the content and the font size.")]
         public int ColumnSpacing { get; set; } = 8;
-        [Setting("Header background", Group = "Colors", IsColor = true, Order = 2)] public string HeaderColor { get; set; } = "#FF1C1C1C";
-        [Setting("Row background", Group = "Colors", IsColor = true, Order = 3)] public string RowColor { get; set; } = "#FF1E1E1E";
-        [Setting("Alternate row", Group = "Colors", IsColor = true, Order = 4)] public string RowAltColor { get; set; } = "#FF282828";
-        [Setting("Player row", Group = "Colors", IsColor = true, Order = 5)] public string PlayerColor { get; set; } = "#FF8E2A2A";
-        [Setting("Text", Group = "Colors", IsColor = true, Order = 6)] public string TextColor { get; set; } = "#FFFFFFFF";
+        [Setting("Header background", Group = "Colors", IsColor = true, Order = 2, Tooltip = "Colour of the header bar (and of the class headers and the gaps between blocks)")] public string HeaderColor { get; set; } = "#FF1C1C1C";
+        [Setting("Row background", Group = "Colors", IsColor = true, Order = 3, Tooltip = "Colour of the rows")] public string RowColor { get; set; } = "#FF1E1E1E";
+        [Setting("Alternate row", Group = "Colors", IsColor = true, Order = 4, Tooltip = "Colour of every second row, so long lists are easier to follow")] public string RowAltColor { get; set; } = "#FF282828";
+        [Setting("Player row", Group = "Colors", IsColor = true, Order = 5, Tooltip = "Colour of your own row")] public string PlayerColor { get; set; } = "#FF8E2A2A";
+        [Setting("Text", Group = "Colors", IsColor = true, Order = 6, Tooltip = "Colour of the text in the rows")] public string TextColor { get; set; } = "#FFFFFFFF";
 
         public StandingsSettings() { Title = "Standings"; }
 

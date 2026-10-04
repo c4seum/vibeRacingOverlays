@@ -101,6 +101,8 @@ namespace vibeRacingOverlays.App.UI
             if (!first) card.Children.Add(Divider());
             bool tall = IsTall(editor);
             var g = new Grid { Tag = "row", Margin = Inset };
+            // the explanation shows over the whole row, not only its label (a control with its own tooltip keeps that one)
+            if (tooltip != null) { g.ToolTip = tooltip; ToolTipService.SetShowOnDisabled(g, true); }
             // fixed height: rows never differ because of the control they hold
             if (tall) g.MinHeight = RowHeight; else g.Height = RowHeight;
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(labelWidth) });

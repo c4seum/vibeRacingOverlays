@@ -25,7 +25,7 @@ namespace vibeRacingOverlays.App.UI
             this.overlays = overlays;
             this.open = open;
             this.exit = exit;
-            icon = new Forms.NotifyIcon { Text = BuildInfo.AppName, Icon = LoadIcon(), ContextMenuStrip = new Forms.ContextMenuStrip(), Visible = true };
+            icon = new Forms.NotifyIcon { Text = BuildInfo.AppName, Icon = LoadIcon(), ContextMenuStrip = new Forms.ContextMenuStrip { ShowItemToolTips = true }, Visible = true };
             // the menu is built when it opens, so it always shows the current state and layouts
             icon.ContextMenuStrip.Opening += (s, e) => Build();
             icon.MouseClick += (s, e) => { if (e.Button == Forms.MouseButtons.Left) open(); };
@@ -56,8 +56,8 @@ namespace vibeRacingOverlays.App.UI
             openItem.Font = new System.Drawing.Font(openItem.Font, System.Drawing.FontStyle.Bold);
             m.Items.Add(openItem);
             m.Items.Add(new Forms.ToolStripSeparator());
-            m.Items.Add(Item("Show widgets", overlays.ToggleOverlays, settings.OverlaysVisible));
-            m.Items.Add(Item("Edit layout", () => overlays.SetEditMode(!overlays.EditMode), overlays.EditMode));
+            m.Items.Add(Item("Show widgets", overlays.ToggleOverlays, settings.OverlaysVisible, "Show or hide all widgets"));
+            m.Items.Add(Item("Edit layout", () => overlays.SetEditMode(!overlays.EditMode), overlays.EditMode, "Drag widgets on screen to move them, mouse wheel to resize"));
             var layouts = new Forms.ToolStripMenuItem("Layout");
             foreach (var l in settings.Layouts)
             {
@@ -71,15 +71,15 @@ namespace vibeRacingOverlays.App.UI
                 var u = Update;
                 m.Items.Add(Item("Download version " + u.Version + "...", () => UpdateCheck.Open(u)));
             }
-            m.Items.Add(Item("Keep running when the window is closed", () => { settings.CloseToTray = !settings.CloseToTray; overlays.ScheduleSave(); }, settings.CloseToTray));
-            m.Items.Add(Item("Check for updates", () => { settings.CheckForUpdates = !settings.CheckForUpdates; overlays.ScheduleSave(); }, settings.CheckForUpdates));
+            m.Items.Add(Item("Keep running when the window is closed", () => { settings.CloseToTray = !settings.CloseToTray; overlays.ScheduleSave(); }, settings.CloseToTray, "On: closing the window keeps the app and widgets running here. Off: closing the window exits the app"));
+            m.Items.Add(Item("Check for updates", () => { settings.CheckForUpdates = !settings.CheckForUpdates; overlays.ScheduleSave(); }, settings.CheckForUpdates, "Look for a new version at start and twice a day (nothing is downloaded by itself)"));
             m.Items.Add(new Forms.ToolStripSeparator());
             m.Items.Add(Item("Exit", exit));
         }
 
-        static Forms.ToolStripMenuItem Item(string text, Action click, bool? check = null)
+        static Forms.ToolStripMenuItem Item(string text, Action click, bool? check = null, string tooltip = null)
         {
-            var mi = new Forms.ToolStripMenuItem(text);
+            var mi = new Forms.ToolStripMenuItem(text) { ToolTipText = tooltip };
             if (check.HasValue) mi.Checked = check.Value;
             mi.Click += (s, e) => click();
             return mi;

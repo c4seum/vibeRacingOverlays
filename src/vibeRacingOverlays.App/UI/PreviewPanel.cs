@@ -70,7 +70,7 @@ namespace vibeRacingOverlays.App.UI
 
         readonly PreviewData data;
         readonly AppSettings settings;
-        readonly ComboBox sourceBox = new ComboBox { Width = 170 };
+        readonly ComboBox sourceBox = new ComboBox { Width = 170, ToolTip = "What the preview shows: live iRacing data, or a demo race in single class or multiclass (the widgets on screen follow the Data choice at the top)" };
         readonly TextBlock info = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0), FontSize = 12 };
         readonly Surface surface = InitSurface();
 

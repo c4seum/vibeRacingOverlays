@@ -23,14 +23,14 @@ namespace vibeRacingOverlays.App.Widgets
         [Setting("Layout", Group = "Content", Order = 1, Tooltip = "Table: in the style of the Relative and Standings (header bar, big fuel level and laps, a row per estimate). Classic: the original free layout.")]
         public FuelLayout Layout { get; set; } = FuelLayout.Classic;
 
-        [Setting("Safety margin (L)", Group = "Content", Min = 0, Max = 5, Step = 0.1, Order = 4)] public double Margin { get; set; } = 0.5;
-        [Setting("Custom per lap (0 = average)", Group = "Estimates", Min = 0, Max = 20, Step = 0.01, Order = 6)] public double CustomPerLap { get; set; } = 0;
-        [Setting("Clock", Group = "Content", Order = 2)] public ClockSource Clock { get; set; } = ClockSource.RealTime;
-        [Setting("Show 'Last' row", Group = "Estimates", Order = 1)] public bool ShowLast { get; set; } = true;
-        [Setting("Show 'Custom' row", Group = "Estimates", Order = 5)] public bool ShowCustom { get; set; } = true;
+        [Setting("Safety margin (L)", Group = "Content", Min = 0, Max = 5, Step = 0.1, Order = 4, Tooltip = "Extra litres added to the refuel amount, so you don't run dry on the last lap")] public double Margin { get; set; } = 0.5;
+        [Setting("Custom per lap (0 = average)", Group = "Estimates", Min = 0, Max = 20, Step = 0.01, Order = 6, Tooltip = "Your own fuel use per lap for the Custom row (a fuel saving target). 0 uses your average")] public double CustomPerLap { get; set; } = 0;
+        [Setting("Clock", Group = "Content", Order = 2, Tooltip = "Real time (the clock of your PC) or the time of day in the sim")] public ClockSource Clock { get; set; } = ClockSource.RealTime;
+        [Setting("Show 'Last' row", Group = "Estimates", Order = 1, Tooltip = "Fuel used on your last valid lap")] public bool ShowLast { get; set; } = true;
+        [Setting("Show 'Custom' row", Group = "Estimates", Order = 5, Tooltip = "The fuel use you set yourself (Custom per lap), for example a fuel saving target")] public bool ShowCustom { get; set; } = true;
         [Setting("Show 'Last N laps' row", Group = "Estimates", Order = 2, Tooltip = "Average fuel use of the last N valid laps (no pit visits, refuels or cautions)")]
         public bool ShowLastN { get; set; } = false;
-        [Setting("Laps for 'Last N' average", Group = "Estimates", Min = 2, Max = 50, Order = 3)] public int LastNLaps { get; set; } = 5;
+        [Setting("Laps for 'Last N' average", Group = "Estimates", Min = 2, Max = 50, Order = 3, Tooltip = "How many of your last valid laps the 'Last N' row averages")] public int LastNLaps { get; set; } = 5;
         [Setting("Show 'Stint' row", Group = "Estimates", Order = 4, Tooltip = "Average fuel use of the valid laps since your last pit stop")]
         public bool ShowStint { get; set; } = false;
         [Setting("Stops", Group = "Content", Order = 3, Tooltip = "Pit stops needed to finish (0 = you make it without refuelling): the refuel amount divided by the tank capacity, rounded up. "
@@ -46,11 +46,11 @@ namespace vibeRacingOverlays.App.Widgets
         [Setting("Header background", Group = "Colors", IsColor = true, Order = 2, Tooltip = "Table layout")] public string HeaderColor { get; set; } = "#FF1C1C1C";
         [Setting("Row background", Group = "Colors", IsColor = true, Order = 3, Tooltip = "Table layout")] public string RowColor { get; set; } = "#FF1E1E1E";
         [Setting("Alternate row", Group = "Colors", IsColor = true, Order = 4, Tooltip = "Table layout")] public string RowAltColor { get; set; } = "#FF282828";
-        [Setting("Average color", Group = "Colors", IsColor = true, Order = 10)] public string AvgColor { get; set; } = "#FF8FA8F0";
-        [Setting("Last color", Group = "Colors", IsColor = true, Order = 11)] public string LastColor { get; set; } = "#FFF0C36A";
-        [Setting("Custom color", Group = "Colors", IsColor = true, Order = 14)] public string CustomColor { get; set; } = "#FF7ED67E";
-        [Setting("Last N color", Group = "Colors", IsColor = true, Order = 12)] public string LastNColor { get; set; } = "#FFD99AF0";
-        [Setting("Stint color", Group = "Colors", IsColor = true, Order = 13)] public string StintColor { get; set; } = "#FF6FD3D8";
+        [Setting("Average color", Group = "Colors", IsColor = true, Order = 10, Tooltip = "Colour of the Average row (and its label)")] public string AvgColor { get; set; } = "#FF8FA8F0";
+        [Setting("Last color", Group = "Colors", IsColor = true, Order = 11, Tooltip = "Colour of the Last row")] public string LastColor { get; set; } = "#FFF0C36A";
+        [Setting("Custom color", Group = "Colors", IsColor = true, Order = 14, Tooltip = "Colour of the Custom row")] public string CustomColor { get; set; } = "#FF7ED67E";
+        [Setting("Last N color", Group = "Colors", IsColor = true, Order = 12, Tooltip = "Colour of the 'Last N' row")] public string LastNColor { get; set; } = "#FFD99AF0";
+        [Setting("Stint color", Group = "Colors", IsColor = true, Order = 13, Tooltip = "Colour of the Stint row")] public string StintColor { get; set; } = "#FF6FD3D8";
 
         public FuelSettings() { Title = "Fuel calculator"; RefreshHz = 4; Show = ShowWhen.InCar; }
     }

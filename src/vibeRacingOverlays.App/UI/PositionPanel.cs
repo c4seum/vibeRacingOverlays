@@ -141,7 +141,7 @@ namespace vibeRacingOverlays.App.UI
             lockLine.Children.Add(lockBox);
             lockLine.Children.Add(lockAll);
             lockLine.Children.Add(unlockAll);
-            Ui.Row(card, "Lock position and size", lockLine, null, null, LabelWidth);
+            Ui.Row(card, "Lock position and size", lockLine, "A locked widget can't be dragged or resized in edit layout, so it doesn't move by accident", null, LabelWidth);
 
             // a locked widget can't be moved from here either
             refreshers.Add(() =>

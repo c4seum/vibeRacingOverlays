@@ -461,6 +461,40 @@ namespace vibeRacingOverlays.App.UI
             /// Column (or header item) list with on/off, width, format, ordering and a reset per entry.
             /// The format choices show an example of the result ("1:35.764", "4.5k"...).
             /// </summary>
+            /// <summary>What a column or header item shows, where its name doesn't say it all (tooltip in the lists).</summary>
+            static readonly Dictionary<string, string> ItemTips = new Dictionary<string, string>
+            {
+                { "Class color bar (multiclass only)", "A bar in the colour of the car's class; only in multiclass sessions" },
+                { "Position", "Position in the class (overall when everyone is in one class)" },
+                { "Class position", "Position in the class" },
+                { "Positions gained", "Places gained (green) or lost (red) since the start of the race" },
+                { "Car brand", "Short name of the car brand, for example LAM or BMW" },
+                { "License / SR", "License class and safety rating, in the license colour" },
+                { "iRating change (est.)", "Estimated iRating gain or loss if the race ended now (green / red)" },
+                { "Gap to leader", "Time behind the leader of the class" },
+                { "Gap to fastest", "Difference to the fastest lap of the class" },
+                { "Interval", "Time to the car one position ahead" },
+                { "Gap to car ahead", "Difference to the lap time of the car one position ahead" },
+                { "Pit status and flags", "PIT, TOW, OUT (out lap), number of stops, and the flags: black flag, furled black flag (warning), meatball (repair), DQ" },
+                { "Laps in stint", "Laps since the car's last pit stop" },
+                { "Laps completed", "Number of laps the car has completed" },
+                { "Tire compound", "The tyres the car is on, when compounds differ in the field" },
+                { "Relative time", "Seconds ahead (+) or behind (-) you on track" },
+                { "Push what follows to the right", "Items below this one are aligned to the right of the header bar" },
+                { "Widget name", "The display name of the widget" },
+                { "Session", "Practice, qualify or race (as a letter or a word)" },
+                { "Class (single class)", "The class or car, when everyone is in one class" },
+                { "Laps", "Laps of the leader, and the total (or an estimate for timed races)" },
+                { "Time", "Time remaining (and the length of the session)" },
+                { "Strength of field", "Average iRating of the field (of your class)" },
+                { "Cars", "Cars on track and the number of cars in the session" },
+                { "Incidents and limits", "Your incidents, the next penalty and the disqualification limit of the event" },
+                { "Clock", "The time of day: your PC's clock or the sim's" },
+                { "Track temperature", "Temperature of the track surface" },
+                { "Air temperature", "Temperature of the air" },
+                { "Humidity", "Relative humidity of the air" },
+            };
+
             sealed class ListEditor : StackPanel
             {
                 readonly List<ColumnConfig> list;
@@ -503,6 +537,8 @@ namespace vibeRacingOverlays.App.UI
                         g.Children.Add(buttons);
 
                         var cb = new CheckBox { Content = def.Label, IsChecked = col.Enabled, VerticalAlignment = VerticalAlignment.Center };
+                        string tip;
+                        if (ItemTips.TryGetValue(def.Label, out tip)) cb.ToolTip = tip;
                         cb.Click += (s, e) => { col.Enabled = cb.IsChecked == true; changed(); };
                         Grid.SetColumn(cb, 1);
                         g.Children.Add(cb);

@@ -12,9 +12,9 @@
                 <TextBlock x:Name="AppTitle" Text="vibeRacingOverlays" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,14,0"/>
                 <!-- presets and files for the active layout and the selected widget (filled when opened) -->
                 <Menu x:Name="MainMenu" VerticalAlignment="Center" Margin="0,0,14,0">
-                    <MenuItem x:Name="LayoutMenu" Header="Layout"><MenuItem Header="..."/></MenuItem>
-                    <MenuItem x:Name="WidgetMenu" Header="Widget"><MenuItem Header="..."/></MenuItem>
-                    <MenuItem x:Name="HotkeysMenu" Header="Hotkeys"/>
+                    <MenuItem x:Name="LayoutMenu" Header="Layout" ToolTip="New layouts, layout presets, export and import"><MenuItem Header="..."/></MenuItem>
+                    <MenuItem x:Name="WidgetMenu" Header="Widget" ToolTip="Presets of the selected widget, export and import"><MenuItem Header="..."/></MenuItem>
+                    <MenuItem x:Name="HotkeysMenu" Header="Hotkeys" ToolTip="Keys and wheel or button box buttons for widgets, layouts and fuel"/>
                 </Menu>
                 <!-- undo / redo of the active layout (MainWindow.Undo.cs) -->
                 <Button x:Name="UndoButton" Style="{StaticResource IconButton}" Content="&#xE7A7;" IsEnabled="False" ToolTipService.ShowOnDisabled="True" VerticalAlignment="Center" Margin="0,0,4,0"/>
@@ -26,7 +26,7 @@
                     </StackPanel>
                 </Border>
                 <TextBlock Text="Data" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <ComboBox x:Name="SourceBox" Width="110" VerticalAlignment="Center"/>
+                <ComboBox x:Name="SourceBox" Width="110" VerticalAlignment="Center" ToolTip="Where the widgets get their data: Auto (iRacing when it runs, otherwise the demo race), iRacing or Demo"/>
 
                 <ToggleButton x:Name="OverlaysToggle" DockPanel.Dock="Right" Content="Toggle overlay" ToolTip="Show or hide all widgets" Margin="0"/>
                 <ToggleButton x:Name="EditToggle" DockPanel.Dock="Right" Content="Edit layout" ToolTip="Move, resize and lock widgets on screen"/>
@@ -44,8 +44,8 @@
                     <TextBlock x:Name="VersionText" FontSize="12" Foreground="{DynamicResource Fg}"/>
                 </Border>
                 <TextBlock x:Name="FolderLink" DockPanel.Dock="Right" Text="Settings folder" FontSize="12" Foreground="{DynamicResource Accent}" Cursor="Hand" Margin="16,0,0,0" VerticalAlignment="Center" ToolTip="Open the folder with your settings, backups and errors.log"/>
-                <TextBlock x:Name="SaveText" DockPanel.Dock="Right" FontSize="12" Foreground="{DynamicResource Muted}" Margin="16,0,0,0" VerticalAlignment="Center"/>
-                <TextBlock x:Name="LayoutInfo" DockPanel.Dock="Left" FontSize="12" Foreground="{DynamicResource Fg}" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                <TextBlock x:Name="SaveText" DockPanel.Dock="Right" FontSize="12" Foreground="{DynamicResource Muted}" Margin="16,0,0,0" VerticalAlignment="Center" ToolTip="Layouts, widgets and presets are saved automatically after every change"/>
+                <TextBlock x:Name="LayoutInfo" DockPanel.Dock="Left" FontSize="12" Foreground="{DynamicResource Fg}" Margin="0,0,16,0" VerticalAlignment="Center" ToolTip="The active layout and how many of its widgets are switched on"/>
                 <TextBlock x:Name="FooterText" Foreground="{DynamicResource Muted}" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
             </DockPanel>
         </Border>

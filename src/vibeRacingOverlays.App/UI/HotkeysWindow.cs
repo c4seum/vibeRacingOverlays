@@ -113,7 +113,8 @@ namespace vibeRacingOverlays.App.UI
                         field.SetResourceReference(Control.ForegroundProperty, "Danger");
                         field.ToolTip = "Another program already uses this key combination: choose another one";
                     }
-                    field.Click += (s, e) => StartCapture(b);
+                    if (field.ToolTip == null) field.ToolTip = "Click, then press a key combination or a wheel button: let go quickly for a short press, keep it pressed for a hold";
+                field.Click += (s, e) => StartCapture(b);
     
                     var repeat = new CheckBox { Content = "Repeat", Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, IsChecked = b.Repeat && !b.Hold };
                     string why = RepeatBlocked(b);

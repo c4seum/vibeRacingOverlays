@@ -393,6 +393,18 @@ namespace vibeRacingOverlays.App
             return mi;
         }
 
+        static MenuItem Tip(MenuItem m, string tooltip) { m.ToolTip = tooltip; return m; }
+
+        /// <summary>Tooltips for menu items by their header (items that already have one keep it).</summary>
+        static void Explain(MenuItem menu, Dictionary<string, string> tips)
+        {
+            foreach (var mi in menu.Items.OfType<MenuItem>())
+            {
+                string tip;
+                if (mi.ToolTip == null && mi.Header is string && tips.TryGetValue((string)mi.Header, out tip)) mi.ToolTip = tip;
+            }
+        }
+
         static MenuItem Sub(string header, IEnumerable<MenuItem> items, string empty = "(none yet)")
         {
             var mi = new MenuItem { Header = header };
@@ -415,13 +427,13 @@ namespace vibeRacingOverlays.App
             var m = LayoutMenu;
             m.Items.Clear();
             var l = settings.ActiveLayout;
-            m.Items.Add(Item("New empty layout...", () => NewLayout(null)));
-            m.Items.Add(Sub("New layout from preset", SortedLayoutPresets().Select(p => Item(p.Name + (p.IsBuiltIn ? "  (built-in)" : ""), () => NewLayout(p)))));
-            m.Items.Add(Item("Rename '" + l.Name + "'...", RenameLayout));
-            m.Items.Add(Item("Duplicate '" + l.Name + "'", DuplicateLayout));
+            m.Items.Add(Item("New empty layout...", () => NewLayout(null), true, "A new layout without widgets; it becomes the active one"));
+            m.Items.Add(Tip(Sub("New layout from preset", SortedLayoutPresets().Select(p => Item(p.Name + (p.IsBuiltIn ? "  (built-in)" : ""), () => NewLayout(p)))), "A new layout made from a layout preset (a preset never overwrites a layout you work with)"));
+            m.Items.Add(Item("Rename '" + l.Name + "'...", RenameLayout, true, "Give the active layout another name"));
+            m.Items.Add(Item("Duplicate '" + l.Name + "'", DuplicateLayout, true, "A copy of the active layout with all its widgets"));
             m.Items.Add(Item("Delete '" + l.Name + "'", DeleteLayout, settings.Layouts.Count > 1, settings.Layouts.Count > 1 ? null : "The last layout can't be deleted"));
             m.Items.Add(new Separator());
-            m.Items.Add(Item("Save as preset...", SaveLayoutAsPreset));
+            m.Items.Add(Item("Save as preset...", SaveLayoutAsPreset, true, "Store the active layout (widgets, positions, settings) as a new layout preset"));
             m.Items.Add(Sub("Save to preset", SortedLayoutPresets().Where(p => !p.IsBuiltIn).Select(p => Item(p.Name, () => SaveLayoutToPreset(p)))));
             m.Items.Add(Sub("Manage presets", SortedLayoutPresets().Where(p => !p.IsBuiltIn).Select(p =>
             {
@@ -433,6 +445,11 @@ namespace vibeRacingOverlays.App
             m.Items.Add(new Separator());
             m.Items.Add(Item("Export layout...", ExportLayout, true, "Save layout '" + l.Name + "' with all its widgets and their settings to a file"));
             m.Items.Add(Item("Import layout...", ImportLayout, true, "Add a layout file as a preset (you can also drop files on the window)"));
+            Explain(m, new Dictionary<string, string>
+            {
+                { "Save to preset", "Overwrite one of your layout presets with the active layout" },
+                { "Manage presets", "Rename or delete your layout presets" },
+            });
         }
 
         /// <summary>Widget menu (for the selected widget): load a preset into it, store it as a preset, manage presets, files.</summary>
@@ -458,6 +475,13 @@ namespace vibeRacingOverlays.App
             m.Items.Add(new Separator());
             m.Items.Add(Item("Export preset...", () => WidgetPresets.Export(this, ws), true, "Save this widget's settings as a preset file (to share)"));
             m.Items.Add(Item("Import preset...", () => { if (WidgetPresets.Import(this, settings, ws) != null) WidgetPresetsChanged(ws); }, true, "Add a preset file (and load it into this widget)"));
+            Explain(m, new Dictionary<string, string>
+            {
+                { "Load preset", "Replace the settings of this widget with a preset (its name and position stay)" },
+                { "Save as preset...", "Store the settings of this widget as a new preset" },
+                { "Save to preset", "Overwrite one of your presets with the settings of this widget" },
+                { "Manage presets", "Rename or delete your presets of this widget type" },
+            });
         }
 
         void WidgetPresetsChanged(WidgetSettings ws)
