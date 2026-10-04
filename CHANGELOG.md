@@ -6,6 +6,8 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-04
+
 ### Added
 - Relative: new style setting **Cars in the pits**. *Dim row* fades the whole row of a car on pit road (car number, license and class color too, the PIT badge stays bright), so it's clear it isn't racing you. *Dim text* is the old look (only the text in grey). Your existing Relative widgets keep *Dim text*; the Default preset (and so new widgets and fresh installs) uses *Dim row*.
 - **System tray icon.** Closing the window keeps the app and your widgets running in the tray; click the icon to open it again. Its menu has show widgets, edit layout, switch layout and Exit. *Keep running when the window is closed* (in that menu) turns this off.
