@@ -28,7 +28,8 @@ namespace vibeRacingOverlays.App.Core
         public string Format { get; set; }
     }
 
-    public enum ShowWhen { Always, InCar, InRace }
+    /// <summary>When a widget is on screen. Saved by name, so new values may go anywhere in the list.</summary>
+    public enum ShowWhen { Always, InCar, InPits, InRace }
 
     /// <summary>Point of the screen (and of the widget) that the position offsets are measured from.</summary>
     public enum Anchor { TopLeft, Top, TopRight, Left, Center, Right, BottomLeft, Bottom, BottomRight }
@@ -66,7 +67,7 @@ namespace vibeRacingOverlays.App.Core
             Tooltip = "How often the widget may redraw. Lower = less FPS impact.")]
         public int RefreshHz { get; set; } = 10;
 
-        [Setting("Show", Group = "Widget", Order = 1, Tooltip = "When the widget is on screen: always, only while you are in the car, or only in races")]
+        [Setting("Show", Group = "Widget", Order = 1, Tooltip = "When the widget is on screen: always, only while you sit in the car, only while you are out of the car (garage, pits, spectating), or only in races")]
         public ShowWhen Show { get; set; } = ShowWhen.Always;
 
         // Bahnschrift: the look every widget had before fonts could be chosen (also in the Default presets)

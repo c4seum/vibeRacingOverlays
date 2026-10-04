@@ -6,6 +6,9 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ## [Unreleased]
 
+### Added
+- **Show: In pits** for every widget (widget card > Show): the widget is only on screen while you are out of the car (garage, pits, spectating). Together with *In car* you can have two versions of a widget in one layout, for example standings with other columns while you're out of the car.
+
 ### Fixed
 - Widgets set to show **In car** stayed on screen after you got out of the car in the pits. They now follow whether you sit in the car (iRacing's own in-car flag), so they also hide in the garage and in replays.
 

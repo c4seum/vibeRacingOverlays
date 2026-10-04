@@ -155,6 +155,8 @@ namespace vibeRacingOverlays.App.Widgets
             {
                 // not the car's track surface: after getting out in the pits it stays "in pit stall"
                 case ShowWhen.InCar: return snap.InCar && snap.Player != null;
+                // out of the car while iRacing runs: a second widget with other settings can take over
+                case ShowWhen.InPits: return !(snap.InCar && snap.Player != null);
                 case ShowWhen.InRace: return snap.IsRace;
                 default: return true;
             }

@@ -363,7 +363,7 @@ namespace vibeRacingOverlays.App.UI
                         return b == null || b.Browsable;
                     }).ToList();
                     // a few short choices: segmented control; otherwise a drop-down
-                    if (values.Count <= 3 && values.All(v => Ui.Label(v).Length <= 14))
+                    if (values.Count <= 3 && values.All(v => Ui.Label(v).Length <= 14) || values.Count == 4 && values.All(v => Ui.Label(v).Length <= 8))
                         return Ui.Segmented(values, p.GetValue(ws), v => { if (!Equals(p.GetValue(ws), v)) { p.SetValue(ws, v); Changed(); } });
                     var items = values.Select(v => new Ui.EnumItem { Value = v }).ToList();
                     var combo = new ComboBox { ItemsSource = items, SelectedItem = items.First(i => Equals(i.Value, p.GetValue(ws))), Width = 200, HorizontalAlignment = HorizontalAlignment.Left };
