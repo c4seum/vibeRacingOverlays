@@ -6,6 +6,8 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-10-04
+
 ### Added
 - **Show: In pits** for every widget (widget card > Show): the widget is only on screen while you are out of the car (garage, pits, spectating). Together with *In car* you can have two versions of a widget in one layout, for example standings with other columns while you're out of the car.
 
