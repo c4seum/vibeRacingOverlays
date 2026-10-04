@@ -132,7 +132,7 @@ namespace vibeRacingOverlays.App.UI
                     row.Children.Add(field);
                     row.Children.Add(repeat);
                     row.Children.Add(clear);
-                    Ui.Row(groupCard, LabelOf(c.Action, c.Label), row, null, null, 260);
+                    Ui.Row(groupCard, LabelOf(c.Action, c.Label), row, Hotkeys.Tooltip(c.Action), null, 260);
                 }
             }
         }

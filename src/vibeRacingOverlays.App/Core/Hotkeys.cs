@@ -58,10 +58,10 @@ namespace vibeRacingOverlays.App.Core
             (HotkeyAction.Layout2, "Layouts", "Layout 2"),
             (HotkeyAction.Layout3, "Layouts", "Layout 3"),
             (HotkeyAction.Layout4, "Layouts", "Layout 4"),
-            (HotkeyAction.FuelCustomUp, "Fuel calculator", "Custom per lap +0.05 L"),
-            (HotkeyAction.FuelCustomDown, "Fuel calculator", "Custom per lap -0.05 L"),
-            (HotkeyAction.FuelCustomToAverage, "Fuel calculator", "Custom per lap = current average"),
-            (HotkeyAction.FuelResetAverage, "Fuel calculator", "Start the averages again"),
+            (HotkeyAction.FuelCustomUp, "Fuel calculator", "Increase custom"),
+            (HotkeyAction.FuelCustomDown, "Fuel calculator", "Decrease custom"),
+            (HotkeyAction.FuelCustomToAverage, "Fuel calculator", "Set custom"),
+            (HotkeyAction.FuelResetAverage, "Fuel calculator", "Reset average"),
         };
 
         /// <summary>
@@ -99,6 +99,19 @@ namespace vibeRacingOverlays.App.Core
             // taken over: not written again (and never read again)
             s.HotkeyEditMode = s.HotkeyToggleOverlays = s.HotkeyNextLayout = null;
             return list;
+        }
+
+        /// <summary>What an action does, when its short name needs it (tooltip in the Hotkeys window).</summary>
+        public static string Tooltip(HotkeyAction a)
+        {
+            switch (a)
+            {
+                case HotkeyAction.FuelCustomUp: return "Custom fuel per lap +0.05 L (a fuel saving target). From \"average\" it starts at your current average.";
+                case HotkeyAction.FuelCustomDown: return "Custom fuel per lap -0.05 L. From \"average\" it starts at your current average.";
+                case HotkeyAction.FuelCustomToAverage: return "Custom fuel per lap = your current average";
+                case HotkeyAction.FuelResetAverage: return "Start the fuel averages again (after a caution or an incident skewed them)";
+                default: return null;
+            }
         }
 
         /// <summary>Actions that may repeat while held (steps); repeating an on / off action would only flicker.</summary>
