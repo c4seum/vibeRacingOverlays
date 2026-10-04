@@ -18,6 +18,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 - Buttons below the layout list: **Add layout**, rename, **duplicate** (new: a copy of the layout with all its widgets, also in the Layout menu) and delete.
 
 ### Changed
+- Standings: the iRating change column (value and title) is aligned left, like Positions gained.
 - Tooltips everywhere they help: every widget setting, the columns and header items (what each one shows), the Data choice, the menus and their items, the preview source, locking, the tray menu and the Hotkeys window. A setting's explanation now shows over its whole row, not only over its name.
 - New footer: on the left the active layout and how many of its widgets are on, plus a hint for what you're doing (how to drag and resize in edit layout, where to set hotkeys, or a tip); on the right whether everything is saved, a link to the settings folder and the version (click: release notes, or the download when a new version is out). The footer no longer lists hotkeys.
 - No hotkeys in a new installation: also Ctrl+Shift+E, H and L are no longer set by default (they work in all of Windows and took those combinations from other programs). Updating keeps the hotkeys you had. The Hotkeys window is in blocks: Widgets, Layouts, Fuel calculator.

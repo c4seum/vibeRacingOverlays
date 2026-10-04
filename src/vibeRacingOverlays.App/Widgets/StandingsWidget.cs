@@ -123,7 +123,7 @@ namespace vibeRacingOverlays.App.Widgets
                 new ColumnDef("brand", "Car brand", "CAR", 34, true, Align.Center).Fit("LAM", Small * 0.9f, 2),
                 LicenseColumn(),
                 RatingColumn(),
-                new ColumnDef("irdelta", "iRating change (est.)", "iR+/-", 46, race, Align.Right).Fit("▲888"),
+                new ColumnDef("irdelta", "iRating change (est.)", "iR+/-", 46, race, Align.Left).Fit("▲888"),
                 // race gaps: 53.0, 1:02.3 or +3L; P&Q: +0.532
                 new ColumnDef("gap", race ? "Gap to leader" : "Gap to fastest", "GAP", 50, true, Align.Right)
                     .Fit(f => race ? "88." + Digits(f) + "|8:88.8|+88L" : "+88." + Digits(f)).WithFormats(race ? "1" : "3", Decimals),
@@ -404,7 +404,7 @@ namespace vibeRacingOverlays.App.Widgets
                     if (c.IRatingDelta.HasValue)
                     {
                         int d = (int)Math.Round(c.IRatingDelta.Value);
-                        dl.Text(x, y, w, h, (d > 0 ? "▲" : d < 0 ? "▼" : "") + Math.Abs(d), fs, d > 0 ? Green : d < 0 ? Red : Dim, Align.Right);
+                        dl.Text(x, y, w, h, (d > 0 ? "▲" : d < 0 ? "▼" : "") + Math.Abs(d), fs, d > 0 ? Green : d < 0 ? Red : Dim, Align.Left);
                     }
                     break;
                 case "gap":
