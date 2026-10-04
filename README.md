@@ -104,7 +104,10 @@ These also work while iRacing has focus. Set them in the **Hotkeys** menu: click
 | (choose) | Layout 1 to 4 (by their place in the layout list) |
 | (choose) | Show/hide widget 1 to 5 (by their place in the widget list of the active layout) |
 | (choose) | Fuel calculator: custom fuel per lap +0.05 L / -0.05 L (a fuel saving target; from "average" it starts at your current average) |
+| (choose) | Fuel calculator: custom fuel per lap = your current average |
 | (choose) | Fuel calculator: start the averages again (after a caution or an incident) |
+
+Each key combination or button can do two things: a **short press** and a **hold** (held for the hold time, 0.6 s by default). A short press goes off right away, or, when the same key or button also has a hold action, when you let go before the hold time. **Short, repeat** (fuel +/- and next / previous layout) goes off right away and again every 0.15 s after half a second while you hold it; it can't share a key or button with a hold. The Fuel calculator confirms its hotkeys for 2 seconds in its header (for example "Averages reset").
 
 The new actions have no keys yet: hotkeys work in all of Windows, so pick combinations your other programs don't use (for example `Ctrl+Shift+F5`). A combination that another program already uses turns red in the Hotkeys window.
 

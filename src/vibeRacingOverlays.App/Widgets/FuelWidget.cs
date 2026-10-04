@@ -63,6 +63,14 @@ namespace vibeRacingOverlays.App.Widgets
 
         public FuelWidget(FuelSettings s) : base(s) { this.s = s; }
 
+        static string flashText;
+        static DateTime flashUntil;
+
+        /// <summary>A short confirmation of a hotkey (custom per lap set, averages reset), shown 2 s in the widget's header.</summary>
+        public static void Flash(string text) { flashText = text; flashUntil = DateTime.UtcNow.AddSeconds(2); }
+
+        static string FlashNow { get { return DateTime.UtcNow < flashUntil ? flashText : null; } }
+
         public override void Draw(DisplayList dl, RaceSnapshot snap)
         {
             if (s.Layout == FuelLayout.Table) { DrawTable(dl, snap); return; }
@@ -117,6 +125,14 @@ namespace vibeRacingOverlays.App.Widgets
                 y += block;
             }
             if (s.ShowCustom) { DrawRow(dl, f, s.CustomPerLap > 0 ? "Custom" : "Custom (avg)", custom, Argb.Parse(s.CustomColor), x, y, colW, lblH, valH, label, big, false); y += block; }
+
+            // a hotkey confirmation over the top label row (Classic has no header bar)
+            string flash = FlashNow;
+            if (flash != null)
+            {
+                dl.Rect(0, 0, width, lblH + pad, Bg(Argb.Parse(s.BackgroundColor)), 6);
+                dl.Text(pad, pad * 0.3f, width - pad * 2, lblH + pad * 0.4f, flash, label * 1.25f, Yellow);
+            }
 
             dl.Width = width;
             dl.Height = height;
@@ -207,11 +223,18 @@ namespace vibeRacingOverlays.App.Widgets
             float y = 0;
             dl.Rect(0, y, width, hh, Bg(Argb.Parse(s.HeaderColor)));
             dl.Text(pad, y, width / 2, hh, "FUEL", fs, White);
+            string flashed = FlashNow;
             string clock = s.Clock == ClockSource.RealTime ? DateTime.Now.ToString("HH:mm") : TimeSpan.FromSeconds(snap.TimeOfDay).ToString(@"hh\:mm");
             float clockW = M("88:88", fs);
             dl.Text(width - pad - clockW, y, clockW, hh, clock, fs, White, Align.Right);
-            string clockLbl = s.Clock == ClockSource.RealTime ? "Clock" : "Sim time";
-            dl.Text(width / 2, y, width / 2 - pad - clockW - fs * 0.6f, hh, clockLbl, small, Dim, Align.Right);
+            float fuelW = dl.Measure("FUEL", fs) + fs;
+            // a hotkey confirmation takes the place of the clock label for 2 s
+            if (flashed != null) dl.Text(pad + fuelW, y, width - pad * 2 - fuelW - clockW - fs * 0.6f, hh, flashed, fs, Yellow);
+            else
+            {
+                string clockLbl = s.Clock == ClockSource.RealTime ? "Clock" : "Sim time";
+                dl.Text(width / 2, y, width / 2 - pad - clockW - fs * 0.6f, hh, clockLbl, small, Dim, Align.Right);
+            }
             y += hh;
 
             // big band: fuel level, laps in race, pit indicator

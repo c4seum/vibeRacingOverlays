@@ -6,8 +6,15 @@ namespace vibeRacingOverlays.App.Core
         EditLayout, ToggleWidgets, NextLayout, PreviousLayout,
         Layout1, Layout2, Layout3, Layout4,
         Widget1, Widget2, Widget3, Widget4, Widget5,
-        FuelCustomUp, FuelCustomDown, FuelResetAverage,
+        FuelCustomUp, FuelCustomDown, FuelResetAverage, FuelCustomToAverage,
     }
+
+    /// <summary>
+    /// How a binding goes off. Press: when pressed (when released if the same key or button also has a Hold action, to
+    /// tell the two apart). PressRepeat: when pressed and, while held, again after 0.5 s every 0.15 s. Hold: once, after
+    /// the hold time while still held.
+    /// </summary>
+    public enum PressMode { Press, PressRepeat, Hold }
 
     /// <summary>
     /// One action with its keyboard combination (WPF key names joined with "+", e.g. "Ctrl+Shift+E"; null = none) and/or
@@ -20,6 +27,8 @@ namespace vibeRacingOverlays.App.Core
         public string Device { get; set; }
         public string DeviceName { get; set; }
         public int Button { get; set; }
+        public PressMode KeysMode { get; set; }
+        public PressMode ButtonMode { get; set; }
     }
 
     public static class Hotkeys
@@ -44,6 +53,7 @@ namespace vibeRacingOverlays.App.Core
             (HotkeyAction.Widget5, "Show / hide widget 5", null),
             (HotkeyAction.FuelCustomUp, "Fuel: custom per lap +0.05 L", null),
             (HotkeyAction.FuelCustomDown, "Fuel: custom per lap -0.05 L", null),
+            (HotkeyAction.FuelCustomToAverage, "Fuel: custom per lap = current average", null),
             (HotkeyAction.FuelResetAverage, "Fuel: start the averages again", null),
         };
 
@@ -69,6 +79,29 @@ namespace vibeRacingOverlays.App.Core
                     b = new HotkeyBinding { Action = c.Action, Keys = keys };
                 }
                 list.Add(b);
+            }
+            return list;
+        }
+
+        /// <summary>Actions that may repeat while held (steps); repeating an on / off action would only flicker.</summary>
+        public static bool CanRepeat(HotkeyAction a)
+        {
+            return a == HotkeyAction.FuelCustomUp || a == HotkeyAction.FuelCustomDown || a == HotkeyAction.NextLayout || a == HotkeyAction.PreviousLayout;
+        }
+
+        /// <summary>The physical input of a binding: "K:keys" or "B:device#button" (null = none).</summary>
+        public static string KeysInput(HotkeyBinding b) { return string.IsNullOrEmpty(b.Keys) ? null : "K:" + b.Keys; }
+        public static string ButtonInput(HotkeyBinding b) { return b.Device == null ? null : "B:" + b.Device + "#" + b.Button; }
+
+        /// <summary>Every binding on one physical input (a key combination or a button), with its mode.</summary>
+        public static List<(HotkeyAction Action, PressMode Mode)> On(AppSettings s, string input)
+        {
+            var list = new List<(HotkeyAction, PressMode)>();
+            if (input == null) return list;
+            foreach (var b in s.Hotkeys)
+            {
+                if (KeysInput(b) == input) list.Add((b.Action, b.KeysMode));
+                if (ButtonInput(b) == input) list.Add((b.Action, b.ButtonMode));
             }
             return list;
         }

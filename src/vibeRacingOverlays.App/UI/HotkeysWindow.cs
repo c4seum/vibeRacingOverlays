@@ -26,7 +26,7 @@ namespace vibeRacingOverlays.App.UI
             this.settings = settings;
             this.overlays = overlays;
             Title = "Hotkeys";
-            Width = 860;
+            Width = 1130;
             Height = 760;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ShowInTaskbar = false;
@@ -72,12 +72,19 @@ namespace vibeRacingOverlays.App.UI
             var card = Ui.Card(host, Ui.Header("Hotkeys and wheel buttons", null));
             var hint = Ui.Caption("Click a field, then press the keys (for example Ctrl+Shift+F5) or a button on your wheel or button box. "
                 + "Keys work everywhere in Windows, so pick combinations other programs don't use. Wheel buttons work while iRacing is in front. "
-                + "Layouts and widgets go by their place in the lists (widget 1 = the first widget of the active layout).");
+                + "Short press: right away (on release when the same key or button also has a Hold action). Repeat: again while you hold it. "
+                + "Hold: after the hold time. Layouts and widgets go by their place in the lists (widget 1 = the first widget of the active layout).");
             hint.TextWrapping = TextWrapping.Wrap;
             hint.Margin = new Thickness(14, 0, 10, 8);
             card.Children.Add(hint);
             notice.Margin = new Thickness(14, 0, 10, 6);
             card.Children.Add(notice);
+
+            var times = new[] { 0.4, 0.5, 0.6, 0.8, 1.0 };
+            var hold = new ComboBox { Width = 120, ItemsSource = times.Select(t => t.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " s").ToList(), HorizontalAlignment = HorizontalAlignment.Left };
+            hold.SelectedIndex = Math.Max(0, Array.IndexOf(times, times.OrderBy(t => Math.Abs(t - settings.HoldSeconds)).First()));
+            hold.SelectionChanged += (s, e) => { settings.HoldSeconds = times[hold.SelectedIndex]; overlays.ScheduleSave(); };
+            Ui.Row(card, "Hold time", hold, "How long a key or button must be held for a Hold action", null, 250);
 
             foreach (var c in Hotkeys.Catalog)
             {
@@ -85,8 +92,8 @@ namespace vibeRacingOverlays.App.UI
                 var row = new StackPanel { Orientation = Orientation.Horizontal };
 
                 bool capturing = capturingKeys == b;
-                string keysText = capturing ? "Press the keys... (Esc: cancel)" : string.IsNullOrEmpty(b.Keys) ? "Set keys" : Hotkeys.Show(b.Keys);
-                var keys = new Button { Content = keysText, Width = 230, HorizontalContentAlignment = HorizontalAlignment.Left };
+                string keysText = capturing ? "Press the keys... (Esc)" : string.IsNullOrEmpty(b.Keys) ? "Set keys" : Hotkeys.Show(b.Keys);
+                var keys = new Button { Content = keysText, Width = 180, HorizontalContentAlignment = HorizontalAlignment.Left };
                 if (string.IsNullOrEmpty(b.Keys) && !capturing) keys.SetResourceReference(Control.ForegroundProperty, "Muted");
                 if (overlays.KeysInUse.Contains(c.Action))
                 {
@@ -98,8 +105,8 @@ namespace vibeRacingOverlays.App.UI
                 clearKeys.IsEnabled = !string.IsNullOrEmpty(b.Keys);
                 clearKeys.Click += (s, e) => { b.Keys = null; Changed(); };
 
-                string buttonText = buttonCapture == b ? "Press a wheel button... (Esc: cancel)" : b.Device == null ? "Set wheel button" : Hotkeys.ShowButton(b);
-                var button = new Button { Content = buttonText, Width = 260, Margin = new Thickness(14, 0, 0, 0), HorizontalContentAlignment = HorizontalAlignment.Left };
+                string buttonText = buttonCapture == b ? "Press a wheel button... (Esc)" : b.Device == null ? "Set wheel button" : Hotkeys.ShowButton(b);
+                var button = new Button { Content = buttonText, Width = 220, Margin = new Thickness(18, 0, 0, 0), HorizontalContentAlignment = HorizontalAlignment.Left };
                 if (b.Device == null && buttonCapture != b) button.SetResourceReference(Control.ForegroundProperty, "Muted");
                 button.Click += (s, e) => StartButtonCapture(b);
                 var clearButton = Ui.IconButton("", "No wheel button");
@@ -107,10 +114,101 @@ namespace vibeRacingOverlays.App.UI
                 clearButton.Click += (s, e) => { b.Device = null; b.DeviceName = null; b.Button = 0; Changed(); };
 
                 row.Children.Add(keys);
+                row.Children.Add(ModeBox(b, true));
                 row.Children.Add(clearKeys);
                 row.Children.Add(button);
+                row.Children.Add(ModeBox(b, false));
                 row.Children.Add(clearButton);
                 Ui.Row(card, LabelOf(c.Action, c.Label), row, null, null, 250);
+            }
+        }
+
+        // ------------------------------------------------------------ short press / repeat / hold
+
+        static readonly (PressMode Mode, string Label)[] Modes = { (PressMode.Press, "Short press"), (PressMode.PressRepeat, "Short, repeat"), (PressMode.Hold, "Hold") };
+
+        static PressMode ModeOf(HotkeyBinding b, bool keysSide) { return keysSide ? b.KeysMode : b.ButtonMode; }
+        static void SetMode(HotkeyBinding b, bool keysSide, PressMode m) { if (keysSide) b.KeysMode = m; else b.ButtonMode = m; }
+        static string InputOf(HotkeyBinding b, bool keysSide) { return keysSide ? Hotkeys.KeysInput(b) : Hotkeys.ButtonInput(b); }
+
+        /// <summary>The other bindings on the same key combination or button (and which side of them).</summary>
+        IEnumerable<(HotkeyBinding B, bool KeysSide)> Others(HotkeyBinding b, bool keysSide)
+        {
+            string input = InputOf(b, keysSide);
+            if (input == null) yield break;
+            foreach (var o in settings.Hotkeys)
+            {
+                if (o == b) continue;
+                if (Hotkeys.KeysInput(o) == input) yield return (o, true);
+                if (Hotkeys.ButtonInput(o) == input) yield return (o, false);
+            }
+        }
+
+        /// <summary>
+        /// How this binding goes off. Options that would clash with another action on the same key or button are greyed:
+        /// one short press and one hold per key or button, and repeat can't share a key or button with a hold.
+        /// </summary>
+        ComboBox ModeBox(HotkeyBinding b, bool keysSide)
+        {
+            var others = Others(b, keysSide).ToList();
+            bool otherPress = others.Any(o => ModeOf(o.B, o.KeysSide) != PressMode.Hold);
+            bool otherHold = others.Any(o => ModeOf(o.B, o.KeysSide) == PressMode.Hold);
+            bool otherRepeat = others.Any(o => ModeOf(o.B, o.KeysSide) == PressMode.PressRepeat);
+            string what = keysSide ? "key combination" : "button";
+            var box = new ComboBox { Width = 120, Margin = new Thickness(4, 0, 0, 0) };
+            ToolTipService.SetShowOnDisabled(box, true);
+            foreach (var m in Modes)
+            {
+                string why = null;
+                if (m.Mode == PressMode.PressRepeat && !Hotkeys.CanRepeat(b.Action)) why = "This action doesn't repeat (only steps do: fuel +/- and next / previous layout)";
+                else if (m.Mode != PressMode.Hold && otherPress) why = "Another action already has a short press on this " + what;
+                else if (m.Mode == PressMode.PressRepeat && otherHold) why = "Repeat can't share a " + what + " with a Hold action";
+                else if (m.Mode == PressMode.Hold && otherHold) why = "Another action already holds this " + what;
+                else if (m.Mode == PressMode.Hold && otherRepeat) why = "Hold can't share a " + what + " with a repeating action";
+                var item = new ComboBoxItem { Content = m.Label, Tag = m.Mode, IsEnabled = why == null, ToolTip = why };
+                ToolTipService.SetShowOnDisabled(item, true);
+                box.Items.Add(item);
+            }
+            box.SelectedIndex = Array.FindIndex(Modes, m => m.Mode == ModeOf(b, keysSide));
+            box.SelectionChanged += (s, e) =>
+            {
+                var item = box.SelectedItem as ComboBoxItem;
+                if (item == null) return;
+                SetMode(b, keysSide, (PressMode)item.Tag);
+                Changed();
+            };
+            return box;
+        }
+
+        /// <summary>
+        /// After a key combination or button was set: another action with the same kind (short press, or hold) on it loses
+        /// it, and repeat and hold can't share it (repeat becomes a plain short press).
+        /// </summary>
+        void Resolve(HotkeyBinding b, bool keysSide)
+        {
+            var mode = ModeOf(b, keysSide);
+            if (mode == PressMode.PressRepeat && !Hotkeys.CanRepeat(b.Action)) SetMode(b, keysSide, mode = PressMode.Press);
+            bool isHold = mode == PressMode.Hold;
+            string what = keysSide ? "keys." : "button.";
+            foreach (var o in Others(b, keysSide).ToList())
+            {
+                var om = ModeOf(o.B, o.KeysSide);
+                var label = "\"" + Hotkeys.Catalog.First(c => c.Action == o.B.Action).Label + "\"";
+                if ((om == PressMode.Hold) == isHold)
+                {
+                    if (o.KeysSide) o.B.Keys = null; else { o.B.Device = null; o.B.DeviceName = null; o.B.Button = 0; }
+                    notice.Text = "Moved from " + label + " to this action.";
+                }
+                else if (isHold && om == PressMode.PressRepeat)
+                {
+                    SetMode(o.B, o.KeysSide, PressMode.Press);
+                    notice.Text = label + " no longer repeats: it shares the same " + what;
+                }
+                else if (mode == PressMode.PressRepeat && om == PressMode.Hold)
+                {
+                    SetMode(b, keysSide, PressMode.Press);
+                    notice.Text = "This action no longer repeats: " + label + " holds the same " + what;
+                }
             }
         }
 
@@ -118,17 +216,6 @@ namespace vibeRacingOverlays.App.UI
         {
             overlays.ScheduleSave();
             Build();
-        }
-
-        /// <summary>A binding used twice would run two actions: the other action loses it.</summary>
-        void TakeOver(HotkeyBinding b, Func<HotkeyBinding, bool> same, Action<HotkeyBinding> clear)
-        {
-            foreach (var other in settings.Hotkeys.Where(x => x != b && same(x)).ToList())
-            {
-                clear(other);
-                var label = Hotkeys.Catalog.First(c => c.Action == other.Action).Label;
-                notice.Text = "Moved from \"" + label + "\" to this action.";
-            }
         }
 
         void OnKey(object sender, KeyEventArgs e)
@@ -156,8 +243,8 @@ namespace vibeRacingOverlays.App.UI
             var b = capturingKeys;
             capturingKeys = null;
             notice.Text = "";
-            TakeOver(b, x => x.Keys == combo, x => x.Keys = null);
             b.Keys = combo;
+            Resolve(b, true);
             Changed();
         }
 
@@ -173,10 +260,10 @@ namespace vibeRacingOverlays.App.UI
                 var target = buttonCapture;
                 StopButtonCapture();
                 if (target == null) return;
-                TakeOver(target, x => x.Device == device && x.Button == button, x => { x.Device = null; x.DeviceName = null; x.Button = 0; });
                 target.Device = device;
                 target.DeviceName = name;
                 target.Button = button;
+                Resolve(target, false);
                 Changed();
             };
             // no wheel connected, or no press: give up after 15 seconds

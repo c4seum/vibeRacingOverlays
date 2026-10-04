@@ -146,6 +146,8 @@ namespace vibeRacingOverlays.App.Core
         public string HotkeyNextLayout { get; set; } = "Ctrl+Shift+L";
         /// <summary>Every action with its keys and / or wheel button (Hotkeys window). The three strings above are only read once from older settings.</summary>
         public List<HotkeyBinding> Hotkeys { get; set; }
+        /// <summary>How long a key or button must be held for a Hold binding (seconds).</summary>
+        public double HoldSeconds { get; set; } = 0.6;
         /// <summary>The window's close button hides the app to the system tray (widgets keep running); Exit is in the tray menu.</summary>
         public bool CloseToTray { get; set; } = true;
         /// <summary>The tray tip "still running" was shown once, so it doesn't come back every time.</summary>

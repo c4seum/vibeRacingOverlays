@@ -17,6 +17,8 @@ namespace vibeRacingOverlays.App.Overlay
     {
         /// <summary>A button went down: device id ("VID_xxxx&amp;PID_yyyy"), device name, button number.</summary>
         public event Action<string, string, int> Pressed;
+        /// <summary>A button went up again (for short press / hold / repeat).</summary>
+        public event Action<string, int> Released;
 
         Thread thread;
         Dispatcher dispatcher;
@@ -117,6 +119,7 @@ namespace vibeRacingOverlays.App.Overlay
                     var now = new HashSet<int>();
                     for (int k = 0; k < len; k++) now.Add(usages[k]);
                     foreach (int b in now) if (!dev.Down.Contains(b) && Pressed != null) Pressed(dev.Id, dev.Name, b);
+                    foreach (int b in dev.Down) if (!now.Contains(b) && Released != null) Released(dev.Id, b);
                     dev.Down = now;
                 }
             }
