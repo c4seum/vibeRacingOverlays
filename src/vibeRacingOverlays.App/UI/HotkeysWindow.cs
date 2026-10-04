@@ -20,6 +20,13 @@ namespace vibeRacingOverlays.App.UI
         readonly StackPanel host = new StackPanel { Margin = new Thickness(20, 16, 20, 16) };
         readonly TextBlock notice = Ui.Caption("");
 
+        // the window edits a copy: nothing is saved (or used) until Save, Cancel or closing throws the changes away
+        readonly List<HotkeyBinding> work;
+        double holdSeconds;
+        readonly string original;
+        bool saved, discard;
+        readonly List<TextBlock> statusTexts = new List<TextBlock>();
+
         HotkeyBinding capturing;      // the binding waiting for a key or button
         string downKeys;              // the key combination being held while capturing
         string downDevice, downName;  // the button being held while capturing
@@ -30,6 +37,9 @@ namespace vibeRacingOverlays.App.UI
         {
             this.settings = settings;
             this.overlays = overlays;
+            work = settings.Hotkeys.Select(Clone).ToList();
+            holdSeconds = settings.HoldSeconds;
+            original = Signature();
             Title = "Hotkeys";
             Width = 900;
             Height = 780;
@@ -39,7 +49,12 @@ namespace vibeRacingOverlays.App.UI
             SetResourceReference(ForegroundProperty, "Fg");
             FontFamily = (System.Windows.Media.FontFamily)FindResource("UiFont");
             FontSize = 13;
-            Content = new ScrollViewer { Content = host, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+            // Save / Cancel above and below the list, so it's clear the hotkeys only count once saved
+            var root = new DockPanel();
+            var top = Bar(false); DockPanel.SetDock(top, Dock.Top); root.Children.Add(top);
+            var bottom = Bar(true); DockPanel.SetDock(bottom, Dock.Bottom); root.Children.Add(bottom);
+            root.Children.Add(new ScrollViewer { Content = host, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+            Content = root;
             notice.TextWrapping = TextWrapping.Wrap;
             notice.SetResourceReference(TextBlock.ForegroundProperty, "Warning");
 
@@ -47,8 +62,10 @@ namespace vibeRacingOverlays.App.UI
             PreviewKeyUp += OnKeyUp;
             SourceInitialized += (s, e) => ThemeManager.ApplyTitleBar(this);
             overlays.SuspendHotkeys();
+            Closing += OnClosing;
             Closed += (s, e) => { StopCapture(); overlays.ReloadHotkeys(); };
             Build();
+            UpdateStatus();
         }
 
         public static void Show(Window owner, AppSettings settings, OverlayManager overlays)
@@ -92,8 +109,8 @@ namespace vibeRacingOverlays.App.UI
 
             var times = new[] { 0.4, 0.5, 0.6, 0.8, 1.0 };
             var hold = new ComboBox { Width = 120, ItemsSource = times.Select(t => t.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " s").ToList(), HorizontalAlignment = HorizontalAlignment.Left };
-            hold.SelectedIndex = Math.Max(0, Array.IndexOf(times, times.OrderBy(t => Math.Abs(t - settings.HoldSeconds)).First()));
-            hold.SelectionChanged += (s, e) => { settings.HoldSeconds = times[hold.SelectedIndex]; overlays.ScheduleSave(); };
+            hold.SelectedIndex = Math.Max(0, Array.IndexOf(times, times.OrderBy(t => Math.Abs(t - holdSeconds)).First()));
+            hold.SelectionChanged += (s, e) => { holdSeconds = times[hold.SelectedIndex]; UpdateStatus(); };
             Ui.Row(card, "Hold time", hold, "How long a key or button must be pressed to count as a hold", null, 260);
 
             // a block per group: widgets, layouts, fuel calculator
@@ -102,17 +119,19 @@ namespace vibeRacingOverlays.App.UI
                 var groupCard = Ui.Card(host, Ui.Header(group.Key, null));
                 foreach (var c in group)
                 {
-                    var b = Hotkeys.Of(settings, c.Action);
+                    var b = work.First(x => x.Action == c.Action);
                     var row = new StackPanel { Orientation = Orientation.Horizontal };
     
                     string text = capturing == b ? "Press a key or button...  (Esc: cancel)" : Hotkeys.Input(b) == null ? "Set key or button" : Hotkeys.Describe(b);
-                    var field = new Button { Content = text, Width = 330, HorizontalContentAlignment = HorizontalAlignment.Left };
+                    // long device names end in "...": the press kind comes before the name, so it always shows
+                    var field = new Button { Content = new TextBlock { Text = text, TextTrimming = TextTrimming.CharacterEllipsis }, Width = 330, HorizontalContentAlignment = HorizontalAlignment.Left };
                     if (Hotkeys.Input(b) == null && capturing != b) field.SetResourceReference(Control.ForegroundProperty, "Muted");
                     if (overlays.KeysInUse.Contains(c.Action))
                     {
                         field.SetResourceReference(Control.ForegroundProperty, "Danger");
                         field.ToolTip = "Another program already uses this key combination: choose another one";
                     }
+                    if (field.ToolTip == null && Hotkeys.Input(b) != null && capturing != b) field.ToolTip = Hotkeys.Describe(b) + "\nClick to set another key or button";
                     if (field.ToolTip == null) field.ToolTip = "Click, then press a key combination or a wheel button: let go quickly for a short press, keep it pressed for a hold";
                 field.Click += (s, e) => StartCapture(b);
     
@@ -144,7 +163,7 @@ namespace vibeRacingOverlays.App.UI
             if (!Hotkeys.CanRepeat(b.Action)) return "Only steps repeat (fuel +/- and next / previous layout)";
             if (Hotkeys.Input(b) == null) return "Set a key or button first";
             if (b.Hold) return "A hold doesn't repeat: it goes off once after the hold time";
-            var other = settings.Hotkeys.FirstOrDefault(o => o != b && o.Hold && Hotkeys.Input(o) == Hotkeys.Input(b));
+            var other = work.FirstOrDefault(o => o != b && o.Hold && Hotkeys.Input(o) == Hotkeys.Input(b));
             if (other != null) return "This key or button also holds \"" + LabelOf(other.Action) + "\": a short press on it goes off on release, so it can't repeat";
             return null;
         }
@@ -155,8 +174,70 @@ namespace vibeRacingOverlays.App.UI
 
         void Changed()
         {
-            overlays.ScheduleSave();
             Build();
+            UpdateStatus();
+        }
+
+        static HotkeyBinding Clone(HotkeyBinding b)
+        {
+            return new HotkeyBinding { Action = b.Action, Keys = b.Keys, Device = b.Device, DeviceName = b.DeviceName, Button = b.Button, Hold = b.Hold, Repeat = b.Repeat };
+        }
+
+        string Signature()
+        {
+            return string.Join(";", work.Select(b => b.Action + "|" + b.Keys + "|" + b.Device + "|" + b.Button + "|" + b.Hold + "|" + b.Repeat)) + ";" + holdSeconds;
+        }
+
+        bool Dirty { get { return Signature() != original; } }
+
+        // ------------------------------------------------------------ save / cancel
+
+        /// <summary>Status text with Cancel and Save, above (bottom = false) or below the list.</summary>
+        Border Bar(bool bottom)
+        {
+            var cancel = new Button { Content = "Cancel", Style = Ui.Style("GhostButton"), MinWidth = 90, Margin = new Thickness(8, 0, 0, 0), ToolTip = "Close without saving: the hotkeys stay as they were" };
+            cancel.Click += (s, e) => { discard = true; Close(); };
+            var save = new Button { Content = "Save", Style = Ui.Style("PrimaryButton"), MinWidth = 90, Margin = new Thickness(8, 0, 0, 0), ToolTip = "Save the hotkeys and close: they work right away" };
+            save.Click += (s, e) => { Save(); Close(); };
+            DockPanel.SetDock(save, Dock.Right);
+            DockPanel.SetDock(cancel, Dock.Right);
+            var status = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
+            statusTexts.Add(status);
+            var row = new DockPanel { LastChildFill = true };
+            row.Children.Add(save);
+            row.Children.Add(cancel);
+            row.Children.Add(status);
+            var bar = new Border { Child = row, Padding = new Thickness(20, 10, 20, 10), BorderThickness = bottom ? new Thickness(0, 1, 0, 0) : new Thickness(0, 0, 0, 1) };
+            bar.SetResourceReference(Border.BackgroundProperty, "Panel");
+            bar.SetResourceReference(Border.BorderBrushProperty, "Divider");
+            return bar;
+        }
+
+        void UpdateStatus()
+        {
+            bool dirty = Dirty;
+            foreach (var t in statusTexts)
+            {
+                t.Text = dirty ? "Changes not saved yet" : "No unsaved changes";
+                t.SetResourceReference(TextBlock.ForegroundProperty, dirty ? "Warning" : "Muted");
+            }
+        }
+
+        void Save()
+        {
+            StopCapture();
+            settings.Hotkeys = work.Select(Clone).ToList();
+            settings.HoldSeconds = holdSeconds;
+            overlays.ScheduleSave();
+            saved = true;
+        }
+
+        void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (saved || discard || !Dirty) return;   // the window's ✕ or Esc with changes: ask
+            var r = MessageBox.Show(this, "Save the changed hotkeys?", "Hotkeys", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+            if (r == MessageBoxResult.Yes) Save();
+            else if (r == MessageBoxResult.Cancel) e.Cancel = true;
         }
 
         // ------------------------------------------------------------ capturing a key or button
@@ -185,7 +266,7 @@ namespace vibeRacingOverlays.App.UI
 
         void StartHoldTimer()
         {
-            holdTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(Math.Max(0.2, settings.HoldSeconds)) };
+            holdTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(Math.Max(0.2, holdSeconds)) };
             holdTimer.Tick += (s, e) => Finish(true);   // still pressed after the hold time: a hold (no need to wait for the release)
             holdTimer.Start();
         }
@@ -202,7 +283,11 @@ namespace vibeRacingOverlays.App.UI
 
         void OnKeyDown(object sender, KeyEventArgs e)
         {
-            if (capturing == null) return;
+            if (capturing == null)
+            {
+                if (e.Key == Key.Escape) { e.Handled = true; Close(); }   // like the window's ✕ (asks when something changed)
+                return;
+            }
             e.Handled = true;
             var key = e.Key == Key.System ? e.SystemKey : e.Key;
             if (key == Key.Escape) { StopCapture(); Build(); return; }
@@ -250,7 +335,7 @@ namespace vibeRacingOverlays.App.UI
             else b.Keys = keys;
             b.Hold = hold;
             notice.Text = "";
-            foreach (var o in settings.Hotkeys.Where(o => o != b && Hotkeys.Input(o) == Hotkeys.Input(b)).ToList())
+            foreach (var o in work.Where(o => o != b && Hotkeys.Input(o) == Hotkeys.Input(b)).ToList())
             {
                 if (o.Hold == b.Hold)
                 {

@@ -153,11 +153,13 @@ namespace vibeRacingOverlays.App.Core
             return b == null || b.Device == null ? "" : "Button " + b.Button + (string.IsNullOrEmpty(b.DeviceName) ? "" : " (" + b.DeviceName + ")");
         }
 
-        /// <summary>What a binding is, for the Hotkeys window: "Ctrl+Shift+F9", "Button 5 (Podium Wheel)", with "  ·  hold".</summary>
+        /// <summary>What a binding is, for the Hotkeys window: "Ctrl+Shift+F9", "Button 5  ·  hold  (Podium Wheel)".</summary>
         public static string Describe(HotkeyBinding b)
         {
-            string what = b.Device != null ? ShowButton(b) : Show(b.Keys);
-            return string.IsNullOrEmpty(what) ? "" : what + (b.Hold ? "  ·  hold" : "");
+            string what = b.Device != null ? "Button " + b.Button : Show(b.Keys);
+            if (string.IsNullOrEmpty(what)) return "";
+            // the device name last: it is long and may be cut off in the field, "hold" must stay visible
+            return what + (b.Hold ? "  ·  hold" : "") + (b.Device != null && !string.IsNullOrEmpty(b.DeviceName) ? "  (" + b.DeviceName + ")" : "");
         }
     }
 }

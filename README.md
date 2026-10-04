@@ -103,7 +103,7 @@ These also work while iRacing has focus. Set them in the **Hotkeys** menu: every
 
 A key or button can do two things: one action on a short press and one on a hold. A short press goes off right away, or, when the same key or button also has a hold action, when you let go before the hold time. A hold goes off once the hold time has passed, while you still hold it. **Repeat** (behind the field; for fuel +/- and next / previous layout) makes a short press go on while you hold it: again after half a second, then every 0.15 s. It's greyed when the key or button also has a hold action. The Fuel calculator confirms its hotkeys for 2 seconds in its header (for example "Averages reset").
 
-A new installation has no hotkeys: they work in all of Windows, so pick combinations your other programs don't use (for example `Ctrl+Shift+F5`), or use wheel buttons. Updating keeps the hotkeys you had (also `Ctrl+Shift+E`, `H` and `L` of earlier versions). A combination that another program already uses turns red in the Hotkeys window.
+A new installation has no hotkeys: they work in all of Windows, so pick combinations your other programs don't use (for example `Ctrl+Shift+F5`), or use wheel buttons. Updating keeps the hotkeys you had (also `Ctrl+Shift+E`, `H` and `L` of earlier versions). A combination that another program already uses turns red in the Hotkeys window. Changes in the Hotkeys window count once you click **Save**; **Cancel** leaves everything as it was.
 
 ### System tray and updates
 
