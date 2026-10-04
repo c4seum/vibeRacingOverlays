@@ -93,7 +93,7 @@ Made a change you didn't want? **Undo** (↶ at the top, or `Ctrl+Z`) puts it ba
 
 ### Hotkeys and wheel buttons
 
-These also work while iRacing has focus. Set them in the **Hotkeys** menu: click a field and press a key combination, or a button on your **wheel or button box** (no extra program needed). ✕ removes a key or button.
+These also work while iRacing has focus. Set them in the **Hotkeys** menu: every action has one field. Click it and press a key combination or a button on your **wheel or button box** (no extra program needed). Let go quickly and it becomes a **short press**; keep it pressed for the hold time (0.6 s by default) and it becomes a **hold**. ✕ removes it.
 
 | Default keys | Action |
 |---|---|
@@ -107,7 +107,7 @@ These also work while iRacing has focus. Set them in the **Hotkeys** menu: click
 | (choose) | Fuel calculator: custom fuel per lap = your current average |
 | (choose) | Fuel calculator: start the averages again (after a caution or an incident) |
 
-Each key combination or button can do two things: a **short press** and a **hold** (held for the hold time, 0.6 s by default). A short press goes off right away, or, when the same key or button also has a hold action, when you let go before the hold time. **Short, repeat** (fuel +/- and next / previous layout) goes off right away and again every 0.15 s after half a second while you hold it; it can't share a key or button with a hold. The Fuel calculator confirms its hotkeys for 2 seconds in its header (for example "Averages reset").
+A key or button can do two things: one action on a short press and one on a hold. A short press goes off right away, or, when the same key or button also has a hold action, when you let go before the hold time. A hold goes off once the hold time has passed, while you still hold it. **Repeat** (behind the field; for fuel +/- and next / previous layout) makes a short press go on while you hold it: again after half a second, then every 0.15 s. It's greyed when the key or button also has a hold action. The Fuel calculator confirms its hotkeys for 2 seconds in its header (for example "Averages reset").
 
 The new actions have no keys yet: hotkeys work in all of Windows, so pick combinations your other programs don't use (for example `Ctrl+Shift+F5`). A combination that another program already uses turns red in the Hotkeys window.
 

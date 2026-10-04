@@ -17,8 +17,10 @@ namespace vibeRacingOverlays.App.Core
     public enum PressMode { Press, PressRepeat, Hold }
 
     /// <summary>
-    /// One action with its keyboard combination (WPF key names joined with "+", e.g. "Ctrl+Shift+E"; null = none) and/or
-    /// a button on a wheel or button box (Device = "VID_xxxx&amp;PID_yyyy", Button = HID button number; null = none).
+    /// One action with ONE input (user's wish, 2026-10-04): a key combination (WPF key names joined with "+", e.g.
+    /// "Ctrl+Shift+E") or a button on a wheel or button box (Device = "VID_xxxx&amp;PID_yyyy", Button = HID button number).
+    /// Hold: goes off when held (recognised while setting it: released quickly = short press, held = hold).
+    /// Repeat: a short press that repeats while held (steps only, never on an input that has a hold action).
     /// </summary>
     public sealed class HotkeyBinding
     {
@@ -27,8 +29,12 @@ namespace vibeRacingOverlays.App.Core
         public string Device { get; set; }
         public string DeviceName { get; set; }
         public int Button { get; set; }
-        public PressMode KeysMode { get; set; }
-        public PressMode ButtonMode { get; set; }
+        public bool Hold { get; set; }
+        public bool Repeat { get; set; }
+
+        // DEV builds of 2026-10-04 had a mode per keys and per button; read once (see Hotkeys.Complete)
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public PressMode? KeysMode { get; set; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public PressMode? ButtonMode { get; set; }
     }
 
     public static class Hotkeys
@@ -78,6 +84,15 @@ namespace vibeRacingOverlays.App.Core
                     }
                     b = new HotkeyBinding { Action = c.Action, Keys = keys };
                 }
+                // one input per action: a wheel button wins over keys (DEV builds allowed both); the old per-input mode
+                if (b.KeysMode != null || b.ButtonMode != null)
+                {
+                    var m = b.Device != null ? b.ButtonMode : b.KeysMode;
+                    b.Hold = m == PressMode.Hold;
+                    b.Repeat = m == PressMode.PressRepeat;
+                    b.KeysMode = b.ButtonMode = null;
+                }
+                if (b.Device != null) b.Keys = null;
                 list.Add(b);
             }
             return list;
@@ -90,19 +105,21 @@ namespace vibeRacingOverlays.App.Core
         }
 
         /// <summary>The physical input of a binding: "K:keys" or "B:device#button" (null = none).</summary>
-        public static string KeysInput(HotkeyBinding b) { return string.IsNullOrEmpty(b.Keys) ? null : "K:" + b.Keys; }
-        public static string ButtonInput(HotkeyBinding b) { return b.Device == null ? null : "B:" + b.Device + "#" + b.Button; }
+        public static string Input(HotkeyBinding b)
+        {
+            if (b.Device != null) return "B:" + b.Device + "#" + b.Button;
+            return string.IsNullOrEmpty(b.Keys) ? null : "K:" + b.Keys;
+        }
+
+        /// <summary>How the binding goes off (for the engine): hold, short press with repeat, or short press.</summary>
+        public static PressMode Mode(HotkeyBinding b) { return b.Hold ? PressMode.Hold : b.Repeat && CanRepeat(b.Action) ? PressMode.PressRepeat : PressMode.Press; }
 
         /// <summary>Every binding on one physical input (a key combination or a button), with its mode.</summary>
         public static List<(HotkeyAction Action, PressMode Mode)> On(AppSettings s, string input)
         {
             var list = new List<(HotkeyAction, PressMode)>();
             if (input == null) return list;
-            foreach (var b in s.Hotkeys)
-            {
-                if (KeysInput(b) == input) list.Add((b.Action, b.KeysMode));
-                if (ButtonInput(b) == input) list.Add((b.Action, b.ButtonMode));
-            }
+            foreach (var b in s.Hotkeys) if (Input(b) == input) list.Add((b.Action, Mode(b)));
             return list;
         }
 
@@ -118,6 +135,13 @@ namespace vibeRacingOverlays.App.Core
         public static string ShowButton(HotkeyBinding b)
         {
             return b == null || b.Device == null ? "" : "Button " + b.Button + (string.IsNullOrEmpty(b.DeviceName) ? "" : " (" + b.DeviceName + ")");
+        }
+
+        /// <summary>What a binding is, for the Hotkeys window: "Ctrl+Shift+F9", "Button 5 (Podium Wheel)", with "  ·  hold".</summary>
+        public static string Describe(HotkeyBinding b)
+        {
+            string what = b.Device != null ? ShowButton(b) : Show(b.Keys);
+            return string.IsNullOrEmpty(what) ? "" : what + (b.Hold ? "  ·  hold" : "");
         }
     }
 }

@@ -219,6 +219,9 @@ namespace vibeRacingOverlays.App.Overlay
         }
         Action<string, string, int> captureButton;
 
+        /// <summary>While the Hotkeys window sets a button: its release (a quick release makes it a short press, holding a hold).</summary>
+        public Action<string, int> CaptureButtonUp;
+
         public void RegisterHotkeys(IntPtr hwnd)
         {
             hotkeySource = HwndSource.FromHwnd(hwnd);
@@ -229,7 +232,11 @@ namespace vibeRacingOverlays.App.Overlay
                 if (captureButton != null) { captureButton(device, name, button); return; }
                 Down("B:" + device + "#" + button, null);
             }));
-            controller.Released += (device, button) => hotkeySource.Dispatcher.BeginInvoke(new Action(() => Up("B:" + device + "#" + button)));
+            controller.Released += (device, button) => hotkeySource.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (CaptureButtonUp != null) { CaptureButtonUp(device, button); return; }
+                Up("B:" + device + "#" + button);
+            }));
             ReloadHotkeys();
         }
 
