@@ -31,8 +31,6 @@
                 <ToggleButton x:Name="OverlaysToggle" DockPanel.Dock="Right" Content="Toggle overlay" ToolTip="Show or hide all widgets" Margin="0"/>
                 <ToggleButton x:Name="EditToggle" DockPanel.Dock="Right" Content="Edit layout" ToolTip="Move, resize and lock widgets on screen"/>
                 <Border DockPanel.Dock="Right" Width="1" Height="20" Background="{DynamicResource Divider}" Margin="8,0,14,0" VerticalAlignment="Center"/>
-                <!-- shown when the update check found a newer release -->
-                <Button x:Name="UpdateButton" DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Visibility="Collapsed" Margin="0,0,14,0" VerticalAlignment="Center"/>
                 <ComboBox x:Name="ThemeBox" DockPanel.Dock="Right" Width="96" VerticalAlignment="Center" ToolTip="App theme"/>
                 <TextBlock DockPanel.Dock="Right" Text="Theme" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
             </DockPanel>
@@ -40,7 +38,16 @@
 
         <!-- footer -->
         <Border DockPanel.Dock="Bottom" Background="{DynamicResource Panel}" Padding="16,7" BorderBrush="{DynamicResource Divider}" BorderThickness="0,1,0,0">
-            <TextBlock x:Name="FooterText" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap"/>
+            <!-- left: the active layout and a hint for what you're doing; right: save state, settings folder, version bubble -->
+            <DockPanel LastChildFill="True">
+                <Border x:Name="VersionBubble" DockPanel.Dock="Right" CornerRadius="10" Padding="10,2" Margin="16,0,0,0" Background="{DynamicResource Field}" Cursor="Hand" VerticalAlignment="Center">
+                    <TextBlock x:Name="VersionText" FontSize="12" Foreground="{DynamicResource Fg}"/>
+                </Border>
+                <TextBlock x:Name="FolderLink" DockPanel.Dock="Right" Text="Settings folder" FontSize="12" Foreground="{DynamicResource Accent}" Cursor="Hand" Margin="16,0,0,0" VerticalAlignment="Center" ToolTip="Open the folder with your settings, backups and errors.log"/>
+                <TextBlock x:Name="SaveText" DockPanel.Dock="Right" FontSize="12" Foreground="{DynamicResource Muted}" Margin="16,0,0,0" VerticalAlignment="Center"/>
+                <TextBlock x:Name="LayoutInfo" DockPanel.Dock="Left" FontSize="12" Foreground="{DynamicResource Fg}" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                <TextBlock x:Name="FooterText" Foreground="{DynamicResource Muted}" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+            </DockPanel>
         </Border>
 
         <!-- sidebar: layouts and the widgets of the active layout -->

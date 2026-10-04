@@ -316,6 +316,8 @@ namespace vibeRacingOverlays.App.Core
         [JsonIgnore] public static string LoadProblem { get; private set; }
         /// <summary>Last save error (null = the last save worked); shown in the status bar.</summary>
         [JsonIgnore] public static string SaveProblem { get; private set; }
+        /// <summary>When the settings were last written (the footer shows it).</summary>
+        [JsonIgnore] public static DateTime LastSaved { get; private set; }
 
         public static AppSettings Load()
         {
@@ -494,6 +496,7 @@ namespace vibeRacingOverlays.App.Core
                 File.WriteAllText(tmp, JsonSerializer.Serialize(this, Json));
                 File.Move(tmp, FilePath, true);
                 SaveProblem = null;
+                LastSaved = DateTime.Now;
             }
             catch (Exception ex)
             {

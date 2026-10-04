@@ -101,6 +101,7 @@ namespace vibeRacingOverlays.App
             RemoveButton.Click += (s, e) => Remove();
             WidgetList.SelectionChanged += (s, e) => ShowSelected();
 
+            InitFooter();
             UpdateFooter();
             HotkeysMenu.Click += (s, e) => { HotkeysWindow.Show(this, settings, overlays); UpdateFooter(); };
             // a hotkey or wheel button showed / hid a widget or changed the fuel target: the list and settings follow
@@ -125,31 +126,97 @@ namespace vibeRacingOverlays.App
             InitUndo();
 
             statusTimer =new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
-            statusTimer.Tick += (s, e) => UpdateStatus();
+            statusTimer.Tick += (s, e) => { UpdateStatus(); RefreshFooter(); };
             statusTimer.Start();
         }
 
         UpdateInfo update;
 
-        /// <summary>A newer release exists: a button in the top bar opens its download page.</summary>
+        /// <summary>A newer release exists: the version bubble in the footer says so and opens its download page.</summary>
         public void ShowUpdate(UpdateInfo info)
         {
-            if (update == null) UpdateButton.Click += (s, e) => UpdateCheck.Open(update);
             update = info;
-            UpdateButton.Content = "Version " + info.Version + " available";
-            UpdateButton.ToolTip = "Open the download page of version " + info.Version + " (you're using " + BuildInfo.Version + ")";
-            UpdateButton.Visibility = Visibility.Visible;
+            RefreshFooter();
         }
 
+        const string ReleasesPage = "https://github.com/" + UpdateCheck.Repository + "/releases";
+
+        void InitFooter()
+        {
+            FolderLink.MouseLeftButtonUp += (s, e) =>
+            {
+                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", "\"" + AppSettings.Folder + "\"") { UseShellExecute = true }); }
+                catch (Exception) { }
+            };
+            // the version bubble: what's new in the release notes, or the download page of a newer version
+            VersionBubble.MouseLeftButtonUp += (s, e) =>
+            {
+                if (update != null) { UpdateCheck.Open(update); return; }
+                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(ReleasesPage) { UseShellExecute = true }); }
+                catch (Exception) { }
+            };
+            RefreshFooter();
+        }
+
+        // short tips for the footer, one at a time (they change every 20 seconds)
+        static readonly string[] Tips =
+        {
+            "Tip: Ctrl+Z undoes any change, Ctrl+Y redoes it.",
+            "Tip: drop a layout or preset file on this window to import it.",
+            "Tip: closing this window keeps the widgets running; the app stays in the system tray.",
+            "Tip: Edit layout lets you drag widgets on screen and resize them with the mouse wheel.",
+            "Tip: keys and wheel buttons for layouts, widgets and fuel are in the Hotkeys menu.",
+        };
+
+        /// <summary>
+        /// Footer (user's choice, 2026-10-04). Left: the active layout and how many of its widgets are on, then a hint for
+        /// what you're doing (edit layout: how to move and resize; no hotkeys yet: where to set them; otherwise a tip).
+        /// Right: save state, the settings folder and a version bubble (highlighted when an update is available).
+        /// </summary>
+        void RefreshFooter()
+        {
+            var l = settings.ActiveLayout;
+            int on = l.Widgets.Count(w => w.Enabled);
+            LayoutInfo.Text = "Layout: " + l.Name + "  ·  " + (settings.OverlaysVisible ? on + " of " + l.Widgets.Count + " widgets on" : "widgets hidden");
+
+            string hint;
+            if (overlays.EditMode) hint = "Edit layout: drag widgets to move them (Shift: no snapping), mouse wheel to resize, click one to select it.";
+            else if (!settings.Hotkeys.Any(b => Hotkeys.Input(b) != null)) hint = "Tip: set keys or wheel buttons for layouts, widgets and fuel in the Hotkeys menu.";
+            else hint = Tips[(int)(DateTime.Now.Ticks / TimeSpan.FromSeconds(20).Ticks % Tips.Length)];
+            if (FooterText.Text != hint) FooterText.Text = hint;
+
+            if (AppSettings.SaveProblem != null)
+            {
+                SaveText.Text = "Not saved: see errors.log";
+                SaveText.SetResourceReference(TextBlock.ForegroundProperty, "Danger");
+            }
+            else
+            {
+                SaveText.Text = AppSettings.LastSaved == DateTime.MinValue ? "Every change is saved automatically" : "All changes saved  ·  " + AppSettings.LastSaved.ToString("HH:mm");
+                SaveText.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
+            }
+
+            if (update != null)
+            {
+                VersionText.Text = "Version " + update.Version + " available";
+                VersionBubble.SetResourceReference(Border.BackgroundProperty, "Accent");
+                VersionText.SetResourceReference(TextBlock.ForegroundProperty, "AccentFg");
+                VersionBubble.ToolTip = "Open the download page (you're using " + BuildInfo.Version + ")";
+            }
+            else
+            {
+                VersionText.Text = BuildInfo.IsDev ? "DEV build" : "v" + BuildInfo.Version;
+                VersionBubble.ToolTip = "What's new: the release notes";
+            }
+        }
+
+        /// <summary>Tooltips of Edit layout and Toggle overlay name their hotkey when there is one (none by default).</summary>
         void UpdateFooter()
         {
             string K(HotkeyAction a) { var b = Hotkeys.Of(settings, a); return b != null && !string.IsNullOrEmpty(b.Keys) ? " (" + Hotkeys.Show(b.Keys) + ")" : ""; }
-            FooterText.Text = "Edit layout" + K(HotkeyAction.EditLayout) + ": drag widgets to move them (Shift: no snapping), mouse wheel to resize.   "
-                + "Show/hide all" + K(HotkeyAction.ToggleWidgets) + ".   Next layout" + K(HotkeyAction.NextLayout) + ".   More keys and wheel buttons: the Hotkeys menu.   "
-                + "Every change is kept automatically; presets and files: the Layout and Widget menus. Settings: " + AppSettings.Folder;
-            // the buttons show their hotkey when there is one (none by default)
             EditToggle.ToolTip = "Move, resize and lock widgets on screen" + K(HotkeyAction.EditLayout);
             OverlaysToggle.ToolTip = "Show or hide all widgets" + K(HotkeyAction.ToggleWidgets);
+            RefreshFooter();
         }
 
         protected override void OnSourceInitialized(EventArgs e)
