@@ -25,7 +25,7 @@ namespace vibeRacingOverlays.App.UI
         double holdSeconds;
         readonly string original;
         bool saved, discard;
-        readonly List<TextBlock> statusTexts = new List<TextBlock>();
+        readonly TextBlock status = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
 
         HotkeyBinding capturing;      // the binding waiting for a key or button
         string downKeys;              // the key combination being held while capturing
@@ -49,10 +49,9 @@ namespace vibeRacingOverlays.App.UI
             SetResourceReference(ForegroundProperty, "Fg");
             FontFamily = (System.Windows.Media.FontFamily)FindResource("UiFont");
             FontSize = 13;
-            // Save / Cancel above and below the list, so it's clear the hotkeys only count once saved
+            // Save / Cancel in a bar that stays below the list, so it's clear the hotkeys only count once saved
             var root = new DockPanel();
-            var top = Bar(false); DockPanel.SetDock(top, Dock.Top); root.Children.Add(top);
-            var bottom = Bar(true); DockPanel.SetDock(bottom, Dock.Bottom); root.Children.Add(bottom);
+            var bar = Bar(); DockPanel.SetDock(bar, Dock.Bottom); root.Children.Add(bar);
             root.Children.Add(new ScrollViewer { Content = host, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
             Content = root;
             notice.TextWrapping = TextWrapping.Wrap;
@@ -192,8 +191,8 @@ namespace vibeRacingOverlays.App.UI
 
         // ------------------------------------------------------------ save / cancel
 
-        /// <summary>Status text with Cancel and Save, above (bottom = false) or below the list.</summary>
-        Border Bar(bool bottom)
+        /// <summary>Status text with Cancel and Save.</summary>
+        Border Bar()
         {
             var cancel = new Button { Content = "Cancel", Style = Ui.Style("GhostButton"), MinWidth = 90, Margin = new Thickness(8, 0, 0, 0), ToolTip = "Close without saving: the hotkeys stay as they were" };
             cancel.Click += (s, e) => { discard = true; Close(); };
@@ -201,13 +200,11 @@ namespace vibeRacingOverlays.App.UI
             save.Click += (s, e) => { Save(); Close(); };
             DockPanel.SetDock(save, Dock.Right);
             DockPanel.SetDock(cancel, Dock.Right);
-            var status = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
-            statusTexts.Add(status);
             var row = new DockPanel { LastChildFill = true };
             row.Children.Add(save);
             row.Children.Add(cancel);
             row.Children.Add(status);
-            var bar = new Border { Child = row, Padding = new Thickness(20, 10, 20, 10), BorderThickness = bottom ? new Thickness(0, 1, 0, 0) : new Thickness(0, 0, 0, 1) };
+            var bar = new Border { Child = row, Padding = new Thickness(20, 10, 20, 10), BorderThickness = new Thickness(0, 1, 0, 0) };
             bar.SetResourceReference(Border.BackgroundProperty, "Panel");
             bar.SetResourceReference(Border.BorderBrushProperty, "Divider");
             return bar;
@@ -216,11 +213,8 @@ namespace vibeRacingOverlays.App.UI
         void UpdateStatus()
         {
             bool dirty = Dirty;
-            foreach (var t in statusTexts)
-            {
-                t.Text = dirty ? "Changes not saved yet" : "No unsaved changes";
-                t.SetResourceReference(TextBlock.ForegroundProperty, dirty ? "Warning" : "Muted");
-            }
+            status.Text = dirty ? "Changes not saved yet" : "No unsaved changes";
+            status.SetResourceReference(TextBlock.ForegroundProperty, dirty ? "Warning" : "Muted");
         }
 
         void Save()
