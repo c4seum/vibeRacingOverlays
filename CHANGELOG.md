@@ -18,6 +18,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 - Buttons below the layout list: **Add layout**, rename, **duplicate** (new: a copy of the layout with all its widgets, also in the Layout menu) and delete.
 
 ### Changed
+- No hotkeys in a new installation: also Ctrl+Shift+E, H and L are no longer set by default (they work in all of Windows and took those combinations from other programs). Updating keeps the hotkeys you had. The Hotkeys window is in blocks: Widgets, Layouts, Fuel calculator.
 - Pit column flags drawn as icons instead of text characters, bigger and clearer: the black flag and the furled black flag as a flag on a pole, the meatball (repair) as a big orange disc. Header bar: humidity has a drop icon instead of "RH".
 - Widget settings have the same order for every widget: the widget card (name, Show, Refresh rate), then what it shows (Rows; Fuel: Content and Estimates), Columns (with *Column titles row*), Header bar (with *Show header bar*), Text & size, Colors. The old "Layout" and "Style" cards are gone. Relative: new setting *Header background*. Fuel calculator (Table): *Header background*, *Row background* and *Alternate row* like the Relative.
 - Fuel calculator: the *Stops* option "Next to refuel" is gone; stops are shown in a column (or off). Widgets that used "Next to refuel" (it was the default) show their stops in a column now.

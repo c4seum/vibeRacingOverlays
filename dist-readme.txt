@@ -11,8 +11,8 @@ Requirements
 Getting started
 - Without iRacing running, the app shows a demo race, so you can set up your widgets straight away.
 - Widgets: Standings, Relative and Fuel calculator. Add more with "+ Add".
-- Edit layout (Ctrl+Shift+E): drag widgets to move them, and use the mouse wheel over a widget to resize it.
-- Show/hide all widgets: Ctrl+Shift+H.   Next layout: Ctrl+Shift+L.
+- Edit layout (top of the window): drag widgets to move them, and use the mouse wheel over a widget to resize it.
+- Hotkeys and wheel buttons (show/hide, layouts, fuel): set them in the Hotkeys menu; a new installation has none.
 - Layouts, presets and settings are stored in %APPDATA%\vibeRacingOverlays.
 
 Windows SmartScreen

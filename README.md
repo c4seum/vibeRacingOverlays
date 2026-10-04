@@ -73,13 +73,13 @@ What changed in each version is in the [changelog](CHANGELOG.md). Older versions
 1. **Choose a data source** at the top: *Auto* uses iRacing when it's running and otherwise the demo race. *iRacing* and *Demo* force one source.
 2. **Add widgets** with **+ Add** (Standings, Relative or Fuel calculator). Tick a widget in the list to show it, untick it to hide it.
 3. **Click a widget** in the list to open its settings. The preview shows the result right away. Use **Side by side** to put the preview next to the settings.
-4. **Place your widgets:** press **Edit layout** (or `Ctrl+Shift+E`), drag the widgets to where you want them and use the mouse wheel to resize them. Press it again when you're done. Outside edit mode, clicks go straight through the widgets to iRacing.
+4. **Place your widgets:** press **Edit layout** (or its hotkey, see below), drag the widgets to where you want them and use the mouse wheel to resize them. Press it again when you're done. Outside edit mode, clicks go straight through the widgets to iRacing.
    - The **Position** panel (next to the widget settings, or below the preview in *Side by side*) sets the position of the selected widget exactly. In edit layout mode, clicking a widget on screen selects it.
    - **Anchoring & positioning:** pick the **screen** and one of the 9 **anchors** (corners, edges, centre). The widget moves into that corner or edge, and the **X/Y offsets** are measured from there towards the middle of the screen. Use the ‹ › buttons or the arrow keys (1 px, with Shift 10 px). An anchored widget stays put when it gets bigger: a widget in the bottom right corner grows up and to the left. Dragging a widget keeps its anchor and updates the offsets.
    - **Lock** a widget so it can't be dragged or resized by accident. Its edit frame turns grey and shows *LOCKED*. **Lock all** / **Unlock all** do the whole layout at once.
    - **Snapping:** a dragged widget snaps to the edges and corners of other widgets and of the screen. **Snap distance** is how close you have to get, **snap margin** the space kept between widgets and from the screen edge. Hold **Shift** while dragging to place a widget freely.
    - Screens are remembered as *Left*, *Middle* and *Right*, so a layout lands on the same screen on another PC with the same setup. If that screen isn't there, the widget shows on the main screen.
-5. **Layouts** are what you use: the layout selected in the list is the active one, and every change (also to its widgets) is kept automatically, there's nothing to save. Switch with the list or `Ctrl+Shift+L`. The buttons below the list **add** a new, empty layout, **rename** (✎), **duplicate** (a copy with all its widgets) or **delete** (🗑) the active one. A widget you add appears in the centre of the main screen.
+5. **Layouts** are what you use: the layout selected in the list is the active one, and every change (also to its widgets) is kept automatically, there's nothing to save. Switch with the list (or a hotkey, see below). The buttons below the list **add** a new, empty layout, **rename** (✎), **duplicate** (a copy with all its widgets) or **delete** (🗑) the active one. A widget you add appears in the centre of the main screen.
 6. **The Layout menu** (top bar): **New empty layout**, **New layout from preset** (a preset is only ever loaded into a new layout, so it never overwrites one you work with), **Rename**, **Delete**, **Save as preset** / **Save to preset** (store the active layout), **Manage presets** (rename / delete) and **Export / Import layout** (files to share or for another PC; an imported layout becomes a preset, you can also drop files on the window). **Get started** is the app's own preset and always stays intact; a new installation starts with it (Standings top left, Relative bottom right, Fuel calculator bottom left, on your main screen). After an update, a layout called "Get started" is added again if you don't have one (your active layout stays active). A "Get started" layout you already have is never changed, so your changes in it are safe. If you delete it, it doesn't come back with updates; you can always make it again with **New layout from preset**.
 
 ### Undo
@@ -95,21 +95,15 @@ Made a change you didn't want? **Undo** (↶ at the top, or `Ctrl+Z`) puts it ba
 
 These also work while iRacing has focus. Set them in the **Hotkeys** menu: every action has one field. Click it and press a key combination or a button on your **wheel or button box** (no extra program needed). Let go quickly and it becomes a **short press**; keep it pressed for the hold time (0.6 s by default) and it becomes a **hold**. ✕ removes it.
 
-| Default keys | Action |
+| Block | Actions |
 |---|---|
-| `Ctrl+Shift+E` | Edit layout on/off (move, resize and lock widgets) |
-| `Ctrl+Shift+H` | Show/hide all widgets |
-| `Ctrl+Shift+L` | Switch to the next layout |
-| (choose) | Previous layout |
-| (choose) | Layout 1 to 4 (by their place in the layout list) |
-| (choose) | Show/hide widget 1 to 5 (by their place in the widget list of the active layout) |
-| (choose) | Fuel calculator: custom fuel per lap +0.05 L / -0.05 L (a fuel saving target; from "average" it starts at your current average) |
-| (choose) | Fuel calculator: custom fuel per lap = your current average |
-| (choose) | Fuel calculator: start the averages again (after a caution or an incident) |
+| Widgets | Edit layout on/off (move, resize and lock widgets), show/hide all widgets, show/hide widget 1 to 5 (by their place in the widget list of the active layout) |
+| Layouts | Next layout, previous layout, layout 1 to 4 (by their place in the layout list) |
+| Fuel calculator | Custom fuel per lap +0.05 L / -0.05 L (a fuel saving target; from "average" it starts at your current average), custom = your current average, start the averages again (after a caution or an incident) |
 
 A key or button can do two things: one action on a short press and one on a hold. A short press goes off right away, or, when the same key or button also has a hold action, when you let go before the hold time. A hold goes off once the hold time has passed, while you still hold it. **Repeat** (behind the field; for fuel +/- and next / previous layout) makes a short press go on while you hold it: again after half a second, then every 0.15 s. It's greyed when the key or button also has a hold action. The Fuel calculator confirms its hotkeys for 2 seconds in its header (for example "Averages reset").
 
-The new actions have no keys yet: hotkeys work in all of Windows, so pick combinations your other programs don't use (for example `Ctrl+Shift+F5`). A combination that another program already uses turns red in the Hotkeys window.
+A new installation has no hotkeys: they work in all of Windows, so pick combinations your other programs don't use (for example `Ctrl+Shift+F5`), or use wheel buttons. Updating keeps the hotkeys you had (also `Ctrl+Shift+E`, `H` and `L` of earlier versions). A combination that another program already uses turns red in the Hotkeys window.
 
 ### System tray and updates
 

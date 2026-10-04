@@ -75,7 +75,7 @@ namespace vibeRacingOverlays.App.UI
         void Build()
         {
             host.Children.Clear();
-            var card = Ui.Card(host, Ui.Header("Hotkeys and wheel buttons", null));
+            var card = Ui.Card(host, Ui.Header("Hotkeys and wheel buttons", null));   // explanation, messages and the hold time
             var hint = Ui.Caption("Click a field, then press a key combination (for example Ctrl+Shift+F5) or a button on your wheel or button box. "
                 + "Let go quickly for a short press, keep it pressed for a hold (the hold time below). A key or button can have one short press and one hold action. "
                 + "Repeat: a short press that goes on while you hold it (steps only). Keys work everywhere in Windows, so pick combinations other programs don't use. "
@@ -92,39 +92,44 @@ namespace vibeRacingOverlays.App.UI
             hold.SelectionChanged += (s, e) => { settings.HoldSeconds = times[hold.SelectedIndex]; overlays.ScheduleSave(); };
             Ui.Row(card, "Hold time", hold, "How long a key or button must be pressed to count as a hold", null, 260);
 
-            foreach (var c in Hotkeys.Catalog)
+            // a block per group: widgets, layouts, fuel calculator
+            foreach (var group in Hotkeys.Catalog.GroupBy(x => x.Group))
             {
-                var b = Hotkeys.Of(settings, c.Action);
-                var row = new StackPanel { Orientation = Orientation.Horizontal };
-
-                string text = capturing == b ? "Press a key or button...  (Esc: cancel)" : Hotkeys.Input(b) == null ? "Set key or button" : Hotkeys.Describe(b);
-                var field = new Button { Content = text, Width = 330, HorizontalContentAlignment = HorizontalAlignment.Left };
-                if (Hotkeys.Input(b) == null && capturing != b) field.SetResourceReference(Control.ForegroundProperty, "Muted");
-                if (overlays.KeysInUse.Contains(c.Action))
+                var groupCard = Ui.Card(host, Ui.Header(group.Key, null));
+                foreach (var c in group)
                 {
-                    field.SetResourceReference(Control.ForegroundProperty, "Danger");
-                    field.ToolTip = "Another program already uses this key combination: choose another one";
+                    var b = Hotkeys.Of(settings, c.Action);
+                    var row = new StackPanel { Orientation = Orientation.Horizontal };
+    
+                    string text = capturing == b ? "Press a key or button...  (Esc: cancel)" : Hotkeys.Input(b) == null ? "Set key or button" : Hotkeys.Describe(b);
+                    var field = new Button { Content = text, Width = 330, HorizontalContentAlignment = HorizontalAlignment.Left };
+                    if (Hotkeys.Input(b) == null && capturing != b) field.SetResourceReference(Control.ForegroundProperty, "Muted");
+                    if (overlays.KeysInUse.Contains(c.Action))
+                    {
+                        field.SetResourceReference(Control.ForegroundProperty, "Danger");
+                        field.ToolTip = "Another program already uses this key combination: choose another one";
+                    }
+                    field.Click += (s, e) => StartCapture(b);
+    
+                    var repeat = new CheckBox { Content = "Repeat", Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, IsChecked = b.Repeat && !b.Hold };
+                    string why = RepeatBlocked(b);
+                    repeat.IsEnabled = why == null;
+                    repeat.ToolTip = why ?? "Goes on while you hold the key or button (again after 0.5 s, then every 0.15 s)";
+                    ToolTipService.SetShowOnDisabled(repeat, true);
+                    // Checked/Unchecked instead of Click: also fires for keyboard and UI Automation
+                    repeat.Checked += (s, e) => { if (!b.Repeat) { b.Repeat = true; Changed(); } };
+                    repeat.Unchecked += (s, e) => { if (b.Repeat) { b.Repeat = false; Changed(); } };
+    
+                    var clear = Ui.IconButton("", "Remove the key or button");
+                    clear.Margin = new Thickness(10, 0, 0, 0);
+                    clear.IsEnabled = Hotkeys.Input(b) != null;
+                    clear.Click += (s, e) => { Clear(b); Changed(); };
+    
+                    row.Children.Add(field);
+                    row.Children.Add(repeat);
+                    row.Children.Add(clear);
+                    Ui.Row(groupCard, LabelOf(c.Action, c.Label), row, null, null, 260);
                 }
-                field.Click += (s, e) => StartCapture(b);
-
-                var repeat = new CheckBox { Content = "Repeat", Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, IsChecked = b.Repeat && !b.Hold };
-                string why = RepeatBlocked(b);
-                repeat.IsEnabled = why == null;
-                repeat.ToolTip = why ?? "Goes on while you hold the key or button (again after 0.5 s, then every 0.15 s)";
-                ToolTipService.SetShowOnDisabled(repeat, true);
-                // Checked/Unchecked instead of Click: also fires for keyboard and UI Automation
-                repeat.Checked += (s, e) => { if (!b.Repeat) { b.Repeat = true; Changed(); } };
-                repeat.Unchecked += (s, e) => { if (b.Repeat) { b.Repeat = false; Changed(); } };
-
-                var clear = Ui.IconButton("", "Remove the key or button");
-                clear.Margin = new Thickness(10, 0, 0, 0);
-                clear.IsEnabled = Hotkeys.Input(b) != null;
-                clear.Click += (s, e) => { Clear(b); Changed(); };
-
-                row.Children.Add(field);
-                row.Children.Add(repeat);
-                row.Children.Add(clear);
-                Ui.Row(card, LabelOf(c.Action, c.Label), row, null, null, 260);
             }
         }
 

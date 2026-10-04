@@ -147,6 +147,9 @@ namespace vibeRacingOverlays.App
             FooterText.Text = "Edit layout" + K(HotkeyAction.EditLayout) + ": drag widgets to move them (Shift: no snapping), mouse wheel to resize.   "
                 + "Show/hide all" + K(HotkeyAction.ToggleWidgets) + ".   Next layout" + K(HotkeyAction.NextLayout) + ".   More keys and wheel buttons: the Hotkeys menu.   "
                 + "Every change is kept automatically; presets and files: the Layout and Widget menus. Settings: " + AppSettings.Folder;
+            // the buttons show their hotkey when there is one (none by default)
+            EditToggle.ToolTip = "Move, resize and lock widgets on screen" + K(HotkeyAction.EditLayout);
+            OverlaysToggle.ToolTip = "Show or hide all widgets" + K(HotkeyAction.ToggleWidgets);
         }
 
         protected override void OnSourceInitialized(EventArgs e)

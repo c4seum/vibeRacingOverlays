@@ -141,9 +141,11 @@ namespace vibeRacingOverlays.App.Core
         /// <summary>Space (px) kept between snapped widgets and from the screen edge.</summary>
         public int SnapMargin { get; set; } = 0;
         public bool OverlaysVisible { get; set; } = true;
-        public string HotkeyEditMode { get; set; } = "Ctrl+Shift+E";
-        public string HotkeyToggleOverlays { get; set; } = "Ctrl+Shift+H";
-        public string HotkeyNextLayout { get; set; } = "Ctrl+Shift+L";
+        // the three hotkeys of versions before the Hotkeys window: only read from older settings files (which always
+        // contain them, so an update keeps them); a fresh install has no hotkeys at all (user's wish, 2026-10-04)
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string HotkeyEditMode { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string HotkeyToggleOverlays { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string HotkeyNextLayout { get; set; }
         /// <summary>Every action with its keys and / or wheel button (Hotkeys window). The three strings above are only read once from older settings.</summary>
         public List<HotkeyBinding> Hotkeys { get; set; }
         /// <summary>How long a key or button must be held for a Hold binding (seconds).</summary>

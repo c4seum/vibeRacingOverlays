@@ -39,28 +39,29 @@ namespace vibeRacingOverlays.App.Core
 
     public static class Hotkeys
     {
-        /// <summary>The actions in the order of the Hotkeys window, with their label and default keys.</summary>
-        public static readonly (HotkeyAction Action, string Label, string DefaultKeys)[] Catalog =
+        /// <summary>
+        /// The actions in the order of the Hotkeys window, in blocks (Group). None has keys by default: hotkeys work in all
+        /// of Windows and would take combinations from other programs; the user picks them (user's wish, 2026-10-04).
+        /// </summary>
+        public static readonly (HotkeyAction Action, string Group, string Label)[] Catalog =
         {
-            (HotkeyAction.EditLayout, "Edit layout on / off", "Ctrl+Shift+E"),
-            (HotkeyAction.ToggleWidgets, "Show / hide all widgets", "Ctrl+Shift+H"),
-            (HotkeyAction.NextLayout, "Next layout", "Ctrl+Shift+L"),
-            // the new actions have no keys by default: hotkeys work in all of Windows, and most free combinations are
-            // taken by other programs (Ctrl+Shift+F in VS Code, Ctrl+Shift+K in browsers...): the user picks them
-            (HotkeyAction.PreviousLayout, "Previous layout", null),
-            (HotkeyAction.Layout1, "Layout 1", null),
-            (HotkeyAction.Layout2, "Layout 2", null),
-            (HotkeyAction.Layout3, "Layout 3", null),
-            (HotkeyAction.Layout4, "Layout 4", null),
-            (HotkeyAction.Widget1, "Show / hide widget 1", null),
-            (HotkeyAction.Widget2, "Show / hide widget 2", null),
-            (HotkeyAction.Widget3, "Show / hide widget 3", null),
-            (HotkeyAction.Widget4, "Show / hide widget 4", null),
-            (HotkeyAction.Widget5, "Show / hide widget 5", null),
-            (HotkeyAction.FuelCustomUp, "Fuel: custom per lap +0.05 L", null),
-            (HotkeyAction.FuelCustomDown, "Fuel: custom per lap -0.05 L", null),
-            (HotkeyAction.FuelCustomToAverage, "Fuel: custom per lap = current average", null),
-            (HotkeyAction.FuelResetAverage, "Fuel: start the averages again", null),
+            (HotkeyAction.EditLayout, "Widgets", "Edit layout on / off"),
+            (HotkeyAction.ToggleWidgets, "Widgets", "Show / hide all widgets"),
+            (HotkeyAction.Widget1, "Widgets", "Show / hide widget 1"),
+            (HotkeyAction.Widget2, "Widgets", "Show / hide widget 2"),
+            (HotkeyAction.Widget3, "Widgets", "Show / hide widget 3"),
+            (HotkeyAction.Widget4, "Widgets", "Show / hide widget 4"),
+            (HotkeyAction.Widget5, "Widgets", "Show / hide widget 5"),
+            (HotkeyAction.NextLayout, "Layouts", "Next layout"),
+            (HotkeyAction.PreviousLayout, "Layouts", "Previous layout"),
+            (HotkeyAction.Layout1, "Layouts", "Layout 1"),
+            (HotkeyAction.Layout2, "Layouts", "Layout 2"),
+            (HotkeyAction.Layout3, "Layouts", "Layout 3"),
+            (HotkeyAction.Layout4, "Layouts", "Layout 4"),
+            (HotkeyAction.FuelCustomUp, "Fuel calculator", "Custom per lap +0.05 L"),
+            (HotkeyAction.FuelCustomDown, "Fuel calculator", "Custom per lap -0.05 L"),
+            (HotkeyAction.FuelCustomToAverage, "Fuel calculator", "Custom per lap = current average"),
+            (HotkeyAction.FuelResetAverage, "Fuel calculator", "Start the averages again"),
         };
 
         /// <summary>
@@ -75,7 +76,7 @@ namespace vibeRacingOverlays.App.Core
                 var b = saved != null ? saved.FirstOrDefault(x => x.Action == c.Action) : null;
                 if (b == null)
                 {
-                    string keys = c.DefaultKeys;
+                    string keys = null;
                     if (saved == null)
                     {
                         if (c.Action == HotkeyAction.EditLayout) keys = s.HotkeyEditMode;
@@ -95,6 +96,8 @@ namespace vibeRacingOverlays.App.Core
                 if (b.Device != null) b.Keys = null;
                 list.Add(b);
             }
+            // taken over: not written again (and never read again)
+            s.HotkeyEditMode = s.HotkeyToggleOverlays = s.HotkeyNextLayout = null;
             return list;
         }
 
