@@ -198,6 +198,7 @@ namespace vibeRacingOverlays.Data.Engine
             snap.SessionType = sess != null ? sess.Type : "";
             snap.SessionName = sess != null ? sess.Name : "";
             snap.IsRace = sess != null && sess.IsRace;
+            snap.InCar = s.IsOnTrack;
             snap.State = s.SessionState;
             snap.Flags = s.SessionFlags;
             snap.TrackName = session.TrackDisplayName;

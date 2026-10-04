@@ -153,7 +153,8 @@ namespace vibeRacingOverlays.App.Widgets
             if (snap == null || !snap.Connected) return false;
             switch (Settings.Show)
             {
-                case ShowWhen.InCar: return snap.Player != null && snap.Player.InWorld;
+                // not the car's track surface: after getting out in the pits it stays "in pit stall"
+                case ShowWhen.InCar: return snap.InCar && snap.Player != null;
                 case ShowWhen.InRace: return snap.IsRace;
                 default: return true;
             }
