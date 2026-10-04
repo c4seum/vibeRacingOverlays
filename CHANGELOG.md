@@ -17,6 +17,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 - Hotkeys window: a hold shows before the device name ("Button 17 · hold (wheel name)"), so it stays visible when a long wheel name is cut off; the full text is in the tooltip.
 
 ### Fixed
+- Fuel calculator: **Reset average** cleared the averages, but the rows kept their old values until the next lap (the estimates only change at the line). They now go blank (-) right away and fill again from the next valid lap.
 - Widgets set to show **In car** stayed on screen after you got out of the car in the pits. They now follow whether you sit in the car (iRacing's own in-car flag), so they also hide in the garage and in replays.
 
 ## [1.4.0] - 2026-10-04
