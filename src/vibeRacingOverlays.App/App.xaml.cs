@@ -22,6 +22,19 @@ namespace vibeRacingOverlays.App
             // --settings-dir <folder>: a separate settings folder (tests run on a copy, never on the user's own file)
             int dirIdx = Array.IndexOf(e.Args, "--settings-dir");
             if (dirIdx >= 0 && dirIdx + 1 < e.Args.Length) AppSettings.FolderOverride = Path.GetFullPath(e.Args[dirIdx + 1]);
+
+            // a bug in the editor must not take the widgets (and unsaved changes) down with it: log it, tell the user
+            // once in a while, and keep running
+            DateTime lastShown = DateTime.MinValue;
+            DispatcherUnhandledException += (s, ev) =>
+            {
+                AppSettings.LogError("Unexpected error: " + ev.Exception);
+                ev.Handled = true;
+                if (DateTime.UtcNow - lastShown < TimeSpan.FromSeconds(10)) return;
+                lastShown = DateTime.UtcNow;
+                MessageBox.Show("Something went wrong: " + ev.Exception.Message + "\n\nThe app keeps running. The details are in " + AppSettings.ErrorLog + ".",
+                    BuildInfo.AppName, MessageBoxButton.OK, MessageBoxImage.Warning);
+            };
             // --zorder-log <file>: log what's in front and what the widgets do (iRacing display modes, see ZOrderDiag)
             int zIdx = Array.IndexOf(e.Args, "--zorder-log");
             if (zIdx >= 0 && zIdx + 1 < e.Args.Length) OverlayManager.ZOrderLog = Path.GetFullPath(e.Args[zIdx + 1]);

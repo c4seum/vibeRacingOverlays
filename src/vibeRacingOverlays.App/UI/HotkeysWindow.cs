@@ -84,6 +84,10 @@ namespace vibeRacingOverlays.App.UI
             hint.Margin = new Thickness(14, 0, 10, 8);
             card.Children.Add(hint);
             notice.Margin = new Thickness(14, 0, 10, 6);
+            // the notice survives rebuilds (its text is set before Build): take it out of the previous card first, an
+            // element can have only one parent (adding it again crashed the app on every rebuild)
+            var oldParent = notice.Parent as Panel;
+            if (oldParent != null) oldParent.Children.Remove(notice);
             card.Children.Add(notice);
 
             var times = new[] { 0.4, 0.5, 0.6, 0.8, 1.0 };
