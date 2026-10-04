@@ -34,6 +34,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 - After an install or update, the layout **Get started** is added again when you don't have a layout with that name (for example after updating from an earlier version, or after renaming it). It's added next to your layouts; your active layout stays active, and the status bar says it was added. A "Get started" layout you already have is never changed: it may hold your own changes. If you delete Get started on purpose, updates don't bring it back (New layout from preset still can).
 
 ### Fixed
+- Standings: a gap or interval of a minute or more ignored the chosen decimals (always 1:54.5, also with 3 decimals) and could show 1:60.0; it now looks like a lap time (1:54.512), rounded the same way, and the column is wide enough for it.
 - The Hotkeys window closed the whole app when you removed a hotkey (and on other changes in it). Also: an unexpected error in the editor no longer closes the app with your widgets; it is logged in `errors.log` and shown in a message.
 - Sharper text in the widgets: letters and digits are now placed on whole screen pixels. Before, digits (centred in their equal-width cells) often fell between two pixels, so some looked thinner or blurrier than others.
 - The preview in the editor now draws text exactly like the widgets on screen (grayscale smoothing). It used Windows ClearType, which gave coloured fringes and made fonts look thinner and harsher than they really are on screen.

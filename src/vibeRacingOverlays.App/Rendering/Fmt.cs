@@ -17,12 +17,12 @@ namespace vibeRacingOverlays.App.Rendering
             return min > 0 ? min.ToString(Inv) + ":" + sec.ToString(f, Inv) : sec.ToString(decimals <= 0 ? "0" : "0." + new string('0', decimals), Inv);
         }
 
-        /// <summary>Gap in seconds: 3.7 / 53.0 / 1:02.3</summary>
+        /// <summary>Gap in seconds: 3.7 / 53.0 / 1:02.3; from a minute on like a lap time, with the same decimals.</summary>
         public static string Gap(double seconds, int decimals = 1)
         {
-            if (seconds < 60) return seconds.ToString(decimals == 0 ? "0" : "0." + new string('0', decimals), Inv);
-            int min = (int)(seconds / 60);
-            return min.ToString(Inv) + ":" + (seconds - min * 60).ToString("00.0", Inv);
+            double r = Math.Round(seconds, Math.Max(0, decimals));
+            if (r < 60) return r.ToString(decimals <= 0 ? "0" : "0." + new string('0', decimals), Inv);
+            return Lap(r, decimals);
         }
 
         /// <summary>Signed relative time: +1.3 / -0.4</summary>

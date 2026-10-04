@@ -126,9 +126,9 @@ namespace vibeRacingOverlays.App.Widgets
                 new ColumnDef("irdelta", "iRating change (est.)", "iR+/-", 46, race, Align.Left).Fit("▲888"),
                 // race gaps: 53.0, 1:02.3 or +3L; P&Q: +0.532
                 new ColumnDef("gap", race ? "Gap to leader" : "Gap to fastest", "GAP", 50, true, Align.Right)
-                    .Fit(f => race ? "88." + Digits(f) + "|8:88.8|+88L" : "+88." + Digits(f)).WithFormats(race ? "1" : "3", Decimals),
+                    .Fit(f => race ? "88." + Digits(f) + "|8:88." + Digits(f) + "|+88L" : "+88." + Digits(f)).WithFormats(race ? "1" : "3", Decimals),
                 new ColumnDef("int", race ? "Interval" : "Gap to car ahead", "INT", 50, race, Align.Right)
-                    .Fit(f => race ? "88." + Digits(f) + "|8:88.8|+88L" : "+88." + Digits(f)).WithFormats(race ? "1" : "3", Decimals),
+                    .Fit(f => race ? "88." + Digits(f) + "|8:88." + Digits(f) + "|+88L" : "+88." + Digits(f)).WithFormats(race ? "1" : "3", Decimals),
                 new ColumnDef("laps", "Laps completed", "LAPS", 32, !race, Align.Right).Fit("888"),
                 LastLapColumn(true, race ? "1" : "3"),
                 new ColumnDef("best", "Best lap", "BEST", 62, !race, Align.Right).Fit(f => "8:88." + Digits(f)).WithFormats("3", LapDecimals),
