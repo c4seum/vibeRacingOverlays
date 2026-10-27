@@ -383,11 +383,10 @@ namespace vibeRacingOverlays.App.Overlay
                         if (WidgetEdited != null) WidgetEdited(ws);
                     }
                     break;
-                case HotkeyAction.FuelCustomUp: SetFuelCustom(from => from + 0.01, v => "Custom " + Rendering.Fmt.Num(v, "0.00") + " L/lap"); break;
-                case HotkeyAction.FuelCustomDown: SetFuelCustom(from => from - 0.01, v => "Custom " + Rendering.Fmt.Num(v, "0.00") + " L/lap"); break;
+                case HotkeyAction.FuelCustomUp: SetFuelCustom((from, avg) => from + 0.01, v => "Custom " + Rendering.Fmt.Num(v, "0.00") + " L/lap"); break;
+                case HotkeyAction.FuelCustomDown: SetFuelCustom((from, avg) => from - 0.01, v => "Custom " + Rendering.Fmt.Num(v, "0.00") + " L/lap"); break;
                 case HotkeyAction.FuelCustomToAverage:
-                    double avg = CurrentAverage();
-                    if (avg > 0) SetFuelCustom(from => avg, v => "Custom = avg " + Rendering.Fmt.Num(v, "0.00"));
+                    if (settings.Widgets.OfType<FuelSettings>().Any(fs => CurrentAverage(fs) > 0)) SetFuelCustom((from, avg) => avg > 0 ? avg : from, v => "Custom = avg " + Rendering.Fmt.Num(v, "0.00"));
                     else FuelWidget.Flash("No average yet");
                     break;
                 case HotkeyAction.FuelResetAverage:
@@ -397,19 +396,26 @@ namespace vibeRacingOverlays.App.Overlay
             }
         }
 
-        double CurrentAverage() { return telemetry.Latest != null && telemetry.Latest.Fuel != null ? telemetry.Latest.Fuel.AvgPerLap : 0; }
+        /// <summary>The average a fuel calculator shows now (in a race before its first lap: practice / qualifying, when it uses that).</summary>
+        double CurrentAverage(FuelSettings fs)
+        {
+            var snap = telemetry.Latest;
+            if (snap == null || snap.Fuel == null) return 0;
+            bool previous;
+            return FuelWidget.Average(fs, snap.Fuel, snap.IsRace, out previous);
+        }
 
         /// <summary>
         /// Custom fuel per lap of the fuel calculators of the active layout (a fuel saving target during the race), from
         /// its current value; "0 = average" starts at the current average. The widget confirms it in its header.
         /// </summary>
-        void SetFuelCustom(Func<double, double> change, Func<double, string> message)
+        void SetFuelCustom(Func<double, double, double> change, Func<double, string> message)
         {
-            double avg = CurrentAverage();
             foreach (var fs in settings.Widgets.OfType<FuelSettings>())
             {
-                double from = fs.CustomPerLap > 0 ? fs.CustomPerLap : Math.Round(avg, 2);
-                fs.CustomPerLap = Math.Max(0.01, Math.Round(change(from), 2));
+                double avg = Math.Round(CurrentAverage(fs), 2);
+                double from = fs.CustomPerLap > 0 ? fs.CustomPerLap : avg;
+                fs.CustomPerLap = Math.Max(0.01, Math.Round(change(from, avg), 2));
                 FuelWidget.Flash(message(fs.CustomPerLap));
                 Invalidate(fs);
                 if (WidgetEdited != null) WidgetEdited(fs);

@@ -14,6 +14,9 @@ namespace vibeRacingOverlays.Data.Engine
     {
         readonly IRacingSource iracing = new IRacingSource();
         DemoSource demo;
+        // the fuel measurement of the iRacing data outlives the engine: iRacing closes and opens the sim between the
+        // sessions of an event, which makes a new engine, and the race needs the practice / qualifying laps
+        readonly FuelTracker iracingFuel = new FuelTracker();
         RaceEngine engine = new RaceEngine();
         ITelemetrySource active;
         Thread thread;
@@ -65,7 +68,7 @@ namespace vibeRacingOverlays.Data.Engine
                     if (src != active)
                     {
                         active = src;
-                        engine = new RaceEngine();
+                        engine = new RaceEngine(src == iracing ? iracingFuel : null);
                         // the new engine needs the session info, which a source normally only sends when it changes
                         if (src != null) src.ResendSession();
                         lastState = null;

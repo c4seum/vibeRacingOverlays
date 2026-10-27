@@ -49,15 +49,15 @@ namespace vibeRacingOverlays.Data.Engine
         readonly Tracker[] trackers = new Tracker[TelemetryState.MaxCars];
         /// <summary>Longest we believe another car is being towed (a tow takes minutes at most; after that it's a disconnect).</summary>
         const double TowMax = 300;
-        readonly FuelTracker fuel = new FuelTracker();
+        readonly FuelTracker fuel;
         SessionInfo session;
         int sessionNum = -1;
-        string carTrackKey;
         long version;
 
         public SessionInfo Session { get { return session; } }
 
-        public RaceEngine() { ResetTrackers(); }
+        /// <param name="fuel">The fuel measurement to continue (it outlives an engine: iRacing restarts the sim between the sessions of an event); null = a new one.</param>
+        public RaceEngine(FuelTracker fuel = null) { this.fuel = fuel ?? new FuelTracker(); ResetTrackers(); }
 
         void ResetTrackers()
         {
@@ -76,14 +76,13 @@ namespace vibeRacingOverlays.Data.Engine
             session = s;
             var p = s.Player;
             string key = (p != null ? p.CarPath : "") + "@" + s.TrackName;
-            if (key != carTrackKey) { carTrackKey = key; fuel.Reset(); }
+            fuel.SetCarTrack(key);
         }
 
-        /// <summary>Call for every telemetry frame (cheap: only tracking).</summary>
-        /// <summary>Forgets the measured fuel use per lap (a hotkey: the averages start again from the next lap).</summary>
-        /// <summary>Starts the fuel averages again; the line snapshot goes too, so the widget shows the cleared values right away instead of at the next line.</summary>
+        /// <summary>Starts the fuel averages again (a hotkey); the line snapshot goes too, so the widget shows the cleared values right away instead of at the next line.</summary>
         public void ResetFuel() { fuel.Reset(); fuelLine = null; }
 
+        /// <summary>Call for every telemetry frame (cheap: only tracking).</summary>
         public void Track(TelemetryState s)
         {
             if (session == null) return;
@@ -91,6 +90,7 @@ namespace vibeRacingOverlays.Data.Engine
             var current = session.Session(s.SessionNum);
             bool isRace = current != null && current.IsRace;
 
+            fuel.SetRace(isRace);
             fuel.Update(s);
             double t = s.SessionTime;
             for (int i = 0; i < TelemetryState.MaxCars; i++)
@@ -516,6 +516,8 @@ namespace vibeRacingOverlays.Data.Engine
             f.Laps = fuel.Laps;
             f.StintAvgPerLap = fuel.StintAverage;
             f.StintValidLaps = fuel.StintCount;
+            f.PreviousAvgPerLap = fuel.PreviousAverage;
+            f.PreviousLaps = fuel.PreviousCount;
 
             var p = snap.Player;
             if (p == null) { checkeredTarget = double.NaN; return; }

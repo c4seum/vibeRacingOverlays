@@ -8,6 +8,7 @@
     "TypeName": "Fuel calculator",
     "Margin": 1,
     "CustomPerLap": 3,
+    "UsePreviousSessions": true,
     "Clock": "SimTime",
     "ShowLast": true,
     "ShowCustom": true,

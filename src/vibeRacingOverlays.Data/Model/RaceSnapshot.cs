@@ -89,6 +89,9 @@ namespace vibeRacingOverlays.Data.Model
         public double StintAvgPerLap;
         public int StintValidLaps;
         public double LapsToGo = -1;      // race laps still to drive (fractional), -1 unknown
+        /// <summary>Practice / qualifying average (last 10 valid laps, same car and track) when the race started, and its number of laps; 0 = none.</summary>
+        public double PreviousAvgPerLap;
+        public int PreviousLaps;
         public bool Valid { get { return AvgPerLap > 0; } }
 
         /// <summary>

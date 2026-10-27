@@ -24,6 +24,9 @@ namespace vibeRacingOverlays.App.Widgets
         public FuelLayout Layout { get; set; } = FuelLayout.Classic;
 
         [Setting("Safety margin (L)", Group = "Content", Min = 0, Max = 5, Step = 0.1, Order = 4, Tooltip = "Extra litres added to the refuel amount, so you don't run dry on the last lap")] public double Margin { get; set; } = 0.5;
+        // off keeps the old behaviour of existing widgets; the Default preset has it on (DEVELOPMENT.md, "Changing a widget")
+        [Setting("Race: practice / qualifying average", Group = "Estimates", Order = 0, Tooltip = "In a race, until your first race lap is done (on the grid, the pace lap and lap 1), the Average row uses your average of practice and qualifying with this car on this track. The race average starts at the green, so the pace lap is not in it")]
+        public bool UsePreviousSessions { get; set; } = false;
         [Setting("Custom per lap (0 = average)", Group = "Estimates", Min = 0, Max = 20, Step = 0.01, Order = 6, Tooltip = "Your own fuel use per lap for the Custom row (a fuel saving target). 0 uses your average")] public double CustomPerLap { get; set; } = 0;
         [Setting("Clock", Group = "Content", Order = 2, Tooltip = "Real time (the clock of your PC) or the time of day in the sim")] public ClockSource Clock { get; set; } = ClockSource.RealTime;
         [Setting("Show 'Last' row", Group = "Estimates", Order = 1, Tooltip = "Fuel used on your last valid lap")] public bool ShowLast { get; set; } = true;
@@ -71,8 +74,27 @@ namespace vibeRacingOverlays.App.Widgets
 
         static string FlashNow { get { return DateTime.UtcNow < flashUntil ? flashText : null; } }
 
+        bool race;   // the session being drawn is a race (practice / qualifying averages only stand in there)
+
+        /// <summary>
+        /// The average the estimates use: the measured one, or in a race that has no lap of its own yet (the grid, the
+        /// pace lap, lap 1) the practice / qualifying average when the widget asks for it. previous = that one is used.
+        /// </summary>
+        public static double Average(FuelSettings s, FuelInfo f, bool race, out bool previous)
+        {
+            previous = false;
+            if (f.AvgPerLap > 0) return f.AvgPerLap;
+            if (race && s.UsePreviousSessions && f.PreviousAvgPerLap > 0) { previous = true; return f.PreviousAvgPerLap; }
+            return 0;
+        }
+
+        double Avg(FuelInfo f) { bool p; return Average(s, f, race, out p); }
+
+        string AvgName(FuelInfo f) { bool p; Average(s, f, race, out p); return p ? "Average (P/Q)" : "Average"; }
+
         public override void Draw(DisplayList dl, RaceSnapshot snap)
         {
+            race = snap.IsRace;
             if (s.Layout == FuelLayout.Table) { DrawTable(dl, snap); return; }
             var f = snap.Fuel;
             float big = (float)s.FontSize, label = big * 0.46f;
@@ -105,8 +127,8 @@ namespace vibeRacingOverlays.App.Widgets
             // the per-lap rows use the values from the last line crossing (or pit exit): they change once a lap,
             // not with every drop of fuel; level, laps in race and the pit indicator above stay live
             f = f.AtLine ?? f;
-            double custom = s.CustomPerLap > 0 ? s.CustomPerLap : Math.Round(f.AvgPerLap, 2);
-            DrawRow(dl, f, "Average", f.AvgPerLap, Argb.Parse(s.AvgColor), x, y, colW, lblH, valH, label, big, true);
+            double custom = s.CustomPerLap > 0 ? s.CustomPerLap : Math.Round(Avg(f), 2);
+            DrawRow(dl, f, AvgName(f), Avg(f), Argb.Parse(s.AvgColor), x, y, colW, lblH, valH, label, big, true);
             y += block;
             if (s.ShowLast) { DrawRow(dl, f, "Last", f.LastPerLap, Argb.Parse(s.LastColor), x, y, colW, lblH, valH, label, big, false); y += block; }
             if (s.ShowLastN)
@@ -176,7 +198,7 @@ namespace vibeRacingOverlays.App.Widgets
         /// <summary>The estimates shown, in order: name, fuel per lap, colour.</summary>
         List<(string Name, double PerLap, uint Color)> Estimates(FuelInfo f)
         {
-            var list = new List<(string, double, uint)> { ("Average", f.AvgPerLap, Argb.Parse(s.AvgColor)) };
+            var list = new List<(string, double, uint)> { (AvgName(f), Avg(f), Argb.Parse(s.AvgColor)) };
             if (s.ShowLast) list.Add(("Last", f.LastPerLap, Argb.Parse(s.LastColor)));
             if (s.ShowLastN)
             {
@@ -184,7 +206,7 @@ namespace vibeRacingOverlays.App.Widgets
                 list.Add(("Last " + (have > 0 && have < n ? have + "/" : "") + n + " avg", f.AverageOfLast(n), Argb.Parse(s.LastNColor)));
             }
             if (s.ShowStint) list.Add(("Stint avg" + (f.StintValidLaps > 0 ? " (" + f.StintValidLaps + ")" : ""), f.StintAvgPerLap, Argb.Parse(s.StintColor)));
-            if (s.ShowCustom) list.Add((s.CustomPerLap > 0 ? "Custom" : "Custom (avg)", s.CustomPerLap > 0 ? s.CustomPerLap : Math.Round(f.AvgPerLap, 2), Argb.Parse(s.CustomColor)));
+            if (s.ShowCustom) list.Add((s.CustomPerLap > 0 ? "Custom" : "Custom (avg)", s.CustomPerLap > 0 ? s.CustomPerLap : Math.Round(Avg(f), 2), Argb.Parse(s.CustomColor)));
             return list;
         }
 
@@ -295,9 +317,10 @@ namespace vibeRacingOverlays.App.Widgets
         {
             // off / stop needed / box within 2 laps / box now
             int state = 0;
-            if (f.Valid && f.LapsToGo >= 0 && f.Level < f.Need(f.AvgPerLap) + s.Margin)
+            double avg = Avg(f);
+            if (avg > 0 && f.LapsToGo >= 0 && f.Level < f.Need(avg) + s.Margin)
             {
-                double left = f.LapsRemaining(f.AvgPerLap);
+                double left = f.LapsRemaining(avg);
                 state = left < 1 ? 3 : left < 2 ? 2 : 1;
             }
             switch (state)

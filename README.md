@@ -53,6 +53,8 @@ How much fuel you use and need.
 - *Laps in Race* follows the iRacing rules for lap races, timed races and races with both a lap and a time limit (whichever comes first). The race ends when the overall leader finishes, also in multiclass; you finish the next time you cross the line after that. Lap times are based on your recent clean laps and those of the leader (pit, out and caution laps don't count).
 - A PIT indicator that warns when you need to stop.
 - Laps with a pit stop, refuel or caution are left out of the average.
+- **Race: practice / qualifying average** (Estimates): on the grid, during the pace lap and lap 1, when the race has no lap of its own yet, the Average row ("Average (P/Q)") uses your average of practice and qualifying with the same car on the same track, also when iRacing restarts the sim between those sessions. That way you already see how much fuel the race needs while you grid. Before the start, *Laps in Race* includes the rest of the pace lap. The race average itself starts when you cross the line at the green: the pace lap is not in it, and lap 1 is its first lap.
+- **Reset average** (a hotkey) sets the counter to 0 but keeps the start of the lap you are driving: that lap counts in full at the line, not just the part after the reset.
 
 ## Installation
 
@@ -101,7 +103,7 @@ These also work while iRacing has focus. Set them in the **Hotkeys** menu: every
 | Layouts | Next layout, previous layout, layout 1 to 4 (by their place in the layout list) |
 | Fuel calculator | Increase custom / Decrease custom (custom fuel per lap +0.01 / -0.01 L, a fuel saving target; from "average" it starts at your current average), Set custom (custom = your current average), Reset average (start the averages again, after a caution or an incident) |
 
-A key or button can do two things: one action on a short press and one on a hold. A short press goes off right away, or, when the same key or button also has a hold action, when you let go before the hold time. A hold goes off once the hold time has passed, while you still hold it. **Repeat** (behind the field; for fuel +/- and next / previous layout) makes a short press go on while you hold it: again after half a second, then every 0.15 s. It's greyed when the key or button also has a hold action. The Fuel calculator confirms its hotkeys for 2 seconds in its header (for example "Averages reset").
+A key or button can do two things: one action on a short press and one on a hold. A short press goes off right away, or, when the same key or button also has a hold action, when you let go before the hold time. A hold goes off once the hold time has passed, while you still hold it. **Repeat** (behind the field; for fuel +/- and next / previous layout) makes a short press go on while you hold it: again after 0.4 s, then about 14 times a second. It's greyed when the key or button also has a hold action. The Fuel calculator confirms its hotkeys for 2 seconds in its header (for example "Averages reset").
 
 A new installation has no hotkeys: they work in all of Windows, so pick combinations your other programs don't use (for example `Ctrl+Shift+F5`), or use wheel buttons. Updating keeps the hotkeys you had (also `Ctrl+Shift+E`, `H` and `L` of earlier versions). A combination that another program already uses turns red in the Hotkeys window. Changes in the Hotkeys window count once you click **Save**; **Cancel** leaves everything as it was.
 
