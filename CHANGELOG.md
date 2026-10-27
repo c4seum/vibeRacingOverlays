@@ -12,6 +12,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 - Fuel calculator: **Race: practice / qualifying average** (Estimates). In a race, until your first race lap is done (grid, pace lap, lap 1), the Average row shows "Average (P/Q)": your average of practice and qualifying with the same car on the same track. The app now keeps those laps when iRacing restarts the sim between sessions (that used to start the fuel measurement from scratch). On in the Default preset, off for your existing Fuel calculators.
 
 ### Changed
+- Fuel calculator: **fuel at the end** never goes below 0. When you don't have enough it shows 0.00 in red; what you are short of is the refuel amount.
 - Fuel calculator: in a race the average starts when you cross the line at the green, so the pace lap is never in it and lap 1 is the first lap that counts (it used to start from lap 2).
 
 ### Fixed

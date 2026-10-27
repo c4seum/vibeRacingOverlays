@@ -212,7 +212,8 @@ namespace vibeRacingOverlays.App.Widgets
                 if (known && s.Stops == StopsDisplay.Column)
                     dl.Text(stopsX, vy, stopsW, valH, stops.ToString(), big, color);
                 double end = f.FuelAtEnd(perLap);
-                dl.Text(x[3], vy, colW, valH, Fmt.Num(end, "0.00"), big, end < 0 ? Red : color);
+                // never below 0: what you are short of is the refuel amount; red says you are short
+                dl.Text(x[3], vy, colW, valH, Fmt.Num(Math.Max(0, end), "0.00"), big, end < 0 ? Red : color);
             }
         }
 
@@ -335,7 +336,8 @@ namespace vibeRacingOverlays.App.Widgets
                             c++;
                         }
                         double end = f.FuelAtEnd(perLap);
-                        dl.Text(x[c], y, w[c], rh, Fmt.Num(end, "0.00"), fs, end < 0 ? Red : White, Align.Right);
+                        // never below 0: what you are short of is the refuel amount; red says you are short
+                        dl.Text(x[c], y, w[c], rh, Fmt.Num(Math.Max(0, end), "0.00"), fs, end < 0 ? Red : White, Align.Right);
                     }
                 }
                 else dl.Text(x[2], y, w[2], rh, "-", fs, Dim, Align.Right);
