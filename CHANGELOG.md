@@ -7,6 +7,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 ## [Unreleased]
 
 ### Added
+- Fuel calculator: **Show header bar** (Header bar card, Table layout). Off: no bar with the title and clock; hotkey confirmations show for 2 s in place of the "Fuel level" and "Laps in race" labels. On for existing widgets and the Default preset.
 - Fuel calculator: the **order of the rows** (Average, Last, Last N laps, Stint average, Custom) is yours to set, with the arrows in the list in the Estimates card, where you also turn them on and off (that replaces the "Show ... row" switches; Average can now be turned off too). Your existing Fuel calculators keep their rows and order.
 - Standings: **Hide others while I qualify** (Practice & qualifying > Content). In a qualifying session only your own row shows while you are out on track, without position, gap and interval. Everyone is back when you set your last lap time (the session's number of timed laps after your out lap, or your first lap after the checkered), or when you are in the pit lane or out of the car. Off unless you switch it on.
 - Fuel calculator: **Race: practice / qualifying average** (Estimates). In a race, until your first race lap is done (grid, pace lap, lap 1), the Average row shows "Average (P/Q)": your average of practice and qualifying with the same car on the same track. The app now keeps those laps when iRacing restarts the sim between sessions (that used to start the fuel measurement from scratch). On in the Default preset, off for your existing Fuel calculators.

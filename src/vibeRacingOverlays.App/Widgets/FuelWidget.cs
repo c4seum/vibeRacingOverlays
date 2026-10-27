@@ -28,6 +28,8 @@ namespace vibeRacingOverlays.App.Widgets
         [Setting("Race: practice / qualifying average", Group = "Estimates", Order = 0, Tooltip = "In a race, until your first race lap is done (on the grid, the pace lap and lap 1), the Average row uses your average of practice and qualifying with this car on this track. The race average starts at the green, so the pace lap is not in it")]
         public bool UsePreviousSessions { get; set; } = false;
         [Setting("Custom per lap (0 = average)", Group = "Estimates", Min = 0, Max = 20, Step = 0.01, Order = 6, Tooltip = "Your own fuel use per lap for the Custom row (a fuel saving target). 0 uses your average")] public double CustomPerLap { get; set; } = 0;
+        [Setting("Show header bar", Group = "Header bar", Order = 0, Tooltip = "Table layout: the bar at the top with the title and the clock. Off: hotkey confirmations show for 2 s over the fuel level label")]
+        public bool ShowHeader { get; set; } = true;
         [Setting("Clock", Group = "Content", Order = 2, Tooltip = "Real time (the clock of your PC) or the time of day in the sim")] public ClockSource Clock { get; set; } = ClockSource.RealTime;
         [Setting("Laps for 'Last N' average", Group = "Estimates", Min = 2, Max = 50, Order = 3, Tooltip = "How many of your last valid laps the 'Last N' row averages")] public int LastNLaps { get; set; } = 5;
 
@@ -278,31 +280,37 @@ namespace vibeRacingOverlays.App.Widgets
 
             // header bar: title, clock
             float y = 0;
-            dl.Rect(0, y, width, hh, Bg(Argb.Parse(s.HeaderColor)));
-            dl.Text(pad, y, width / 2, hh, "FUEL", fs, White);
             string flashed = FlashNow;
-            string clock = s.Clock == ClockSource.RealTime ? DateTime.Now.ToString("HH:mm") : TimeSpan.FromSeconds(snap.TimeOfDay).ToString(@"hh\:mm");
-            float clockW = M("88:88", fs);
-            dl.Text(width - pad - clockW, y, clockW, hh, clock, fs, White, Align.Right);
-            float fuelW = dl.Measure("FUEL", fs) + fs;
-            // the clock label always stays; a hotkey confirmation shows for 2 s in the space between the title and the label
-            string clockLbl = s.Clock == ClockSource.RealTime ? "Clock" : "Sim time";
-            float lblW = dl.Measure(clockLbl, small);
-            float lblX = width - pad - clockW - fs * 0.6f - lblW;
-            dl.Text(lblX, y, lblW, hh, clockLbl, small, Dim, Align.Right);
-            if (flashed != null) dl.Text(pad + fuelW, y, lblX - fs * 0.6f - pad - fuelW, hh, flashed, fs, Yellow);
-            y += hh;
+            if (s.ShowHeader)
+            {
+                dl.Rect(0, y, width, hh, Bg(Argb.Parse(s.HeaderColor)));
+                dl.Text(pad, y, width / 2, hh, "FUEL", fs, White);
+                string clock = s.Clock == ClockSource.RealTime ? DateTime.Now.ToString("HH:mm") : TimeSpan.FromSeconds(snap.TimeOfDay).ToString(@"hh\:mm");
+                float clockW = M("88:88", fs);
+                dl.Text(width - pad - clockW, y, clockW, hh, clock, fs, White, Align.Right);
+                float fuelW = dl.Measure("FUEL", fs) + fs;
+                // the clock label always stays; a hotkey confirmation shows for 2 s in the space between the title and the label
+                string clockLbl = s.Clock == ClockSource.RealTime ? "Clock" : "Sim time";
+                float lblW = dl.Measure(clockLbl, small);
+                float lblX = width - pad - clockW - fs * 0.6f - lblW;
+                dl.Text(lblX, y, lblW, hh, clockLbl, small, Dim, Align.Right);
+                if (flashed != null) dl.Text(pad + fuelW, y, lblX - fs * 0.6f - pad - fuelW, hh, flashed, fs, Yellow);
+                y += hh;
+            }
 
             // big band: fuel level, laps in race, pit indicator
             float lblH = heroLbl * 1.5f, valH = heroFs * 1.15f, heroH = lblH + valH + 6;
             dl.Rect(0, y, width, heroH, Bg(Argb.Parse(s.RowColor)));
             float hx = pad + 2;
-            dl.Text(hx, y + 3, levelW, lblH, "FUEL LEVEL", heroLbl, Dim);
+            // no header bar: a hotkey confirmation takes the place of the labels of the band for 2 s
+            bool flashInBand = !s.ShowHeader && flashed != null;
+            if (!flashInBand) dl.Text(hx, y + 3, levelW, lblH, "FUEL LEVEL", heroLbl, Dim);
             dl.Text(hx, y + 3 + lblH, levelW, valH, level, heroFs, White);
             hx += levelW + fs * 1.5f;
-            dl.Text(hx, y + 3, lapsW, lblH, "LAPS IN RACE", heroLbl, Dim);
+            if (!flashInBand) dl.Text(hx, y + 3, lapsW, lblH, "LAPS IN RACE", heroLbl, Dim);
             dl.Text(hx, y + 3 + lblH, lapsW, valH, laps, heroFs, White);
             DrawPit(dl, live, width - pad - pitW, y + (heroH - pitH) / 2, pitW, pitH, fs);
+            if (flashInBand) dl.Text(pad + 2, y + 2, width - pad * 2 - pitW - fs * 0.5f, lblH + 1, flashed, heroLbl * 1.25f, Yellow);
             y += heroH;
 
             // column titles

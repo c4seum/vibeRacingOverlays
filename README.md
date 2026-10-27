@@ -47,7 +47,7 @@ The cars directly around you on track, with the time difference to each.
 
 ### Fuel calculator
 How much fuel you use and need.
-- Two layouts (Content > Layout): **Table**, in the style of the Relative and Standings (header bar with the clock, fuel level and laps in race big, then a row per estimate with columns L/lap, laps, refuel, stops and fuel at the end), and **Classic**, the original free layout with big values. "Value font size" scales the whole widget.
+- Two layouts (Content > Layout): **Table**, in the style of the Relative and Standings (header bar with the clock, fuel level and laps in race big, then a row per estimate with columns L/lap, laps, refuel, stops and fuel at the end), and **Classic**, the original free layout with big values. "Value font size" scales the whole widget. In Table the header bar can be turned off (Header bar > Show header bar); hotkey confirmations then show for 2 s in place of the fuel level and laps labels.
 - Fuel level, laps left in the race and the time of day.
 - Consumption per lap based on your average (last 10 laps), your last lap, the average of your last N laps (you choose N, 2 to 50), the average since your last pit stop, or a value you set yourself. You choose which of these rows show and in which order (Estimates: the list with the arrows).
 
