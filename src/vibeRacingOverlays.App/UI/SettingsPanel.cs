@@ -29,6 +29,8 @@ namespace vibeRacingOverlays.App.UI
             foreach (var p in Editor.SettingsOf(ws)) p.SetValue(ws, p.GetValue(source));
             var t = ws as ITableSettings;
             if (t != null) { t.Columns = ((ITableSettings)source).Columns; t.MergeColumns(); }
+            var fuel = ws as FuelSettings;
+            if (fuel != null) fuel.EstimateRows = ((FuelSettings)source).EstimateRows.Select(c => new ColumnConfig { Key = c.Key, Enabled = c.Enabled, Width = c.Width, Format = c.Format }).ToList();
             var norm = ws as INormalizable;
             if (norm != null) norm.Normalize();
         }
@@ -197,10 +199,18 @@ namespace vibeRacingOverlays.App.UI
                     string g = group.Key;
                     if (g == "Widget" || (g == "Columns" && table != null) || (g == "Header bar" && header != null)) continue;
                     var list = group.ToList();
+                    // the Fuel calculator's estimate rows: their order and on / off as a list below the Estimates settings
+                    var fuel = g == "Estimates" ? t as FuelSettings : null;
                     cards.Add((GroupRank(g), () =>
                     {
-                        var card = Ui.Card(host, Header(g, () => list.All(x => IsDefault(x.P, t, d)), () => { foreach (var x in list) ResetProp(x.P, t, d); }));
+                        var card = Ui.Card(host, Header(g, () => list.All(x => IsDefault(x.P, t, d)) && (fuel == null || ListIsDefault(fuel.EstimateRows, ((FuelSettings)d).EstimateRows)),
+                            () => { foreach (var x in list) ResetProp(x.P, t, d); if (fuel != null) fuel.EstimateRows = CopyList(((FuelSettings)d).EstimateRows); }));
                         AddRows(card, t, d, list);
+                        if (fuel != null)
+                        {
+                            AddHint(card, "Order and on / off of the rows.");
+                            card.Children.Add(new ListEditor(fuel.EstimateRows, FuelSettings.AvailableEstimates, false, Changed, this));
+                        }
                     }));
                 }
                 if (table != null)
@@ -244,6 +254,8 @@ namespace vibeRacingOverlays.App.UI
                 foreach (var p in AllProps(ws)) ResetProp(p, ws, defaults);
                 var t = ws as ITableSettings;
                 if (t != null) t.Columns = CopyList(((ITableSettings)defaults).Columns);
+                var fuel = ws as FuelSettings;
+                if (fuel != null) fuel.EstimateRows = CopyList(((FuelSettings)defaults).EstimateRows);
             }
 
             // ------------------------------------------------------------ defaults / reset
@@ -255,7 +267,7 @@ namespace vibeRacingOverlays.App.UI
             {
                 return t.GetType().GetProperties().Where(p => p.CanRead && p.CanWrite && !InstanceProps.Contains(p.Name)
                     && p.GetCustomAttribute<System.Text.Json.Serialization.JsonIgnoreAttribute>() == null
-                    && p.Name != "Columns" && p.Name != "Header" && p.Name != "Kind");
+                    && p.Name != "Columns" && p.Name != "Header" && p.Name != "Kind" && p.Name != "EstimateRows");
             }
 
             static bool IsSimple(Type t) { return t.IsPrimitive || t.IsEnum || t == typeof(string) || t == typeof(decimal); }
@@ -292,6 +304,8 @@ namespace vibeRacingOverlays.App.UI
             bool ColumnsAreDefault()
             {
                 var t = ws as ITableSettings;
+                var fuel = ws as FuelSettings;
+                if (fuel != null && !ListIsDefault(fuel.EstimateRows, ((FuelSettings)defaults).EstimateRows)) return false;
                 return t == null || ListIsDefault(t.Columns, ((ITableSettings)defaults).Columns);
             }
 
@@ -493,6 +507,12 @@ namespace vibeRacingOverlays.App.UI
                 { "Track temperature", "Temperature of the track surface" },
                 { "Air temperature", "Temperature of the air" },
                 { "Humidity", "Relative humidity of the air" },
+                // Fuel calculator estimate rows
+                { "Average", "Average fuel use of your last 10 valid laps (no pit visits, refuels or cautions)" },
+                { "Last", "Fuel used on your last valid lap" },
+                { "Last N laps", "Average fuel use of your last N valid laps (N: Laps for 'Last N' average)" },
+                { "Stint average", "Average fuel use of the valid laps since your last pit stop" },
+                { "Custom", "The fuel use you set yourself (Custom per lap), for example a fuel saving target; 0 uses your average" },
             };
 
             sealed class ListEditor : StackPanel

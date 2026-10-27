@@ -10,11 +10,14 @@
     "CustomPerLap": 3,
     "UsePreviousSessions": true,
     "Clock": "SimTime",
-    "ShowLast": true,
-    "ShowCustom": true,
-    "ShowLastN": false,
+    "EstimateRows": [
+      { "Key": "avg", "Enabled": true },
+      { "Key": "last", "Enabled": true },
+      { "Key": "lastn", "Enabled": false },
+      { "Key": "stint", "Enabled": false },
+      { "Key": "custom", "Enabled": true }
+    ],
     "LastNLaps": 5,
-    "ShowStint": false,
     "Stops": "Column",
     "FontSize": 24,
     "BackgroundColor": "#FF2B2B2B",

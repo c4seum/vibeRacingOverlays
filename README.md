@@ -49,7 +49,8 @@ The cars directly around you on track, with the time difference to each.
 How much fuel you use and need.
 - Two layouts (Content > Layout): **Table**, in the style of the Relative and Standings (header bar with the clock, fuel level and laps in race big, then a row per estimate with columns L/lap, laps, refuel, stops and fuel at the end), and **Classic**, the original free layout with big values. "Value font size" scales the whole widget.
 - Fuel level, laps left in the race and the time of day.
-- Consumption per lap based on your average (last 10 laps), your last lap, the average of your last N laps (you choose N, 2 to 50), the average since your last pit stop, or a value you set yourself.
+- Consumption per lap based on your average (last 10 laps), your last lap, the average of your last N laps (you choose N, 2 to 50), the average since your last pit stop, or a value you set yourself. You choose which of these rows show and in which order (Estimates: the list with the arrows).
+
 - For each: how many laps your fuel lasts, how much you need to refuel to finish (with an adjustable safety margin), how many pit stops that takes with your tank size, and how much will be left at the finish. These values are updated once a lap, when you cross the line (and when you leave the pit lane), so they don't tick while you drive; fuel level and laps in race stay live.
 - *Laps in Race* follows the iRacing rules for lap races, timed races and races with both a lap and a time limit (whichever comes first). The race ends when the overall leader finishes, also in multiclass; you finish the next time you cross the line after that. Lap times are based on your recent clean laps and those of the leader (pit, out and caution laps don't count).
 - A PIT indicator that warns when you need to stop.

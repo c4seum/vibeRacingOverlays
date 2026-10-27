@@ -29,19 +29,56 @@ namespace vibeRacingOverlays.App.Widgets
         public bool UsePreviousSessions { get; set; } = false;
         [Setting("Custom per lap (0 = average)", Group = "Estimates", Min = 0, Max = 20, Step = 0.01, Order = 6, Tooltip = "Your own fuel use per lap for the Custom row (a fuel saving target). 0 uses your average")] public double CustomPerLap { get; set; } = 0;
         [Setting("Clock", Group = "Content", Order = 2, Tooltip = "Real time (the clock of your PC) or the time of day in the sim")] public ClockSource Clock { get; set; } = ClockSource.RealTime;
-        [Setting("Show 'Last' row", Group = "Estimates", Order = 1, Tooltip = "Fuel used on your last valid lap")] public bool ShowLast { get; set; } = true;
-        [Setting("Show 'Custom' row", Group = "Estimates", Order = 5, Tooltip = "The fuel use you set yourself (Custom per lap), for example a fuel saving target")] public bool ShowCustom { get; set; } = true;
-        [Setting("Show 'Last N laps' row", Group = "Estimates", Order = 2, Tooltip = "Average fuel use of the last N valid laps (no pit visits, refuels or cautions)")]
-        public bool ShowLastN { get; set; } = false;
         [Setting("Laps for 'Last N' average", Group = "Estimates", Min = 2, Max = 50, Order = 3, Tooltip = "How many of your last valid laps the 'Last N' row averages")] public int LastNLaps { get; set; } = 5;
-        [Setting("Show 'Stint' row", Group = "Estimates", Order = 4, Tooltip = "Average fuel use of the valid laps since your last pit stop")]
-        public bool ShowStint { get; set; } = false;
+
+        /// <summary>The estimate rows: order and on / off (user's wish, 2026-10-27; the editor's list in the Estimates card).</summary>
+        public List<ColumnConfig> EstimateRows { get; set; } = DefaultEstimateRows();
+
+        public static readonly IReadOnlyList<ColumnDef> AvailableEstimates = new[]
+        {
+            new ColumnDef("avg", "Average", "", 0, true, Align.Left),
+            new ColumnDef("last", "Last", "", 0, true, Align.Left),
+            new ColumnDef("lastn", "Last N laps", "", 0, false, Align.Left),
+            new ColumnDef("stint", "Stint average", "", 0, false, Align.Left),
+            new ColumnDef("custom", "Custom", "", 0, true, Align.Left),
+        };
+
+        static List<ColumnConfig> DefaultEstimateRows() { return AvailableEstimates.Select(d => new ColumnConfig { Key = d.Key, Enabled = d.DefaultOn }).ToList(); }
+
+        // the on / off switches of before the list: only read from older files and presets, then turned into EstimateRows (Normalize)
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public bool? ShowLast { get; set; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public bool? ShowCustom { get; set; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public bool? ShowLastN { get; set; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public bool? ShowStint { get; set; }
+
+        /// <summary>Whether an estimate row is on.</summary>
+        public bool Shows(string key) { var r = EstimateRows.FirstOrDefault(x => x.Key == key); return r != null && r.Enabled; }
         [Setting("Stops", Group = "Content", Order = 3, Tooltip = "Pit stops needed to finish (0 = you make it without refuelling): the refuel amount divided by the tank capacity, rounded up. "
             + "Column: a column of its own.")]
         public StopsDisplay Stops { get; set; } = StopsDisplay.Column;
 
         // "next to refuel" is gone: widgets that used it (it was the default) keep seeing their stops, in a column
-        public void Normalize() { if (Stops == StopsDisplay.NextToRefuel) Stops = StopsDisplay.Column; }
+        public void Normalize()
+        {
+            if (Stops == StopsDisplay.NextToRefuel) Stops = StopsDisplay.Column;
+            // older files: the switches become the list, in the fixed order of before (Average was always on)
+            if (ShowLast != null || ShowCustom != null || ShowLastN != null || ShowStint != null)
+            {
+                EstimateRows = new List<ColumnConfig>
+                {
+                    new ColumnConfig { Key = "avg", Enabled = true },
+                    new ColumnConfig { Key = "last", Enabled = ShowLast ?? true },
+                    new ColumnConfig { Key = "lastn", Enabled = ShowLastN ?? false },
+                    new ColumnConfig { Key = "stint", Enabled = ShowStint ?? false },
+                    new ColumnConfig { Key = "custom", Enabled = ShowCustom ?? true },
+                };
+                ShowLast = ShowCustom = ShowLastN = ShowStint = null;
+            }
+            // every row once, in the user's order; rows of a newer version go at the end
+            var rows = (EstimateRows ?? new List<ColumnConfig>()).Where(r => r != null && AvailableEstimates.Any(d => d.Key == r.Key)).GroupBy(r => r.Key).Select(g => g.First()).ToList();
+            foreach (var d in AvailableEstimates) if (!rows.Any(r => r.Key == d.Key)) rows.Add(new ColumnConfig { Key = d.Key, Enabled = d.DefaultOn });
+            EstimateRows = rows;
+        }
 
         [Setting("Value font size", Group = "Text & size", Min = 12, Max = 40, Order = 3, Tooltip = "Size of the big values; the rest of the widget scales with it (Table: 24 gives the rows the size of the Relative's 14).")] public double FontSize { get; set; } = 24;
         [Setting("Background (classic)", Group = "Colors", IsColor = true, Order = 1, Tooltip = "Background of the Classic layout")] public string BackgroundColor { get; set; } = "#FF2B2B2B";
@@ -103,7 +140,7 @@ namespace vibeRacingOverlays.App.Widgets
             float need = Math.Max(dl.Measure("88.88", big), new[] { "Laps in Race", "Laps Remain", "Fuel at End", "Clock 24h" }.Max(t => dl.Measure(t, label)));
             float colW = Math.Max(big * 3.3f, need + big * 0.5f);
             float lblH = label * 1.35f, valH = big * 1.2f, block = lblH + valH + big * 0.25f;
-            int rows = 2 + (s.ShowLast ? 1 : 0) + (s.ShowLastN ? 1 : 0) + (s.ShowStint ? 1 : 0) + (s.ShowCustom ? 1 : 0);
+            int rows = 1 + s.EstimateRows.Count(r => r.Enabled);
             // optional stops column between "Refuel" and "Fuel at End" (narrower: it only holds a small number)
             stopsW = s.Stops == StopsDisplay.Column ? colW * 0.6f : 0;
             stopsX = pad + colW * 3;
@@ -127,26 +164,14 @@ namespace vibeRacingOverlays.App.Widgets
             // the per-lap rows use the values from the last line crossing (or pit exit): they change once a lap,
             // not with every drop of fuel; level, laps in race and the pit indicator above stay live
             f = f.AtLine ?? f;
-            double custom = s.CustomPerLap > 0 ? s.CustomPerLap : Math.Round(Avg(f), 2);
-            DrawRow(dl, f, AvgName(f), Avg(f), Argb.Parse(s.AvgColor), x, y, colW, lblH, valH, label, big, true);
-            y += block;
-            if (s.ShowLast) { DrawRow(dl, f, "Last", f.LastPerLap, Argb.Parse(s.LastColor), x, y, colW, lblH, valH, label, big, false); y += block; }
-            if (s.ShowLastN)
+            // in the user's order; the first row carries the column labels
+            bool firstRow = true;
+            foreach (var r in Estimates(f))
             {
-                int n = Math.Max(2, s.LastNLaps), have = Math.Min(n, f.Laps.Length);
-                // "Last 3/5 avg" while there aren't n valid laps yet
-                string name = "Last " + (have > 0 && have < n ? have + "/" : "") + n + " avg";
-                DrawRow(dl, f, name, f.AverageOfLast(n), Argb.Parse(s.LastNColor), x, y, colW, lblH, valH, label, big, false);
+                DrawRow(dl, f, r.Name, r.PerLap, r.Color, x, y, colW, lblH, valH, label, big, firstRow);
+                firstRow = false;
                 y += block;
             }
-            if (s.ShowStint)
-            {
-                // "Stint avg (4)": number of valid laps since the last pit stop
-                string name = "Stint avg" + (f.StintValidLaps > 0 ? " (" + f.StintValidLaps + ")" : "");
-                DrawRow(dl, f, name, f.StintAvgPerLap, Argb.Parse(s.StintColor), x, y, colW, lblH, valH, label, big, false);
-                y += block;
-            }
-            if (s.ShowCustom) { DrawRow(dl, f, s.CustomPerLap > 0 ? "Custom" : "Custom (avg)", custom, Argb.Parse(s.CustomColor), x, y, colW, lblH, valH, label, big, false); y += block; }
 
             // a hotkey confirmation over the top label row (Classic has no header bar), up to the clock label, which stays
             string flash = FlashNow;
@@ -195,18 +220,27 @@ namespace vibeRacingOverlays.App.Widgets
 
         const uint Dim = 0xFF9A9A9A;
 
-        /// <summary>The estimates shown, in order: name, fuel per lap, colour.</summary>
+        /// <summary>The estimates shown, in the user's order: name, fuel per lap, colour.</summary>
         List<(string Name, double PerLap, uint Color)> Estimates(FuelInfo f)
         {
-            var list = new List<(string, double, uint)> { (AvgName(f), Avg(f), Argb.Parse(s.AvgColor)) };
-            if (s.ShowLast) list.Add(("Last", f.LastPerLap, Argb.Parse(s.LastColor)));
-            if (s.ShowLastN)
+            var list = new List<(string Name, double PerLap, uint Color)>();
+            foreach (var r in s.EstimateRows)
             {
-                int n = Math.Max(2, s.LastNLaps), have = Math.Min(n, f.Laps.Length);
-                list.Add(("Last " + (have > 0 && have < n ? have + "/" : "") + n + " avg", f.AverageOfLast(n), Argb.Parse(s.LastNColor)));
+                if (!r.Enabled) continue;
+                switch (r.Key)
+                {
+                    case "avg": list.Add((AvgName(f), Avg(f), Argb.Parse(s.AvgColor))); break;
+                    case "last": list.Add(("Last", f.LastPerLap, Argb.Parse(s.LastColor))); break;
+                    case "lastn":
+                        // "Last 3/5 avg" while there aren't n valid laps yet
+                        int n = Math.Max(2, s.LastNLaps), have = Math.Min(n, f.Laps.Length);
+                        list.Add(("Last " + (have > 0 && have < n ? have + "/" : "") + n + " avg", f.AverageOfLast(n), Argb.Parse(s.LastNColor)));
+                        break;
+                    // "Stint avg (4)": number of valid laps since the last pit stop
+                    case "stint": list.Add(("Stint avg" + (f.StintValidLaps > 0 ? " (" + f.StintValidLaps + ")" : ""), f.StintAvgPerLap, Argb.Parse(s.StintColor))); break;
+                    case "custom": list.Add((s.CustomPerLap > 0 ? "Custom" : "Custom (avg)", s.CustomPerLap > 0 ? s.CustomPerLap : Math.Round(Avg(f), 2), Argb.Parse(s.CustomColor))); break;
+                }
             }
-            if (s.ShowStint) list.Add(("Stint avg" + (f.StintValidLaps > 0 ? " (" + f.StintValidLaps + ")" : ""), f.StintAvgPerLap, Argb.Parse(s.StintColor)));
-            if (s.ShowCustom) list.Add((s.CustomPerLap > 0 ? "Custom" : "Custom (avg)", s.CustomPerLap > 0 ? s.CustomPerLap : Math.Round(Avg(f), 2), Argb.Parse(s.CustomColor)));
             return list;
         }
 
@@ -229,7 +263,7 @@ namespace vibeRacingOverlays.App.Widgets
 
             // columns: colour bar | name | L/lap | laps | refuel | (stops) | at end
             float num = Math.Max(M("188.88", fs), M("REFUEL", small));
-            var w = new List<float> { 4, rows.Max(r => M(r.Name, fs)), num, num, num };
+            var w = new List<float> { 4, rows.Select(r => M(r.Name, fs)).DefaultIfEmpty(M("Average", fs)).Max(), num, num, num };
             if (stopsCol) w.Add(Math.Max(M("8", fs), M("STOPS", small)));
             w.Add(Math.Max(M("-188.88", fs), M("AT END", small)));
             var x = new float[w.Count];
