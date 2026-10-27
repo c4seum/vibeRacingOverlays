@@ -8,6 +8,7 @@
     "TypeName": "Standings",
     "PracticeQualify": {
       "Kind": "PracticeQualify",
+      "HideOthersInQualifying": true,
       "ShowHeader": true,
       "ShowColumnTitles": false,
       "Rows": 15,
@@ -147,12 +148,6 @@
           "Format": "remain_total"
         },
         {
-          "Key": "clock",
-          "Enabled": true,
-          "Width": 0,
-          "Format": "sim"
-        },
-        {
           "Key": "spacer",
           "Enabled": true,
           "Width": 0,
@@ -174,7 +169,7 @@
           "Key": "humidity",
           "Enabled": true,
           "Width": 0,
-          "Format": "0"
+          "Format": "1"
         },
         {
           "Key": "sof",
@@ -183,8 +178,14 @@
           "Format": "full"
         },
         {
-          "Key": "cars",
+          "Key": "clock",
           "Enabled": true,
+          "Width": 0,
+          "Format": "sim"
+        },
+        {
+          "Key": "cars",
+          "Enabled": false,
           "Width": 0,
           "Format": "running"
         },
@@ -198,6 +199,7 @@
     },
     "Race": {
       "Kind": "Race",
+      "HideOthersInQualifying": false,
       "ShowHeader": true,
       "ShowColumnTitles": false,
       "Rows": 15,
@@ -337,12 +339,6 @@
           "Format": "remain_total"
         },
         {
-          "Key": "clock",
-          "Enabled": true,
-          "Width": 0,
-          "Format": "sim"
-        },
-        {
           "Key": "spacer",
           "Enabled": true,
           "Width": 0,
@@ -373,8 +369,14 @@
           "Format": "full"
         },
         {
-          "Key": "cars",
+          "Key": "clock",
           "Enabled": true,
+          "Width": 0,
+          "Format": "sim"
+        },
+        {
+          "Key": "cars",
+          "Enabled": false,
           "Width": 0,
           "Format": "running"
         },
@@ -382,11 +384,11 @@
           "Key": "incidents",
           "Enabled": false,
           "Width": 0,
-          "Format": "full"
+          "Format": "dq"
         }
       ]
     },
-    "FontSize": 14,
+    "FontSize": 15,
     "RowHeight": 25,
     "ColumnSpacing": 5,
     "HeaderColor": "#FF1C1C1C",
@@ -408,6 +410,8 @@
     "Scale": 1,
     "BackgroundOpacity": 0.8,
     "RefreshHz": 60,
-    "Show": "InCar"
+    "Show": "InCar",
+    "Font": "TitilliumWeb",
+    "TextWeight": "Regular"
   }
 }

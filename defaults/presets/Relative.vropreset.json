@@ -9,9 +9,10 @@
     "CarsAhead": 4,
     "CarsBehind": 4,
     "ShowHeader": true,
-    "FontSize": 14,
+    "FontSize": 15,
     "RowHeight": 25,
     "ColumnSpacing": 15,
+    "HeaderColor": "#FF1C1C1C",
     "RowColor": "#FF1E1E1E",
     "RowAltColor": "#FF282828",
     "PlayerColor": "#FF8E2A2A",
@@ -128,13 +129,13 @@
         "Key": "incidents",
         "Enabled": true,
         "Width": 0,
-        "Format": "count"
+        "Format": "dq"
       },
       {
         "Key": "clock",
-        "Enabled": false,
+        "Enabled": true,
         "Width": 0,
-        "Format": "real"
+        "Format": "sim"
       }
     ],
     "AvailableColumns": [
@@ -174,6 +175,8 @@
     "Scale": 1,
     "BackgroundOpacity": 0.8,
     "RefreshHz": 60,
-    "Show": "InCar"
+    "Show": "InCar",
+    "Font": "TitilliumWeb",
+    "TextWeight": "Regular"
   }
 }

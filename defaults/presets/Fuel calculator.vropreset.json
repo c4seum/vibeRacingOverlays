@@ -6,22 +6,50 @@
   "Widget": {
     "type": "fuel",
     "TypeName": "Fuel calculator",
-    "Margin": 1,
-    "CustomPerLap": 3,
-    "UsePreviousSessions": true,
-    "Clock": "SimTime",
-    "EstimateRows": [
-      { "Key": "avg", "Enabled": true },
-      { "Key": "last", "Enabled": true },
-      { "Key": "lastn", "Enabled": false },
-      { "Key": "stint", "Enabled": false },
-      { "Key": "custom", "Enabled": true }
-    ],
-    "LastNLaps": 5,
-    "Stops": "Column",
-    "FontSize": 24,
-    "BackgroundColor": "#FF2B2B2B",
     "Layout": "Table",
+    "Margin": 1,
+    "UsePreviousSessions": true,
+    "CustomPerLap": 3,
+    "Clock": "SimTime",
+    "LastNLaps": 5,
+    "EstimateRows": [
+      {
+        "Key": "avg",
+        "Enabled": true,
+        "Width": 0,
+        "Format": null
+      },
+      {
+        "Key": "custom",
+        "Enabled": true,
+        "Width": 0,
+        "Format": null
+      },
+      {
+        "Key": "last",
+        "Enabled": true,
+        "Width": 0,
+        "Format": null
+      },
+      {
+        "Key": "lastn",
+        "Enabled": false,
+        "Width": 0,
+        "Format": null
+      },
+      {
+        "Key": "stint",
+        "Enabled": false,
+        "Width": 0,
+        "Format": null
+      }
+    ],
+    "Stops": "Column",
+    "FontSize": 30,
+    "BackgroundColor": "#FF2B2B2B",
+    "HeaderColor": "#FF1C1C1C",
+    "RowColor": "#FF1E1E1E",
+    "RowAltColor": "#FF282828",
     "AvgColor": "#FF8FA8F0",
     "LastColor": "#FFF0C36A",
     "CustomColor": "#FF7ED67E",
@@ -38,9 +66,11 @@
     "OffsetY": 0,
     "Locked": false,
     "PresetId": null,
-    "Scale": 1,
+    "Scale": 1.2,
     "BackgroundOpacity": 0.8,
     "RefreshHz": 60,
-    "Show": "InCar"
+    "Show": "InCar",
+    "Font": "TitilliumWeb",
+    "TextWeight": "Regular"
   }
 }
