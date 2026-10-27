@@ -6,6 +6,8 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-27
+
 ### Added
 - Fuel calculator: **Show header bar** (Header bar card, Table layout). Off: no bar with the title and clock; hotkey confirmations show for 2 s in place of the "Fuel level" and "Laps in race" labels. On for existing widgets and the Default preset.
 - Fuel calculator: the **order of the rows** (Average, Last, Last N laps, Stint average, Custom) is yours to set, with the arrows in the list in the Estimates card, where you also turn them on and off (that replaces the "Show ... row" switches; Average can now be turned off too). Your existing Fuel calculators keep their rows and order.
