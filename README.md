@@ -32,6 +32,7 @@ The classification of your session.
 - Many columns have a format of their own, for example lap times with 3, 2 or 1 decimals, iRating as 4567 or 4.5k, and license as A3.48, A3.4 or only the letter. Numbers always line up neatly in their column.
 - Header bar with the items you choose, in your order: session type, class, laps (or an estimate for timed races), time, track and air temperature (°C and/or °F, with a road and a wind icon), humidity (with a drop icon), strength of field and number of cars, split into a left and a right group.
 - **Separate settings for practice & qualifying and for the race:** rows, columns, header and formats can differ per session type (for example 3 decimals and best laps in qualifying, gaps with 1 decimal in the race). The widget switches automatically; colors and size are shared.
+- **Hide others while I qualify** (Practice & qualifying > Content): in a qualifying session the widget shows only your own row while you are out on track, however many laps you do, so other drivers' times don't distract you. Everyone is back as soon as you are in the pit lane or out of the car. Practice is not affected.
 
 ### Relative
 The cars directly around you on track, with the time difference to each.

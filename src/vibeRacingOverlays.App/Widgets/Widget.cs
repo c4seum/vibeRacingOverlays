@@ -69,6 +69,12 @@ namespace vibeRacingOverlays.App.Widgets
         }
     }
 
+    /// <summary>Settings of which some only apply in one case (e.g. one session kind): the editor leaves the others out.</summary>
+    public interface ISettingFilter
+    {
+        bool Shows(string property);
+    }
+
     /// <summary>Settings that need fixing up after loading (migration of older files, new defaults).</summary>
     public interface INormalizable
     {

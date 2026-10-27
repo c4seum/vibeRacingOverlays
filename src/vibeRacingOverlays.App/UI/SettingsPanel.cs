@@ -168,7 +168,7 @@ namespace vibeRacingOverlays.App.UI
             {
                 return t.GetType().GetProperties()
                     .Select(p => new SettingProp { P = p, A = p.GetCustomAttribute<SettingAttribute>() })
-                    .Where(x => x.A != null)
+                    .Where(x => x.A != null && (!(t is ISettingFilter) || ((ISettingFilter)t).Shows(x.P.Name)))
                     .OrderBy(x => x.A.Order)
                     .ToList();
             }

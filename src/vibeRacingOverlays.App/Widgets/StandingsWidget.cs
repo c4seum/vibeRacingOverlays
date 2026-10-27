@@ -11,9 +11,16 @@ namespace vibeRacingOverlays.App.Widgets
     /// What the standings show in one kind of session (P&amp;Q or race): rows, columns, header items and their formats.
     /// Style (colors, font, scale) is shared and lives in <see cref="StandingsSettings"/>.
     /// </summary>
-    public sealed class StandingsProfile : ITableSettings, IHeaderItems
+    public sealed class StandingsProfile : ITableSettings, IHeaderItems, ISettingFilter
     {
         public SessionKind Kind { get; set; }
+
+        // the number of flying laps differs per event, so it goes by where you are: hidden while you're out on track in
+        // a qualifying session, back once you're in the pit lane or out of the car (user's wish, 2026-10-27)
+        [Setting("Hide others while I qualify", Group = "Content", Order = 1, Tooltip = "In a qualifying session only your own row shows while you are out on track (any number of laps), so other drivers' times don't distract you. Everyone is back once you are in the pit lane or out of the car. Practice is not affected")]
+        public bool HideOthersInQualifying { get; set; } = false;
+
+        public bool Shows(string property) { return property != nameof(HideOthersInQualifying) || Kind == SessionKind.PracticeQualify; }
 
         [Setting("Show header bar", Group = "Header bar", Order = 0, Tooltip = "The bar above the rows with the title and the header items below")] public bool ShowHeader { get; set; } = true;
         [Setting("Column titles row", Group = "Columns", Order = 0, Tooltip = "A row with the column names above the drivers")] public bool ShowColumnTitles { get; set; } = false;
@@ -274,7 +281,22 @@ namespace vibeRacingOverlays.App.Widgets
                 y += rh;
             }
 
-            if (multi)
+            if (HidesOthers(snap))
+            {
+                // only your own row; gaps and intervals are about the others, so they stay empty
+                dl.Rect(0, y, width, rh, Bg(Argb.Parse(s.PlayerColor)));
+                float x = Pad;
+                foreach (var c in cols)
+                {
+                    if (c.Key != "gap" && c.Key != "int") DrawCell(dl, c, snap.Player, snap, x, y, c.Width, rh, fs, Argb.Parse(s.TextColor), false);
+                    x += c.Width + sp;
+                }
+                y += rh;
+                dl.Rect(0, y, width, rh, Bg(Argb.Parse(s.RowColor)));
+                dl.Text(Pad, y, width - Pad * 2, rh, "Others hidden until you're back in the pits", fs * 0.8f, Dim);
+                y += rh;
+            }
+            else if (multi)
             {
                 var classes = snap.Classes.ToList();
                 if (pr.PlayerClassFirst && snap.PlayerClass != null && classes.Remove(snap.PlayerClass)) classes.Insert(0, snap.PlayerClass);
@@ -301,6 +323,14 @@ namespace vibeRacingOverlays.App.Widgets
             dl.Width = width;
             dl.Height = y;
             dl.RoundCorners(Corner);
+        }
+
+        /// <summary>Qualifying with "hide others" on and you out on track (not in the pit lane, in the car).</summary>
+        bool HidesOthers(RaceSnapshot snap)
+        {
+            if (snap.IsRace || !pr.HideOthersInQualifying || snap.Player == null || !snap.InCar || snap.Player.OnPitRoad) return false;
+            // "Lone Qualify", "Open Qualify", "Qualifying"
+            return (snap.SessionType ?? "").IndexOf("Qualif", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         /// <summary>Space between blocks, in the header colour: the widget stays one shape instead of loose pieces.</summary>
