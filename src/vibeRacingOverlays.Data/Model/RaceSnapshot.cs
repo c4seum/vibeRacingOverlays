@@ -144,6 +144,8 @@ namespace vibeRacingOverlays.Data.Model
         public bool IsRace;
         /// <summary>The player sits in the car with its physics running (iRacing IsOnTrack): false in the garage, after getting out, in a replay.</summary>
         public bool InCar;
+        /// <summary>The player has driven all laps this session allows (lap limit after the out lap, or the line after the checkered).</summary>
+        public bool PlayerSessionDone;
         public SessionState State;
         public SessionFlags Flags;
         public string TrackName = "";

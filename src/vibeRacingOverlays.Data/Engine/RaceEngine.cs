@@ -63,6 +63,7 @@ namespace vibeRacingOverlays.Data.Engine
         {
             for (int i = 0; i < trackers.Length; i++) trackers[i] = new Tracker();
             fuelLine = null; fuelLineLap = int.MinValue; fuelLinePrevPit = false;
+            playerLapAtCheckered = int.MinValue;
         }
 
         public void SetSession(SessionInfo s)
@@ -350,6 +351,7 @@ namespace vibeRacingOverlays.Data.Engine
                 if (lapTime > 0) snap.EstTotalLaps = classLeader.Progress + snap.TimeRemain / lapTime;
             }
 
+            snap.PlayerSessionDone = PlayerSessionDone(snap, s);
             BuildRelative(snap, s);
             BuildFuel(snap, s, overallLeader);
             return snap;
@@ -558,6 +560,24 @@ namespace vibeRacingOverlays.Data.Engine
         }
 
         double checkeredTarget = double.NaN;   // the player's finish line crossing once the checkered flag is out
+
+        int playerLapAtCheckered = int.MinValue;   // the player's completed laps when the session's checkered flag came out
+
+        /// <summary>
+        /// The player has driven all laps the session allows: the lap limit after the out lap (lone qualifying: line
+        /// crossings since leaving the pit lane = out lap + timed laps), or the first line crossing after the checkered.
+        /// </summary>
+        bool PlayerSessionDone(RaceSnapshot snap, TelemetryState s)
+        {
+            var p = snap.Player;
+            if (p == null) return false;
+            if (s.SessionState >= SessionState.Checkered)
+            {
+                if (playerLapAtCheckered == int.MinValue) playerLapAtCheckered = p.LapCompleted;
+                if (p.LapCompleted > playerLapAtCheckered) return true;
+            }
+            return snap.TotalLaps > 0 && p.StintLaps >= snap.TotalLaps + 1;
+        }
 
         static void ParseLicense(string lic, CarInfo c)
         {

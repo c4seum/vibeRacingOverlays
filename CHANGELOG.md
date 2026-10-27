@@ -7,7 +7,7 @@ Versions: the last digit is for fixes only, the middle digit for new features.
 ## [Unreleased]
 
 ### Added
-- Standings: **Hide others while I qualify** (Practice & qualifying > Content). In a qualifying session only your own row shows while you are out on track, whatever the number of laps, with "Others hidden until you're back in the pits" below it; gaps and intervals stay empty. Everyone is back in the pit lane or out of the car. Off unless you switch it on.
+- Standings: **Hide others while I qualify** (Practice & qualifying > Content). In a qualifying session only your own row shows while you are out on track, without position, gap and interval. Everyone is back when you set your last lap time (the session's number of timed laps after your out lap, or your first lap after the checkered), or when you are in the pit lane or out of the car. Off unless you switch it on.
 - Fuel calculator: **Race: practice / qualifying average** (Estimates). In a race, until your first race lap is done (grid, pace lap, lap 1), the Average row shows "Average (P/Q)": your average of practice and qualifying with the same car on the same track. The app now keeps those laps when iRacing restarts the sim between sessions (that used to start the fuel measurement from scratch). On in the Default preset, off for your existing Fuel calculators.
 
 ### Changed
